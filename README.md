@@ -9,6 +9,12 @@
 
 ## 📜 完整版本演進歷程 (Version History & Changelog)
 
+### 🚀 v3.0-dev (2026-08-15) - TODO-02 版號與 <title> 連動
+- **版號常數集中管理**：新增 `APP_VERSION = "v3.0-dev"` 常數。
+- **網頁 Title & Badge 同步**：網頁 `<title>` 與 Header 版號標籤連動更新。
+
+---
+
 ### ⚡ v2.7 (2026-08-01) - 3 步驟智慧型抽籤與併排設定版 [目前基準 Baseline]
 - **三步驟 SOP 工作流**：匯入名單 ➔ 個別需求設定 ➔ 執行分階段抽籤。
 - **四大個別需求標籤**：坐靠前 (Emerald)、坐靠後 (Slate)、不最後 (Purple)、不靠邊 (Amber)。
