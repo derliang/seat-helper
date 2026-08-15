@@ -656,7 +656,8 @@
             </div>
 
             <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
-                <section class="xl:col-span-5 bg-white dark:bg-slate-900 p-7 sm:p-8 rounded-[2rem] shadow-sm border border-slate-200 dark:border-slate-700 border-t-4 border-t-indigo-500">
+                <div class="xl:col-span-5 flex flex-col gap-6">
+                <section class="bg-white dark:bg-slate-900 p-7 sm:p-8 rounded-[2rem] shadow-sm border border-slate-200 dark:border-slate-700 border-t-4 border-t-indigo-500">
                     <div class="flex items-center gap-3 mb-6">
                         <div class="bg-indigo-50 dark:bg-indigo-950/50 p-2.5 rounded-xl"><i data-lucide="school" class="w-6 h-6 text-indigo-500"></i></div>
                         <div>
@@ -670,6 +671,27 @@
                     </div>
                     <p id="classroomNameStatus" class="text-sm font-bold text-emerald-600 dark:text-emerald-400 mt-3 min-h-[1.25rem]"></p>
                 </section>
+
+                <section class="bg-white dark:bg-slate-900 p-7 sm:p-8 rounded-[2rem] shadow-sm border border-slate-200 dark:border-slate-700 border-t-4 border-t-emerald-500">
+                    <div class="flex items-center gap-3 mb-5">
+                        <div class="bg-emerald-50 dark:bg-emerald-950/50 p-2.5 rounded-xl"><i data-lucide="archive" class="w-6 h-6 text-emerald-500"></i></div>
+                        <div>
+                            <h2 class="text-lg font-black text-slate-800 dark:text-white">JSON 完整備份</h2>
+                            <p class="text-xs font-bold text-slate-500 dark:text-slate-400">跨裝置備份與還原所有本機資料</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <button type="button" onclick="exportJsonBackup()" class="btn-main bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-3 flex items-center justify-center gap-2">
+                            <i data-lucide="download" class="w-5 h-5"></i> 匯出 JSON
+                        </button>
+                        <button type="button" onclick="document.getElementById('jsonBackupInput').click()" class="btn-main bg-slate-700 hover:bg-slate-600 text-white px-5 py-3 flex items-center justify-center gap-2">
+                            <i data-lucide="upload" class="w-5 h-5"></i> 匯入 JSON
+                        </button>
+                    </div>
+                    <input id="jsonBackupInput" type="file" accept=".json,application/json" class="hidden" onchange="importJsonBackup(this)">
+                    <p id="jsonBackupStatus" class="text-sm font-bold text-slate-500 dark:text-slate-400 mt-3 min-h-[1.25rem]">匯入時會先驗證檔案，再詢問是否覆蓋。</p>
+                </section>
+                </div>
 
                 <section class="xl:col-span-7 bg-white dark:bg-slate-900 p-7 sm:p-8 rounded-[2rem] shadow-sm border border-slate-200 dark:border-slate-700 border-t-4 border-t-violet-500">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
@@ -747,8 +769,10 @@
         let soundEnabled = true;
         let phaseSoundMap = { priority: 'priority', rear: 'rear', noBack: 'noBack', noSide: 'noSide', final: 'final' };
 
-        function saveData() {
-            const data = {
+        const validPhaseSoundIds = ['priority', 'rear', 'noBack', 'noSide', 'final', 'gentleBell', 'crystalRise', 'digitalPop', 'warmChord', 'celebration'];
+
+        function getSerializableData() {
+            return {
                 students: students.map(s => ({...s, tags: Array.from(s.tags)})),
                 seating,
                 gridConfig,
@@ -758,7 +782,10 @@
                 soundEnabled,
                 phaseSoundMap
             };
-            localStorage.setItem('seatHelperDataV2', JSON.stringify(data));
+        }
+
+        function saveData() {
+            localStorage.setItem('seatHelperDataV2', JSON.stringify(getSerializableData()));
         }
 
         function loadData() {
@@ -912,6 +939,83 @@
             const safeName = classroomName.replace(/[\\/:*?"<>|]/g, '_').trim() || '座位表';
             const date = new Date().toLocaleDateString('sv-SE');
             return `${safeName}_${date}.${extension}`;
+        }
+
+        function setJsonBackupStatus(message, isError = false) {
+            const status = document.getElementById('jsonBackupStatus');
+            status.textContent = message;
+            status.className = `text-sm font-bold mt-3 min-h-[1.25rem] ${isError ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`;
+        }
+
+        function exportJsonBackup() {
+            const backup = {
+                app: 'seat-helper',
+                schemaVersion: 1,
+                appVersion: APP_VERSION,
+                exportedAt: new Date().toISOString(),
+                theme: localStorage.getItem('seatHelperTheme') || 'light',
+                data: getSerializableData()
+            };
+            const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = getExportFileName('json');
+            link.click();
+            URL.revokeObjectURL(url);
+            setJsonBackupStatus('JSON 完整備份已匯出。');
+        }
+
+        function validateJsonBackup(backup) {
+            if (!backup || backup.app !== 'seat-helper' || backup.schemaVersion !== 1 || !backup.data) throw new Error('這不是有效的座位小幫手備份檔。');
+            const data = backup.data;
+            if (!Array.isArray(data.students) || !Array.isArray(data.seating) || !Array.isArray(data.mergeRight) || !Array.isArray(data.drawHistory)) throw new Error('備份資料結構不完整。');
+            if (!data.gridConfig || !Number.isInteger(data.gridConfig.cols) || !Number.isInteger(data.gridConfig.rows) || data.gridConfig.cols < 1 || data.gridConfig.cols > 30 || data.gridConfig.rows < 1 || data.gridConfig.rows > 30) throw new Error('座位行列設定不正確。');
+            if (data.seating.length !== data.gridConfig.cols * data.gridConfig.rows) throw new Error('座位資料數量與行列設定不符。');
+            if (data.mergeRight.length !== Math.max(0, data.gridConfig.cols - 1) || data.mergeRight.some(value => typeof value !== 'boolean')) throw new Error('併排設定不正確。');
+            if (data.students.some(student => !student || typeof student.name !== 'string' || !Array.isArray(student.tags))) throw new Error('學生名單格式不正確。');
+            if (typeof data.classroomName !== 'string' || typeof data.soundEnabled !== 'boolean') throw new Error('班級或音效設定不正確。');
+            if (!data.phaseSoundMap || ['priority', 'rear', 'noBack', 'noSide', 'final'].some(phase => !validPhaseSoundIds.includes(data.phaseSoundMap[phase]))) throw new Error('五階段音效設定不正確。');
+            if (!['light', 'dark'].includes(backup.theme)) throw new Error('主題設定不正確。');
+            return data;
+        }
+
+        async function importJsonBackup(input) {
+            const file = input.files[0];
+            if (!file) return;
+            try {
+                if (file.size > 5 * 1024 * 1024) throw new Error('備份檔超過 5 MB，請確認檔案是否正確。');
+                const backup = JSON.parse(await file.text());
+                const data = validateJsonBackup(backup);
+                if (!confirm(`已驗證「${data.classroomName}」備份檔。\n\n確定要覆蓋目前所有資料嗎？`)) {
+                    setJsonBackupStatus('已取消匯入，目前資料未變更。');
+                    return;
+                }
+                students = data.students.map(student => ({ ...student, tags: new Set(student.tags) }));
+                seating = data.seating;
+                gridConfig = data.gridConfig;
+                mergeRight = data.mergeRight;
+                drawHistory = data.drawHistory;
+                classroomName = data.classroomName;
+                soundEnabled = data.soundEnabled;
+                phaseSoundMap = { ...data.phaseSoundMap };
+                localStorage.setItem('seatHelperTheme', backup.theme);
+                document.getElementById('cfgCols').value = gridConfig.cols;
+                document.getElementById('cfgRows').value = gridConfig.rows;
+                document.getElementById('classroomNameInput').value = classroomName;
+                updateMergeUI();
+                updateGridUI();
+                updateUI();
+                updateClassroomNameUI();
+                updateSoundSettingUI();
+                initTheme();
+                saveData();
+                setJsonBackupStatus('備份已完整還原。');
+            } catch (error) {
+                setJsonBackupStatus(error instanceof SyntaxError ? 'JSON 格式錯誤，目前資料未變更。' : error.message, true);
+            } finally {
+                input.value = '';
+            }
         }
 
         function updateSoundSettingUI() {
@@ -1754,4 +1858,3 @@
     </script>
 </body>
 </html>
-
