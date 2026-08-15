@@ -2580,9 +2580,6 @@
                     } else if (seat?.name) {
                         const student = students.find(st => st.name === seat.name || st.displayName === seat.name);
                         paragraphs = [makeParagraph(getExportStudentText(student, seat.name), { size: 24, bold: true })];
-                        if (displaySettings.export.seatCoordinates) {
-                            paragraphs.push(makeParagraph(getCoord(idx).str, { size: 16, color: '64748B' }));
-                        }
                     } else if (!displaySettings.export.emptySeats) {
                         borders = { top: hiddenBorder, bottom: hiddenBorder, left: hiddenBorder, right: hiddenBorder };
                     }
