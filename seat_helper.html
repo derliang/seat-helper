@@ -639,35 +639,54 @@
     </div>
 
     <div id="adminView" class="hidden min-h-[calc(100vh-2rem)]">
-        <div class="max-w-5xl mx-auto">
-            <div class="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-[2.5rem] shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-                <div class="flex items-center gap-4">
-                    <div class="bg-indigo-50 dark:bg-indigo-950/50 p-3 rounded-2xl border border-indigo-100 dark:border-indigo-800">
-                        <i data-lucide="settings" class="w-7 h-7 text-indigo-600 dark:text-indigo-400"></i>
+        <div class="max-w-7xl mx-auto">
+            <div class="bg-gradient-to-r from-indigo-600 to-violet-600 p-6 sm:p-8 rounded-[2.5rem] shadow-xl flex flex-row flex-wrap items-center justify-between gap-4 mb-8 text-white">
+                <div class="order-2 ml-auto flex items-center gap-4">
+                    <div class="bg-white/15 p-3 rounded-2xl border border-white/20">
+                        <i data-lucide="settings" class="w-7 h-7 text-white"></i>
                     </div>
                     <div>
-                        <h1 class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">本機管理後台</h1>
-                        <p class="text-sm font-bold text-slate-500 dark:text-slate-400 mt-1">設定功能將依後續 TODO 逐項加入</p>
+                        <h1 class="text-2xl sm:text-3xl font-black">本機管理後台</h1>
+                        <p class="text-sm font-bold text-white/70 mt-1">所有設定只儲存在目前瀏覽器</p>
                     </div>
                 </div>
-                <button type="button" onclick="closeAdminView()" class="btn-main bg-slate-800 hover:bg-slate-700 text-white px-5 py-3 flex items-center justify-center gap-2">
+                <button type="button" onclick="closeAdminView()" class="order-1 btn-main bg-white hover:bg-indigo-50 text-indigo-700 px-5 py-3 flex items-center justify-center gap-2 shadow-lg">
                     <i data-lucide="arrow-left" class="w-5 h-5"></i> 返回抽籤頁面
                 </button>
             </div>
 
-            <div class="bg-white dark:bg-slate-900 p-8 sm:p-10 rounded-[2.5rem] shadow-sm border border-slate-200 dark:border-slate-700">
-                <div class="flex items-center gap-3 mb-6">
-                    <i data-lucide="school" class="w-7 h-7 text-indigo-500"></i>
-                    <div>
-                        <h2 class="text-xl font-black text-slate-800 dark:text-white">班級與教室名稱</h2>
-                        <p class="text-sm font-bold text-slate-500 dark:text-slate-400">用於頁面標題、本機顯示與匯出檔名</p>
+            <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+                <section class="xl:col-span-5 bg-white dark:bg-slate-900 p-7 sm:p-8 rounded-[2rem] shadow-sm border border-slate-200 dark:border-slate-700 border-t-4 border-t-indigo-500">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="bg-indigo-50 dark:bg-indigo-950/50 p-2.5 rounded-xl"><i data-lucide="school" class="w-6 h-6 text-indigo-500"></i></div>
+                        <div>
+                            <h2 class="text-lg font-black text-slate-800 dark:text-white">班級與教室名稱</h2>
+                            <p class="text-xs font-bold text-slate-500 dark:text-slate-400">頁面顯示與匯出檔名</p>
+                        </div>
                     </div>
-                </div>
-                <div class="flex flex-col sm:flex-row gap-3">
-                    <input id="classroomNameInput" type="text" maxlength="60" class="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-5 py-3 font-bold text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-400" placeholder="例如：113學年度 3年1班">
-                    <button type="button" onclick="saveClassroomName()" class="btn-main bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3">儲存名稱</button>
-                </div>
-                <p id="classroomNameStatus" class="text-sm font-bold text-emerald-600 dark:text-emerald-400 mt-3 min-h-[1.25rem]"></p>
+                    <div class="flex flex-col gap-3">
+                        <input id="classroomNameInput" type="text" maxlength="60" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-5 py-3 font-bold text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-400" placeholder="例如：113學年度 3年1班">
+                        <button type="button" onclick="saveClassroomName()" class="btn-main bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3">儲存名稱</button>
+                    </div>
+                    <p id="classroomNameStatus" class="text-sm font-bold text-emerald-600 dark:text-emerald-400 mt-3 min-h-[1.25rem]"></p>
+                </section>
+
+                <section class="xl:col-span-7 bg-white dark:bg-slate-900 p-7 sm:p-8 rounded-[2rem] shadow-sm border border-slate-200 dark:border-slate-700 border-t-4 border-t-violet-500">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div class="flex items-center gap-3">
+                            <div class="bg-violet-50 dark:bg-violet-950/50 p-2.5 rounded-xl"><i data-lucide="audio-lines" class="w-6 h-6 text-violet-500"></i></div>
+                            <div>
+                                <h2 class="text-lg font-black text-slate-800 dark:text-white">五階段抽籤音效</h2>
+                                <p class="text-xs font-bold text-slate-500 dark:text-slate-400">每個階段可獨立選擇與試聽</p>
+                            </div>
+                        </div>
+                        <label class="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-2.5 cursor-pointer">
+                            <input id="soundEnabledToggle" type="checkbox" onchange="saveSoundSetting()" class="w-5 h-5 accent-violet-600">
+                            <span id="soundSettingLabel" class="font-black text-slate-800 dark:text-white">開啟音效</span>
+                        </label>
+                    </div>
+                    <div id="phaseSoundSettings" class="flex flex-col gap-3"></div>
+                </section>
             </div>
         </div>
     </div>
@@ -725,6 +744,8 @@
         let mergeRight = [];
         let drawHistory = [];
         let classroomName = '113學年度 3年1班';
+        let soundEnabled = true;
+        let phaseSoundMap = { priority: 'priority', rear: 'rear', noBack: 'noBack', noSide: 'noSide', final: 'final' };
 
         function saveData() {
             const data = {
@@ -733,7 +754,9 @@
                 gridConfig,
                 mergeRight,
                 drawHistory,
-                classroomName
+                classroomName,
+                soundEnabled,
+                phaseSoundMap
             };
             localStorage.setItem('seatHelperDataV2', JSON.stringify(data));
         }
@@ -749,6 +772,8 @@
                     mergeRight = data.mergeRight || new Array(Math.max(0, gridConfig.cols - 1)).fill(false);
                     drawHistory = data.drawHistory || [];
                     classroomName = data.classroomName || classroomName;
+                    soundEnabled = data.soundEnabled !== false;
+                    phaseSoundMap = { ...phaseSoundMap, ...(data.phaseSoundMap || {}) };
                     if (data.students) {
                         students = data.students.map(s => ({...s, tags: new Set(s.tags)}));
                     }
@@ -861,6 +886,7 @@
         function openAdminModal() {
             document.getElementById('classroomNameInput').value = classroomName;
             document.getElementById('classroomNameStatus').textContent = '';
+            updateSoundSettingUI();
             document.getElementById('mainView').classList.add('hidden');
             document.getElementById('adminView').classList.remove('hidden');
             window.scrollTo(0, 0);
@@ -886,6 +912,56 @@
             const safeName = classroomName.replace(/[\\/:*?"<>|]/g, '_').trim() || '座位表';
             const date = new Date().toLocaleDateString('sv-SE');
             return `${safeName}_${date}.${extension}`;
+        }
+
+        function updateSoundSettingUI() {
+            document.getElementById('soundEnabledToggle').checked = soundEnabled;
+            document.getElementById('soundSettingLabel').textContent = soundEnabled ? '開啟音效' : '靜音';
+            renderPhaseSoundSettings();
+        }
+
+        function saveSoundSetting() {
+            soundEnabled = document.getElementById('soundEnabledToggle').checked;
+            updateSoundSettingUI();
+            saveData();
+        }
+
+        function renderPhaseSoundSettings() {
+            const phaseLabels = { priority: '1. 坐靠前', rear: '2. 坐靠後', noBack: '3. 不最後', noSide: '4. 不靠邊', final: '5. 其他人' };
+            const soundOptions = {
+                priority: '水晶星光鐘聲',
+                rear: '柔和雙音',
+                noBack: '活力鐘聲',
+                noSide: '明亮高音',
+                final: '勝利號角',
+                gentleBell: '柔和鈴聲',
+                crystalRise: '水晶上升琶音',
+                digitalPop: '數位彈跳',
+                warmChord: '溫暖和弦',
+                celebration: '慶典連奏'
+            };
+            const container = document.getElementById('phaseSoundSettings');
+            container.innerHTML = Object.entries(phaseLabels).map(([phaseId, phaseLabel]) => `
+                <div class="grid grid-cols-1 sm:grid-cols-[110px_1fr_auto] items-center gap-3 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-2xl p-3">
+                    <span class="font-black text-slate-700 dark:text-slate-200">${phaseLabel}</span>
+                    <select onchange="savePhaseSoundSetting('${phaseId}', this.value)" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 font-bold text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-violet-400">
+                        ${Object.entries(soundOptions).map(([soundId, soundLabel]) => `<option value="${soundId}" ${phaseSoundMap[phaseId] === soundId ? 'selected' : ''}>${soundLabel}</option>`).join('')}
+                    </select>
+                    <button type="button" onclick="previewPhaseSound('${phaseId}')" class="btn-main bg-violet-600 hover:bg-violet-500 text-white px-4 py-2 flex items-center justify-center gap-1.5">
+                        <i data-lucide="play" class="w-4 h-4"></i> 試聽
+                    </button>
+                </div>
+            `).join('');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function savePhaseSoundSetting(phaseId, soundId) {
+            phaseSoundMap[phaseId] = soundId;
+            saveData();
+        }
+
+        function previewPhaseSound(phaseId) {
+            playPhaseSound(phaseId, true);
         }
 
         function closeAdminView() {
@@ -1181,29 +1257,61 @@
             return audioCtx;
         }
 
-        function playPhaseSound(phaseId) {
+        function playPhaseSound(phaseId, forcePreview = false) {
             try {
+                if (!soundEnabled && !forcePreview) return;
                 const ctx = getAudioContext();
                 if (!ctx) return;
                 const now = ctx.currentTime;
+                const soundId = phaseSoundMap[phaseId] || phaseId;
 
                 let frequencies = [];
-                if (phaseId === 'priority') {
+                if (soundId === 'priority') {
                     // 水晶靈動鐘聲 (Crystal Star Chime: F5 -> A5 -> C6)
                     frequencies = [{ f: 698.46, t: 0, d: 0.12, wave: 'triangle' }, { f: 880.00, t: 0.08, d: 0.15, wave: 'triangle' }, { f: 1046.50, t: 0.16, d: 0.3, wave: 'triangle' }];
-                } else if (phaseId === 'rear') {
+                } else if (soundId === 'rear') {
                     frequencies = [{ f: 440.00, t: 0, d: 0.15 }, { f: 523.25, t: 0.12, d: 0.2 }];
-                } else if (phaseId === 'noBack') {
+                } else if (soundId === 'noBack') {
                     frequencies = [{ f: 659.25, t: 0, d: 0.15 }, { f: 880.00, t: 0.12, d: 0.25 }];
-                } else if (phaseId === 'noSide') {
+                } else if (soundId === 'noSide') {
                     frequencies = [{ f: 783.99, t: 0, d: 0.15 }, { f: 1046.50, t: 0.12, d: 0.25 }];
-                } else if (phaseId === 'final' || phaseId === 'victory') {
+                } else if (soundId === 'final' || soundId === 'victory') {
                     frequencies = [
                         { f: 392.00, t: 0, d: 0.12 },
                         { f: 523.25, t: 0.10, d: 0.12 },
                         { f: 659.25, t: 0.20, d: 0.12 },
                         { f: 783.99, t: 0.30, d: 0.15 },
                         { f: 1046.50, t: 0.45, d: 0.35 }
+                    ];
+                } else if (soundId === 'gentleBell') {
+                    frequencies = [
+                        { f: 523.25, t: 0, d: 0.28, wave: 'sine', g: 0.16 },
+                        { f: 659.25, t: 0.18, d: 0.38, wave: 'sine', g: 0.14 }
+                    ];
+                } else if (soundId === 'crystalRise') {
+                    frequencies = [
+                        { f: 523.25, t: 0, d: 0.16, wave: 'triangle', g: 0.16 },
+                        { f: 659.25, t: 0.10, d: 0.18, wave: 'triangle', g: 0.16 },
+                        { f: 783.99, t: 0.20, d: 0.20, wave: 'triangle', g: 0.15 },
+                        { f: 1046.50, t: 0.32, d: 0.35, wave: 'triangle', g: 0.14 }
+                    ];
+                } else if (soundId === 'digitalPop') {
+                    frequencies = [
+                        { f: 739.99, t: 0, d: 0.10, wave: 'square', g: 0.07 },
+                        { f: 987.77, t: 0.11, d: 0.14, wave: 'square', g: 0.06 }
+                    ];
+                } else if (soundId === 'warmChord') {
+                    frequencies = [
+                        { f: 261.63, t: 0, d: 0.45, wave: 'sine', g: 0.09 },
+                        { f: 329.63, t: 0, d: 0.45, wave: 'sine', g: 0.09 },
+                        { f: 392.00, t: 0, d: 0.45, wave: 'sine', g: 0.09 }
+                    ];
+                } else if (soundId === 'celebration') {
+                    frequencies = [
+                        { f: 523.25, t: 0, d: 0.12, wave: 'triangle', g: 0.16 },
+                        { f: 783.99, t: 0.10, d: 0.12, wave: 'triangle', g: 0.16 },
+                        { f: 1046.50, t: 0.22, d: 0.16, wave: 'triangle', g: 0.15 },
+                        { f: 1318.51, t: 0.38, d: 0.32, wave: 'triangle', g: 0.13 }
                     ];
                 }
 
@@ -1212,7 +1320,7 @@
                     const gain = ctx.createGain();
                     osc.type = note.wave || 'sine';
                     osc.frequency.setValueAtTime(note.f, now + note.t);
-                    gain.gain.setValueAtTime(0.2, now + note.t);
+                    gain.gain.setValueAtTime(note.g || 0.2, now + note.t);
                     gain.gain.exponentialRampToValueAtTime(0.001, now + note.t + note.d);
                     osc.connect(gain);
                     gain.connect(ctx.destination);
