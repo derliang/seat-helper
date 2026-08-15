@@ -10,7 +10,8 @@
 ## 📜 完整版本演進歷程 (Version History & Changelog)
 
 ### 🚀 v3.0-dev (2026-08-15) - TODO-18 & FIX-18A~D 設定齒輪純 Icon、權限鎖定與登入驗證
-- **⚙️ 設定齒輪純 Icon 與權限鎖定 (TODO-18, FIX-18A~D)**：設定按鈕純 Icon 化與未登入灰化鎖定，深色模式與設定按鈕對齊座位設定區最右側，加入 `googleAuthOverlay` 澈底解決預設 Client ID 導致的 Google 401 錯誤頁 jump。
+- **🛡️ Google GIS SSO 身分驗證與 Allowlist 授權解耦 (TODO-18, FIX-18E)**：撤銷所有模擬/對話框與硬編碼登入，採用 Google Identity Services 官方原生 SSO，實現身分 (Authentication) 與管理者權限 (Authorization Allowlist: `derliang@gmail.com` + `email_verified`) 完全獨立解耦，建立 5 大 UI 狀態機機制（未登入/未授權/授權管理者/登出/Session恢復）。
+- **⚙️ 設定齒輪純 Icon 與權限鎖定 (TODO-18, FIX-18A~D)**：設定按鈕純 Icon 化與未登入灰化鎖定，深色模式與設定按鈕對齊座位設定區最右側。
 - **📐 Header 兩端平衡佈局 (TODO-17)**：最左側放置 Google 登入與雲端狀態，中間 `flex-1` 留白，最右側對齊標題、版號與主題按鈕。
 - **🔑 Google 官方原生登入按鈕 (TODO-16)**：引入 Google Identity Services (`gsi/client`) 官方 SDK 與原生彩色 G Logo 登入容器。
 - **🎵 5 階段 Web Audio 儀式音效 (TODO-15, FIX-15A)**：零外部檔 Web Audio 音效，各階段抽籤完成播放靈動水晶鐘聲與 Victory Fanfare 勝利號角。

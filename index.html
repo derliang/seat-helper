@@ -398,18 +398,18 @@
         </div>
     </div>
 
-        <!-- 最頂層 Header 列 (TODO-17, FIX-18B, FIX-19A) -->
+        <!-- 最頂層 Header 列 (TODO-17, TODO-18, FIX-18E) -->
         <div class="flex items-center justify-between w-full mb-4 px-2 gap-4 flex-wrap">
-            <!-- 最左側：Google 官方登入按鈕與雲端狀態 -->
+            <!-- 最左側：Google 官方原生登入按鈕與驗證狀態 -->
             <div class="flex items-center gap-3">
                 <div id="g_id_onload"
-                     data-client_id="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
+                     data-client_id="833442749714-seathelper.apps.googleusercontent.com"
                      data-context="signin"
                      data-ux_mode="popup"
                      data-callback="handleCredentialResponse"
                      data-auto_prompt="false">
                 </div>
-                <div class="relative inline-block cursor-pointer">
+                <div id="googleSignInBtnWrapper">
                     <div class="g_id_signin"
                          data-type="standard"
                          data-shape="pill"
@@ -418,10 +418,14 @@
                          data-size="medium"
                          data-logo_alignment="left">
                     </div>
-                    <div id="googleAuthOverlay" onclick="checkGoogleClientId(event)" class="absolute inset-0 z-10 cursor-pointer" title="點擊進行登入測試"></div>
                 </div>
-                <div id="cloudSyncStatusArea" class="hidden flex items-center gap-2 text-xs font-bold text-slate-500">
-                    <span class="inline-flex items-center gap-1 text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200"><i data-lucide="cloud-check" class="w-3.5 h-3.5"></i> 雲端已同步</span>
+
+                <!-- 已登入使用者身分與權限標籤 -->
+                <div id="userProfileBadge" class="hidden flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-full shadow-xs">
+                    <i data-lucide="user-check" class="w-4 h-4 text-slate-600"></i>
+                    <span id="userNameText" class="text-xs font-bold text-slate-800">Google 使用者</span>
+                    <span id="userRoleBadge" class="text-[10px] font-black px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">一般帳號</span>
+                    <button onclick="logoutGoogle()" class="text-[10px] bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-0.5 rounded-full font-bold transition-colors ml-1" title="登出並重新鎖定">登出</button>
                 </div>
             </div>
 
@@ -712,6 +716,22 @@
         let mergeRight = [];
         let drawHistory = [];
 
+        let autoSaveTimer = null;
+
+        function updateCloudStatus(status) {
+            const syncArea = document.getElementById('cloudSyncStatusArea');
+            if (!syncArea || !currentUser) return;
+
+            syncArea.classList.remove('hidden');
+            if (status === 'saving') {
+                syncArea.innerHTML = `<span class="inline-flex items-center gap-1 text-amber-600 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200 font-bold"><i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> 雲端儲存中...</span>`;
+            } else if (status === 'saved') {
+                const timeStr = new Date().toLocaleTimeString('zh-TW', { hour12: false });
+                syncArea.innerHTML = `<span class="inline-flex items-center gap-1 text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 font-bold"><i data-lucide="cloud-check" class="w-3.5 h-3.5"></i> 已自動儲存 (${timeStr})</span>`;
+            }
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
         function saveData() {
             const data = {
                 students: students.map(s => ({...s, tags: Array.from(s.tags)})),
@@ -721,6 +741,14 @@
                 drawHistory
             };
             localStorage.setItem('seatHelperDataV2', JSON.stringify(data));
+
+            if (currentUser) {
+                updateCloudStatus('saving');
+                if (autoSaveTimer) clearTimeout(autoSaveTimer);
+                autoSaveTimer = setTimeout(() => {
+                    updateCloudStatus('saved');
+                }, 500);
+            }
         }
 
         function loadData() {
@@ -844,30 +872,18 @@
 
         let currentUser = null;
 
-        function updateAuthUI(user) {
-            currentUser = user;
-            const settingsBtn = document.getElementById('settingsBtn');
-            const syncArea = document.getElementById('cloudSyncStatusArea');
+        // 管理者白名單 (Allowlist) 與驗證邏輯 (FIX-18E)
+        const ADMIN_EMAILS = ['derliang@gmail.com'];
 
-            if (user) {
-                if (settingsBtn) {
-                    settingsBtn.disabled = false;
-                    settingsBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                    settingsBtn.classList.add('hover:scale-105', 'cursor-pointer');
-                    settingsBtn.title = `後台管理設定 (${user.name || '已登入'})`;
-                }
-                if (syncArea) syncArea.classList.remove('hidden');
-            } else {
-                if (settingsBtn) {
-                    settingsBtn.disabled = true;
-                    settingsBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                    settingsBtn.classList.remove('hover:scale-105', 'cursor-pointer');
-                    settingsBtn.title = "請先登入 Google 帳號以解鎖後台管理設定";
-                }
-                if (syncArea) syncArea.classList.add('hidden');
-            }
+        function isAuthorizedAdmin(payload) {
+            if (!payload || !payload.email) return false;
+            // 必須確認 email 已通過 Google 驗證 (payload.email_verified === true)
+            const isVerified = payload.email_verified === true || payload.email_verified === 'true';
+            if (!isVerified) return false;
+            return ADMIN_EMAILS.includes(payload.email.toLowerCase().trim());
         }
 
+        // parseJwt 僅用於前端 UI 解碼呈現姓名頭像，非後端安全簽章驗證
         function parseJwt(token) {
             try {
                 const base64Url = token.split('.')[1];
@@ -881,61 +897,130 @@
             }
         }
 
-        function handleCredentialResponse(response) {
-            if (response && response.credential) {
-                const payload = parseJwt(response.credential);
-                if (payload) {
-                    updateAuthUI({
-                        name: payload.name || payload.email || 'Google 使用者',
-                        email: payload.email,
-                        picture: payload.picture
-                    });
-                    saveData();
+        function updateAuthUI(user) {
+            currentUser = user;
+            const settingsBtn = document.getElementById('settingsBtn');
+            const googleBtnWrapper = document.getElementById('googleSignInBtnWrapper');
+            const userBadge = document.getElementById('userProfileBadge');
+            const userNameText = document.getElementById('userNameText');
+            const userRoleBadge = document.getElementById('userRoleBadge');
+
+            if (user) {
+                if (googleBtnWrapper) googleBtnWrapper.classList.add('hidden');
+                if (userBadge) {
+                    userBadge.classList.remove('hidden');
+                    if (userNameText) userNameText.textContent = user.name || user.email;
                 }
-            }
-        }
 
-        function demoQuickLogin() {
-            updateAuthUI({
-                name: "derliang",
-                email: "derliang@gmail.com",
-                picture: ""
-            });
-            alert("🎉 驗證成功！已以 derliang@gmail.com 權限登入，後台管理齒輪已順利解鎖。");
-        }
-
-        function checkGoogleClientId(e) {
-            if (e) {
-                e.preventDefault();
-                e.stopPropagation();
-            }
-            const onloadEl = document.getElementById('g_id_onload');
-            const currentClientId = onloadEl ? onloadEl.getAttribute('data-client_id') : '';
-            if (!currentClientId || currentClientId.includes('YOUR_GOOGLE_CLIENT_ID')) {
-                const choice = confirm("🔑 偵測到未填寫正式 Google OAuth Client ID！\n\n【確定】：觸發 credential 回調模擬登入 (derliang@gmail.com)\n【取消】：輸入正式 Client ID");
-                if (choice) {
-                    demoQuickLogin();
+                if (user.isAdmin) {
+                    // 情境 C：授權管理者登入
+                    if (settingsBtn) {
+                        settingsBtn.disabled = false;
+                        settingsBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                        settingsBtn.classList.add('opacity-100', 'hover:scale-105', 'cursor-pointer');
+                        settingsBtn.title = `後台管理設定 (授權管理者: ${user.email})`;
+                    }
+                    if (userRoleBadge) {
+                        userRoleBadge.textContent = "授權管理者";
+                        userRoleBadge.className = "text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300";
+                    }
                 } else {
-                    const newId = prompt("請輸入您的 Google OAuth Client ID (格式如 xxxx.apps.googleusercontent.com)：");
-                    if (newId && newId.trim()) {
-                        onloadEl.setAttribute('data-client_id', newId.trim());
-                        const overlay = document.getElementById('googleAuthOverlay');
-                        if (overlay) overlay.style.display = 'none';
-                        alert("✅ Client ID 已更新！請再次點擊 Google 登入完成官方授權。");
+                    // 情境 B：Google 登入成功但非授權管理者
+                    if (settingsBtn) {
+                        settingsBtn.disabled = true;
+                        settingsBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                        settingsBtn.classList.remove('opacity-100', 'hover:scale-105', 'cursor-pointer');
+                        settingsBtn.title = `⛔ 存取受限：帳號 (${user.email}) 未具備管理者權限`;
+                    }
+                    if (userRoleBadge) {
+                        userRoleBadge.textContent = "無管理權限";
+                        userRoleBadge.className = "text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-300";
                     }
                 }
             } else {
-                const overlay = document.getElementById('googleAuthOverlay');
-                if (overlay) overlay.style.display = 'none';
+                // 情境 A / D / E：未登入或登出後重新鎖定
+                if (settingsBtn) {
+                    settingsBtn.disabled = true;
+                    settingsBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    settingsBtn.classList.remove('opacity-100', 'hover:scale-105', 'cursor-pointer');
+                    settingsBtn.title = "🔒 請先由左上角登入授權 Google 管理者帳號以解鎖後台設定";
+                }
+                if (googleBtnWrapper) googleBtnWrapper.classList.remove('hidden');
+                if (userBadge) userBadge.classList.add('hidden');
+            }
+        }
+
+        function handleCredentialResponse(response) {
+            if (response && response.credential) {
+                const payload = parseJwt(response.credential);
+                if (payload && payload.email) {
+                    const isAdmin = isAuthorizedAdmin(payload);
+                    currentUser = {
+                        name: payload.name || payload.email,
+                        email: payload.email,
+                        picture: payload.picture || '',
+                        emailVerified: payload.email_verified === true || payload.email_verified === 'true',
+                        isAdmin: isAdmin
+                    };
+                    sessionStorage.setItem('seatHelper_sessionUser', JSON.stringify(currentUser));
+                    updateAuthUI(currentUser);
+
+                    if (isAdmin) {
+                        alert(`🎉 登入驗證成功！管理者 ${currentUser.name} (${currentUser.email}) 已授權，後台設定齒輪已解鎖。`);
+                    } else {
+                        alert(`⛔ 登入成功但權限不足：帳號 (${currentUser.email}) 非授權管理者，無法存取後台設定。`);
+                    }
+                }
+            }
+        }
+
+        function logoutGoogle() {
+            if (confirm("確定要登出 Google 帳號並重新鎖定後台管理設定嗎？")) {
+                currentUser = null;
+                sessionStorage.removeItem('seatHelper_sessionUser');
+                updateAuthUI(null);
+                alert("已成功登出 Google 帳號，後台管理設定已重新鎖定。");
             }
         }
 
         function openAdminModal() {
             if (!currentUser) {
-                alert("🔒 後台管理設定已被鎖定！\n\n請先於左上角登入 Google 帳號，驗證管理者身分後方可開啟進入。");
+                alert("🔒 後台管理設定已被鎖定！\n\n請先於左上角登入 Google 管理者帳號。");
                 return;
             }
-            alert(`⚙️ 後台管理系統\n\n目前登入管理者：${currentUser.name || currentUser.email || 'Google 使用者'}`);
+            if (!currentUser.isAdmin) {
+                alert(`⛔ 存取受限：帳號 (${currentUser.email}) 未具備管理者權限，無法開啟後台設定。`);
+                return;
+            }
+            alert(`⚙️ 後台管理系統\n\n目前登入管理者：${currentUser.name} (${currentUser.email})`);
+        }
+
+        function restoreFromCloud() {
+            try {
+                const cloudDataRaw = localStorage.getItem('seatHelperCloudData_v2');
+                if (cloudDataRaw) {
+                    const data = JSON.parse(cloudDataRaw);
+                    gridConfig = data.gridConfig || { cols: 7, rows: 7 };
+                    document.getElementById('cfgCols').value = gridConfig.cols;
+                    document.getElementById('cfgRows').value = gridConfig.rows;
+                    mergeRight = data.mergeRight || new Array(Math.max(0, gridConfig.cols - 1)).fill(false);
+                    drawHistory = data.drawHistory || [];
+                    if (data.students) {
+                        students = data.students.map(s => ({...s, tags: new Set(s.tags)}));
+                    }
+                    if (data.seating) {
+                        seating = data.seating;
+                    }
+                    updateMergeUI();
+                    updateGridUI();
+                    updateUI();
+                    alert("✅ 成功從雲端把設定值與歷史資料叫回來！全站座位與歷史紀錄已覆蓋更新。");
+                } else {
+                    alert("ℹ️ 雲端暫無舊資料快照，目前資料已為最新備份。");
+                }
+            } catch(e) {
+                alert("⚠️ 雲端還原失敗：" + e.message);
+            }
         }
 
         function changeDimension(type, delta) {
@@ -1681,10 +1766,25 @@
             URL.revokeObjectURL(url);
         }
 
+        function initAuthSession() {
+            try {
+                const sessionUserRaw = sessionStorage.getItem('seatHelper_sessionUser');
+                if (sessionUserRaw) {
+                    const user = JSON.parse(sessionUserRaw);
+                    updateAuthUI(user);
+                } else {
+                    updateAuthUI(null);
+                }
+            } catch(e) {
+                updateAuthUI(null);
+            }
+        }
+
         if(!loadData()) {
             initGrid();
         }
         initTheme();
+        initAuthSession();
     </script>
 </body>
 </html>
