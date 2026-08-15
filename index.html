@@ -397,6 +397,7 @@
         </div>
     </div>
 
+    <div id="mainView">
         <!-- 最頂層 Header 列 (TODO-17, TODO-18) -->
         <div class="flex items-center justify-between w-full mb-4 px-2 gap-4 flex-wrap">
             <!-- 中間彈性留白 -->
@@ -452,7 +453,7 @@
                     <button onclick="toggleTheme()" id="themeToggleBtn" title="切換深色/淺色主題" class="p-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 hover:scale-105 transition-all flex items-center justify-center">
                         <i data-lucide="moon" class="w-5 h-5 text-amber-400"></i>
                     </button>
-                    <button id="settingsBtn" onclick="openAdminModal()" title="本機管理設定 (TODO-23 後台建置中)" class="p-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 hover:scale-105 transition-all flex items-center justify-center cursor-pointer">
+                    <button id="settingsBtn" onclick="openAdminModal()" title="本機管理設定" class="p-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 hover:scale-105 transition-all flex items-center justify-center cursor-pointer">
                         <i data-lucide="settings" class="w-5 h-5"></i>
                     </button>
                 </div>
@@ -629,6 +630,31 @@
                         <i data-lucide="file-text" class="w-5 h-5"></i> 匯出 Word
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="adminView" class="hidden min-h-[calc(100vh-2rem)]">
+        <div class="max-w-5xl mx-auto">
+            <div class="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-[2.5rem] shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+                <div class="flex items-center gap-4">
+                    <div class="bg-indigo-50 dark:bg-indigo-950/50 p-3 rounded-2xl border border-indigo-100 dark:border-indigo-800">
+                        <i data-lucide="settings" class="w-7 h-7 text-indigo-600 dark:text-indigo-400"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">本機管理後台</h1>
+                        <p class="text-sm font-bold text-slate-500 dark:text-slate-400 mt-1">設定功能將依後續 TODO 逐項加入</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeAdminView()" class="btn-main bg-slate-800 hover:bg-slate-700 text-white px-5 py-3 flex items-center justify-center gap-2">
+                    <i data-lucide="arrow-left" class="w-5 h-5"></i> 返回抽籤頁面
+                </button>
+            </div>
+
+            <div class="bg-white dark:bg-slate-900 p-8 sm:p-12 rounded-[2.5rem] shadow-sm border border-slate-200 dark:border-slate-700 text-center">
+                <i data-lucide="panel-top" class="w-12 h-12 text-indigo-500 mx-auto mb-4"></i>
+                <h2 class="text-xl font-black text-slate-800 dark:text-white mb-2">後台切換骨架已建立</h2>
+                <p class="text-slate-500 dark:text-slate-400 font-bold">TODO-23 只建立安全的頁面切換；尚未加入班級、音效或備份設定。</p>
             </div>
         </div>
     </div>
@@ -817,7 +843,17 @@
         }
 
         function openAdminModal() {
-            alert("⚙️ 本機管理設定（TODO-23 後台建置中）");
+            document.getElementById('mainView').classList.add('hidden');
+            document.getElementById('adminView').classList.remove('hidden');
+            window.scrollTo(0, 0);
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function closeAdminView() {
+            document.getElementById('adminView').classList.add('hidden');
+            document.getElementById('mainView').classList.remove('hidden');
+            window.scrollTo(0, 0);
+            if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
         function changeDimension(type, delta) {
@@ -1570,3 +1606,4 @@
     </script>
 </body>
 </html>
+
