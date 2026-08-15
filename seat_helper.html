@@ -398,7 +398,7 @@
         </div>
     </div>
 
-        <!-- 最頂層 Header 列 (TODO-17, FIX-18B) -->
+        <!-- 最頂層 Header 列 (TODO-17, FIX-18B, FIX-19A) -->
         <div class="flex items-center justify-between w-full mb-4 px-2 gap-4 flex-wrap">
             <!-- 最左側：Google 官方登入按鈕與雲端狀態 -->
             <div class="flex items-center gap-3">
@@ -406,15 +406,19 @@
                      data-client_id="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
                      data-context="signin"
                      data-ux_mode="popup"
+                     data-callback="handleCredentialResponse"
                      data-auto_prompt="false">
                 </div>
-                <div class="g_id_signin"
-                     data-type="standard"
-                     data-shape="pill"
-                     data-theme="outline"
-                     data-text="signin_with"
-                     data-size="medium"
-                     data-logo_alignment="left">
+                <div class="relative inline-block cursor-pointer">
+                    <div class="g_id_signin"
+                         data-type="standard"
+                         data-shape="pill"
+                         data-theme="outline"
+                         data-text="signin_with"
+                         data-size="medium"
+                         data-logo_alignment="left">
+                    </div>
+                    <div id="googleAuthOverlay" onclick="checkGoogleClientId(event)" class="absolute inset-0 z-10 cursor-pointer" title="點擊進行登入測試"></div>
                 </div>
                 <div id="cloudSyncStatusArea" class="hidden flex items-center gap-2 text-xs font-bold text-slate-500">
                     <span class="inline-flex items-center gap-1 text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200"><i data-lucide="cloud-check" class="w-3.5 h-3.5"></i> 雲端已同步</span>
@@ -864,12 +868,74 @@
             }
         }
 
+        function parseJwt(token) {
+            try {
+                const base64Url = token.split('.')[1];
+                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                }).join(''));
+                return JSON.parse(jsonPayload);
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function handleCredentialResponse(response) {
+            if (response && response.credential) {
+                const payload = parseJwt(response.credential);
+                if (payload) {
+                    updateAuthUI({
+                        name: payload.name || payload.email || 'Google 使用者',
+                        email: payload.email,
+                        picture: payload.picture
+                    });
+                    saveData();
+                }
+            }
+        }
+
+        function demoQuickLogin() {
+            updateAuthUI({
+                name: "derliang",
+                email: "derliang@gmail.com",
+                picture: ""
+            });
+            alert("🎉 驗證成功！已以 derliang@gmail.com 權限登入，後台管理齒輪已順利解鎖。");
+        }
+
+        function checkGoogleClientId(e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            const onloadEl = document.getElementById('g_id_onload');
+            const currentClientId = onloadEl ? onloadEl.getAttribute('data-client_id') : '';
+            if (!currentClientId || currentClientId.includes('YOUR_GOOGLE_CLIENT_ID')) {
+                const choice = confirm("🔑 偵測到未填寫正式 Google OAuth Client ID！\n\n【確定】：觸發 credential 回調模擬登入 (derliang@gmail.com)\n【取消】：輸入正式 Client ID");
+                if (choice) {
+                    demoQuickLogin();
+                } else {
+                    const newId = prompt("請輸入您的 Google OAuth Client ID (格式如 xxxx.apps.googleusercontent.com)：");
+                    if (newId && newId.trim()) {
+                        onloadEl.setAttribute('data-client_id', newId.trim());
+                        const overlay = document.getElementById('googleAuthOverlay');
+                        if (overlay) overlay.style.display = 'none';
+                        alert("✅ Client ID 已更新！請再次點擊 Google 登入完成官方授權。");
+                    }
+                }
+            } else {
+                const overlay = document.getElementById('googleAuthOverlay');
+                if (overlay) overlay.style.display = 'none';
+            }
+        }
+
         function openAdminModal() {
             if (!currentUser) {
                 alert("🔒 後台管理設定已被鎖定！\n\n請先於左上角登入 Google 帳號，驗證管理者身分後方可開啟進入。");
                 return;
             }
-            alert(`⚙️ 後台管理系統\n\n目前管理者：${currentUser.name || 'Google 使用者'}\n雲端同步狀態：正常連線中`);
+            alert(`⚙️ 後台管理系統\n\n目前登入管理者：${currentUser.name || currentUser.email || 'Google 使用者'}`);
         }
 
         function changeDimension(type, delta) {
