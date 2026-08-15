@@ -227,6 +227,14 @@
         }
 
         #captureArea.hide-classroom-name #classroomNameSeatPreview,
+        #captureArea.hide-school-name .meta-school-name,
+        #captureArea.hide-school-year .meta-school-year,
+        #captureArea.hide-semester .meta-semester,
+        #captureArea.hide-advisor-name .meta-advisor-name,
+        #captureArea.hide-class-name .meta-class-name,
+        #captureArea.hide-front-door #frontDoorDisplay,
+        #captureArea.hide-rear-door #rearDoorDisplay,
+        #captureArea.hide-seat-map-note #seatMapNoteDisplay,
         #captureArea.hide-front-label #screenContainer,
         #captureArea.hide-row-labels #labelWrapper,
         #captureArea.hide-seat-coordinates .coord-badge,
@@ -432,17 +440,15 @@
             <div class="flex-1"></div>
 
             <!-- 頁面最上面靠右：圖示 + 程式名稱「座位小幫手」 + 版號 v3.0-dev -->
-            <div class="flex items-center gap-3">
-                <div class="bg-indigo-50 p-3 rounded-2xl shadow-sm border border-indigo-100 flex items-center justify-center">
-                    <i data-lucide="layout-grid" class="text-indigo-600 w-7 h-7 sm:w-8 sm:h-8"></i>
-                </div>
-                <div class="flex flex-col items-end gap-1">
-                    <div class="flex items-center gap-2">
-                        <h1 class="text-2xl sm:text-3xl font-black italic text-indigo-600 leading-none">座位小幫手</h1>
+            <div class="flex flex-col items-end gap-1">
+                    <div class="flex items-center gap-2 sm:gap-3">
+                        <div class="bg-indigo-50 p-2.5 rounded-2xl shadow-sm border border-indigo-100 flex items-center justify-center">
+                            <i data-lucide="layout-grid" class="text-indigo-600 w-6 h-6 sm:w-7 sm:h-7"></i>
+                        </div>
+                        <h1 id="appTitle" class="text-2xl sm:text-3xl font-black italic text-indigo-600 leading-none">座位小幫手</h1>
                         <span id="appVersionBadge" class="bg-indigo-600 text-white text-xs sm:text-sm font-black px-3 py-1 rounded-full shadow-md tracking-wider">v3.0-dev</span>
                     </div>
                     <p id="classroomNameDisplay" class="text-xs sm:text-sm font-black text-slate-500 dark:text-slate-400"></p>
-                </div>
             </div>
         </div>
 
@@ -625,12 +631,16 @@
             <div class="xl:col-span-7">
                 <div id="captureArea" class="bg-white rounded-[3.5rem] p-10 md:p-14 shadow-2xl min-h-[850px] flex flex-col justify-between border-[12px] border-slate-50 relative">
                     <h2 id="classroomNameSeatPreview" class="text-center text-2xl sm:text-3xl font-black mb-8" style="color: #1e293b;"></h2>
+                    <p id="seatMapMetadata" class="text-center text-sm font-bold text-slate-500 -mt-5 mb-8"></p>
+                    <div id="rearDoorDisplay" class="absolute left-3 top-[34%] text-lg font-black text-slate-700"></div>
                     <p id="seatMapExportDate" class="export-date text-center text-sm font-bold text-slate-400 -mt-5 mb-6"></p>
                     <div class="flex-1 relative z-10">
                         <div id="gridWrapper" class="grid gap-y-4 w-full"></div>
                     </div>
                     <div class="w-full flex flex-col items-center mt-10 relative z-10">
                         <div id="labelWrapper" class="grid w-full mb-4"></div>
+                        <div id="frontDoorDisplay" class="absolute left-0 bottom-5 text-lg font-black text-slate-700"></div>
+                        <div id="seatMapNoteDisplay" class="absolute right-0 bottom-24 text-sm font-bold text-slate-600"></div>
                         <div id="screenContainer" class="grid w-full">
                             <div class="screen-bar" id="screenBar">大屏</div>
                         </div>
@@ -681,13 +691,46 @@
                     <div class="flex items-center gap-3 mb-6">
                         <div class="bg-indigo-50 dark:bg-indigo-950/50 p-2.5 rounded-xl"><i data-lucide="school" class="w-6 h-6 text-indigo-500"></i></div>
                         <div>
-                            <h2 class="text-lg font-black text-slate-800 dark:text-white">班級與教室名稱</h2>
-                            <p class="text-xs font-bold text-slate-500 dark:text-slate-400">頁面顯示與匯出檔名</p>
+                            <h2 class="text-lg font-black text-slate-800 dark:text-white">自訂名稱與基本資料</h2>
                         </div>
                     </div>
-                    <div class="flex flex-col gap-3">
-                        <input id="classroomNameInput" type="text" maxlength="60" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-5 py-3 font-bold text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-400" placeholder="例如：113學年度 3年1班">
-                        <button type="button" onclick="saveClassroomName()" class="btn-main bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3">儲存名稱</button>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <label class="sm:col-span-2 text-xs font-black text-slate-500">座位表標題（自訂名稱）
+                            <input id="classroomNameInput" type="text" maxlength="60" oninput="syncBasicInfoInputs()" class="mt-1 w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-5 py-3 font-bold text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-400" placeholder="例如：三年一班">
+                        </label>
+                        <label class="text-xs font-black text-slate-500">校名
+                            <input id="schoolNameInput" type="text" maxlength="60" oninput="syncBasicInfoInputs()" class="mt-1 w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3 font-bold text-slate-800 dark:text-white" placeholder="例如：幸福國小">
+                        </label>
+                        <label class="text-xs font-black text-slate-500">學年度（輸入數字）
+                            <input id="schoolYearInput" type="number" min="1" max="999" oninput="syncBasicInfoInputs()" class="mt-1 w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3 font-bold text-slate-800 dark:text-white" placeholder="例如：115">
+                        </label>
+                        <label class="text-xs font-black text-slate-500">學期
+                            <select id="semesterInput" onchange="syncBasicInfoInputs()" class="mt-1 w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3 font-bold text-slate-800 dark:text-white">
+                                <option value="">不設定</option>
+                                <option value="上學期">上學期</option>
+                                <option value="下學期">下學期</option>
+                                <option value="暑輔">暑輔</option>
+                            </select>
+                        </label>
+                        <label class="text-xs font-black text-slate-500">導師
+                            <input id="advisorNameInput" type="text" maxlength="40" oninput="syncBasicInfoInputs()" class="mt-1 w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3 font-bold text-slate-800 dark:text-white" placeholder="例如：王老師">
+                        </label>
+                        <label class="sm:col-span-2 text-xs font-black text-slate-500">班級／課程名稱
+                            <input id="classNameInput" type="text" maxlength="60" oninput="syncBasicInfoInputs()" class="mt-1 w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3 font-bold text-slate-800 dark:text-white" placeholder="例如：三年級恭班或暑期輔導班">
+                        </label>
+                        <label class="text-xs font-black text-slate-500">前方設備
+                            <input id="frontLabelInput" type="text" maxlength="20" oninput="syncBasicInfoInputs()" class="mt-1 w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3 font-bold text-slate-800 dark:text-white" placeholder="例如：講臺">
+                        </label>
+                        <label class="text-xs font-black text-slate-500">前門
+                            <input id="frontDoorInput" type="text" maxlength="20" oninput="syncBasicInfoInputs()" class="mt-1 w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3 font-bold text-slate-800 dark:text-white" placeholder="例如：前門">
+                        </label>
+                        <label class="text-xs font-black text-slate-500">後門
+                            <input id="rearDoorInput" type="text" maxlength="20" oninput="syncBasicInfoInputs()" class="mt-1 w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3 font-bold text-slate-800 dark:text-white" placeholder="例如：後門">
+                        </label>
+                        <label class="sm:col-span-2 text-xs font-black text-slate-500">備註
+                            <input id="seatMapNoteInput" type="text" maxlength="100" oninput="syncBasicInfoInputs()" class="mt-1 w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3 font-bold text-slate-800 dark:text-white" placeholder="例如：下次 8/26 抽、8/31 換">
+                        </label>
+                        <button type="button" onclick="saveClassroomName()" class="sm:col-span-2 btn-main bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3">儲存基本資料</button>
                     </div>
                     <p id="classroomNameStatus" class="text-sm font-bold text-emerald-600 dark:text-emerald-400 mt-3 min-h-[1.25rem]"></p>
                 </section>
@@ -802,12 +845,21 @@
         let activeSeatIdx = null;
         let mergeRight = [];
         let drawHistory = [];
-        let classroomName = '113學年度 3年1班';
+        let classroomName = '座位表';
+        let schoolName = '';
+        let schoolYear = '';
+        let semester = '';
+        let advisorName = '';
+        let className = '';
+        let frontLabel = '大屏';
+        let frontDoor = '';
+        let rearDoor = '';
+        let seatMapNote = '';
         let soundEnabled = true;
         let phaseSoundMap = { priority: 'priority', rear: 'rear', noBack: 'noBack', noSide: 'noSide', final: 'final' };
         const defaultDisplaySettings = {
-            preview: { classroomName: true, frontLabel: true, rowLabels: true, seatCoordinates: true, needs: true, disabledSeats: true, emptySeats: true },
-            export: { classroomName: true, frontLabel: true, rowLabels: true, seatCoordinates: true, needs: false, disabledSeats: false, emptySeats: true, exportDate: false }
+            preview: { classroomName: true, schoolName: true, schoolYear: true, semester: true, advisorName: false, className: true, frontLabel: true, frontDoor: true, rearDoor: true, seatMapNote: false, rowLabels: true, seatCoordinates: true, needs: true, disabledSeats: true, emptySeats: true },
+            export: { classroomName: true, schoolName: true, schoolYear: true, semester: true, advisorName: true, className: true, frontLabel: true, frontDoor: true, rearDoor: true, seatMapNote: true, rowLabels: true, seatCoordinates: true, needs: false, disabledSeats: false, emptySeats: true, exportDate: false }
         };
         let displaySettings = JSON.parse(JSON.stringify(defaultDisplaySettings));
 
@@ -821,6 +873,16 @@
                 mergeRight,
                 drawHistory,
                 classroomName,
+                schoolName,
+                schoolYear,
+                semester,
+                advisorName,
+                className,
+                frontLabel,
+                frontDoor,
+                rearDoor,
+                seatMapNote,
+                seatMapTitle: classroomName,
                 soundEnabled,
                 phaseSoundMap,
                 displaySettings
@@ -841,7 +903,17 @@
                     document.getElementById('cfgRows').value = gridConfig.rows;
                     mergeRight = data.mergeRight || new Array(Math.max(0, gridConfig.cols - 1)).fill(false);
                     drawHistory = data.drawHistory || [];
-                    classroomName = data.classroomName || classroomName;
+                    classroomName = data.seatMapTitle || '座位表';
+                    schoolName = data.schoolName || '';
+                    schoolYear = String(data.schoolYear || '').match(/\d+/)?.[0] || '';
+                    semester = ({ '第一學期': '上學期', '第二學期': '下學期', '暑期輔導': '暑輔' })[data.semester] || data.semester || '';
+                    if (!['上學期', '下學期', '暑輔'].includes(semester)) semester = '';
+                    advisorName = data.advisorName || '';
+                    className = data.className || (!data.seatMapTitle ? (data.classroomName || '') : '');
+                    frontLabel = data.frontLabel || '大屏';
+                    frontDoor = data.frontDoor || '';
+                    rearDoor = data.rearDoor || '';
+                    seatMapNote = data.seatMapNote || '';
                     soundEnabled = data.soundEnabled !== false;
                     phaseSoundMap = { ...phaseSoundMap, ...(data.phaseSoundMap || {}) };
                     displaySettings = {
@@ -962,6 +1034,15 @@
             const jsonSection = document.getElementById('jsonBackupSection');
             if (jsonSection.parentElement !== adminGrid) adminGrid.appendChild(jsonSection);
             document.getElementById('classroomNameInput').value = classroomName;
+            document.getElementById('schoolNameInput').value = schoolName;
+            document.getElementById('schoolYearInput').value = schoolYear;
+            document.getElementById('semesterInput').value = semester;
+            document.getElementById('advisorNameInput').value = advisorName;
+            document.getElementById('classNameInput').value = className;
+            document.getElementById('frontLabelInput').value = frontLabel;
+            document.getElementById('frontDoorInput').value = frontDoor;
+            document.getElementById('rearDoorInput').value = rearDoor;
+            document.getElementById('seatMapNoteInput').value = seatMapNote;
             document.getElementById('classroomNameStatus').textContent = '';
             updateSoundSettingUI();
             renderDisplaySettingRows();
@@ -972,17 +1053,52 @@
         }
 
         function updateClassroomNameUI() {
-            document.getElementById('classroomNameDisplay').textContent = classroomName;
-            document.getElementById('classroomNameSeatPreview').textContent = classroomName;
-            document.title = `${classroomName}｜座位小幫手 ${APP_VERSION}`;
+            const previewMeta = [
+                displaySettings.preview.schoolName && schoolName,
+                displaySettings.preview.schoolYear && schoolYear ? `${schoolYear}學年度` : '',
+                displaySettings.preview.semester && semester,
+                displaySettings.preview.className && className,
+                displaySettings.preview.advisorName && advisorName ? `導師：${advisorName}` : ''
+            ].filter(Boolean);
+            document.getElementById('appTitle').textContent = '座位小幫手';
+            document.getElementById('classroomNameDisplay').textContent = previewMeta.join('｜');
+            document.getElementById('classroomNameSeatPreview').textContent = classroomName.trim() || '座位表';
+            const metadataEl = document.getElementById('seatMapMetadata');
+            metadataEl.replaceChildren();
+            [[schoolName, 'meta-school-name'], [schoolYear ? `${schoolYear}學年度` : '', 'meta-school-year'], [semester, 'meta-semester'], [className, 'meta-class-name'], [advisorName ? `導師：${advisorName}` : '', 'meta-advisor-name']]
+                .filter(([value]) => value)
+                .forEach(([value, className], index) => {
+                    if (index) metadataEl.appendChild(document.createTextNode('　'));
+                    const span = document.createElement('span');
+                    span.className = className;
+                    span.textContent = value;
+                    metadataEl.appendChild(span);
+                });
+            document.getElementById('screenBar').textContent = frontLabel || '大屏';
+            document.getElementById('frontDoorDisplay').textContent = frontDoor;
+            document.getElementById('rearDoorDisplay').textContent = rearDoor;
+            document.getElementById('seatMapNoteDisplay').textContent = seatMapNote;
+            document.title = `座位小幫手 ${APP_VERSION}`;
+        }
+
+        function syncBasicInfoInputs() {
+            classroomName = document.getElementById('classroomNameInput').value.trim();
+            schoolName = document.getElementById('schoolNameInput').value.trim();
+            schoolYear = document.getElementById('schoolYearInput').value.trim();
+            semester = document.getElementById('semesterInput').value.trim();
+            advisorName = document.getElementById('advisorNameInput').value.trim();
+            className = document.getElementById('classNameInput').value.trim();
+            frontLabel = document.getElementById('frontLabelInput').value.trim();
+            frontDoor = document.getElementById('frontDoorInput').value.trim();
+            rearDoor = document.getElementById('rearDoorInput').value.trim();
+            seatMapNote = document.getElementById('seatMapNoteInput').value.trim();
+            updateClassroomNameUI();
+            saveData();
+            document.getElementById('classroomNameStatus').textContent = '已自動儲存於本機';
         }
 
         function saveClassroomName() {
-            const input = document.getElementById('classroomNameInput');
-            classroomName = input.value.trim() || '113學年度 3年1班';
-            input.value = classroomName;
-            updateClassroomNameUI();
-            saveData();
+            syncBasicInfoInputs();
             document.getElementById('classroomNameStatus').textContent = '已儲存於本機';
         }
 
@@ -994,7 +1110,9 @@
 
         function renderDisplaySettingRows() {
             const labels = {
-                classroomName: '班級名稱', frontLabel: '大屏／黑板', rowLabels: '各排名稱',
+                classroomName: '座位表主標題', schoolName: '校名', schoolYear: '學年度', semester: '學期',
+                className: '班級／課程名稱', advisorName: '導師',
+                frontLabel: '前方設備', frontDoor: '前門', rearDoor: '後門', seatMapNote: '備註', rowLabels: '各排名稱',
                 seatCoordinates: '座位座標', needs: '個別需求標示', disabledSeats: '禁排座位標示', emptySeats: '空座位外框'
             };
             document.getElementById('displaySettingRows').innerHTML = Object.entries(labels).map(([key, label]) => `
@@ -1010,6 +1128,7 @@
 
         function saveDisplaySetting(target, key, checked) {
             displaySettings[target][key] = checked;
+            updateClassroomNameUI();
             applyCaptureDisplaySettings('preview');
             saveData();
         }
@@ -1018,7 +1137,9 @@
             const area = document.getElementById('captureArea');
             const settings = displaySettings[target];
             const classMap = {
-                classroomName: 'hide-classroom-name', frontLabel: 'hide-front-label', rowLabels: 'hide-row-labels',
+                classroomName: 'hide-classroom-name', schoolName: 'hide-school-name', schoolYear: 'hide-school-year', semester: 'hide-semester', advisorName: 'hide-advisor-name',
+                className: 'hide-class-name',
+                frontLabel: 'hide-front-label', frontDoor: 'hide-front-door', rearDoor: 'hide-rear-door', seatMapNote: 'hide-seat-map-note', rowLabels: 'hide-row-labels',
                 seatCoordinates: 'hide-seat-coordinates', needs: 'hide-needs', disabledSeats: 'hide-disabled-seats', emptySeats: 'hide-empty-seats'
             };
             Object.entries(classMap).forEach(([key, className]) => area.classList.toggle(className, !settings[key]));
@@ -1058,6 +1179,7 @@
             if (data.mergeRight.length !== Math.max(0, data.gridConfig.cols - 1) || data.mergeRight.some(value => typeof value !== 'boolean')) throw new Error('併排設定不正確。');
             if (data.students.some(student => !student || typeof student.name !== 'string' || !Array.isArray(student.tags))) throw new Error('學生名單格式不正確。');
             if (typeof data.classroomName !== 'string' || typeof data.soundEnabled !== 'boolean') throw new Error('班級或音效設定不正確。');
+            if (['schoolName', 'schoolYear', 'semester', 'advisorName', 'className', 'frontLabel', 'frontDoor', 'rearDoor', 'seatMapNote', 'seatMapTitle'].some(key => data[key] !== undefined && typeof data[key] !== 'string')) throw new Error('基本資料格式不正確。');
             if (!data.phaseSoundMap || ['priority', 'rear', 'noBack', 'noSide', 'final'].some(phase => !validPhaseSoundIds.includes(data.phaseSoundMap[phase]))) throw new Error('五階段音效設定不正確。');
             if (data.displaySettings && (!data.displaySettings.preview || !data.displaySettings.export)) throw new Error('座位表顯示設定不正確。');
             if (!['light', 'dark'].includes(backup.theme)) throw new Error('主題設定不正確。');
@@ -1080,7 +1202,17 @@
                 gridConfig = data.gridConfig;
                 mergeRight = data.mergeRight;
                 drawHistory = data.drawHistory;
-                classroomName = data.classroomName;
+                classroomName = data.seatMapTitle || data.classroomName || '座位表';
+                schoolName = data.schoolName || '';
+                schoolYear = String(data.schoolYear || '').match(/\d+/)?.[0] || '';
+                semester = ({ '第一學期': '上學期', '第二學期': '下學期', '暑期輔導': '暑輔' })[data.semester] || data.semester || '';
+                if (!['上學期', '下學期', '暑輔'].includes(semester)) semester = '';
+                advisorName = data.advisorName || '';
+                className = data.className || '';
+                frontLabel = data.frontLabel || '大屏';
+                frontDoor = data.frontDoor || '';
+                rearDoor = data.rearDoor || '';
+                seatMapNote = data.seatMapNote || '';
                 soundEnabled = data.soundEnabled;
                 phaseSoundMap = { ...data.phaseSoundMap };
                 displaySettings = {
@@ -1091,6 +1223,15 @@
                 document.getElementById('cfgCols').value = gridConfig.cols;
                 document.getElementById('cfgRows').value = gridConfig.rows;
                 document.getElementById('classroomNameInput').value = classroomName;
+                document.getElementById('schoolNameInput').value = schoolName;
+                document.getElementById('schoolYearInput').value = schoolYear;
+                document.getElementById('semesterInput').value = semester;
+                document.getElementById('advisorNameInput').value = advisorName;
+                document.getElementById('classNameInput').value = className;
+                document.getElementById('frontLabelInput').value = frontLabel;
+                document.getElementById('frontDoorInput').value = frontDoor;
+                document.getElementById('rearDoorInput').value = rearDoor;
+                document.getElementById('seatMapNoteInput').value = seatMapNote;
                 updateMergeUI();
                 updateGridUI();
                 updateUI();
@@ -1767,7 +1908,16 @@
             activeSeatIdx = null;
             mergeRight = [];
             drawHistory = [];
-            classroomName = '113學年度 3年1班';
+            classroomName = '座位表';
+            schoolName = '';
+            schoolYear = '';
+            semester = '';
+            advisorName = '';
+            className = '';
+            frontLabel = '大屏';
+            frontDoor = '';
+            rearDoor = '';
+            seatMapNote = '';
             soundEnabled = true;
             phaseSoundMap = { priority: 'priority', rear: 'rear', noBack: 'noBack', noSide: 'noSide', final: 'final' };
             displaySettings = JSON.parse(JSON.stringify(defaultDisplaySettings));
@@ -1852,6 +2002,12 @@
                 let layoutData = [];
 
                 if (displaySettings.export.classroomName) layoutData.push([classroomName]);
+                if (displaySettings.export.schoolName && schoolName) layoutData.push([schoolName]);
+                if (displaySettings.export.schoolYear && schoolYear) layoutData.push([`${schoolYear}學年度`]);
+                if (displaySettings.export.semester && semester) layoutData.push([semester]);
+                if (displaySettings.export.className && className) layoutData.push([className]);
+                if (displaySettings.export.advisorName && advisorName) layoutData.push([`導師：${advisorName}`]);
+                if (displaySettings.export.rearDoor && rearDoor) layoutData.push([rearDoor]);
                 if (displaySettings.export.exportDate) layoutData.push([`匯出日期：${new Date().toLocaleDateString('zh-TW')}`]);
 
                 // 1. 深位從大到小 (gridConfig.rows 倒數到 1)
@@ -1881,10 +2037,12 @@
 
                 // 3. 大屏列在最下方
                 if (displaySettings.export.frontLabel) {
-                    let screenRow = ["大 屏 ( 白 板 )"];
+                    let screenRow = [frontLabel || "大屏"];
                     for (let p = 1; p <= gridConfig.cols; p++) screenRow.push("");
                     layoutData.push(screenRow);
                 }
+                if (displaySettings.export.frontDoor && frontDoor) layoutData.push([frontDoor]);
+                if (displaySettings.export.seatMapNote && seatMapNote) layoutData.push([seatMapNote]);
 
                 let listData = [displaySettings.export.seatCoordinates ? ["座位座標", "學生姓名", "狀態"] : ["學生姓名", "狀態"]];
                 seating.forEach((s, i) => {
@@ -1943,6 +2101,12 @@
             </style>
             </head><body>
             ${displaySettings.export.classroomName ? `<h2 style="text-align:center;">${classroomName}</h2>` : ''}
+            ${(displaySettings.export.schoolName && schoolName) ? `<p style="text-align:center;">${schoolName}</p>` : ''}
+            ${(displaySettings.export.schoolYear && schoolYear) ? `<p style="text-align:center;">${schoolYear}學年度</p>` : ''}
+            ${(displaySettings.export.semester && semester) ? `<p style="text-align:center;">${semester}</p>` : ''}
+            ${(displaySettings.export.className && className) ? `<p style="text-align:center;">${className}</p>` : ''}
+            ${(displaySettings.export.advisorName && advisorName) ? `<p style="text-align:center;">導師：${advisorName}</p>` : ''}
+            ${(displaySettings.export.rearDoor && rearDoor) ? `<p><b>${rearDoor}</b></p>` : ''}
             ${displaySettings.export.exportDate ? `<p style="text-align:center;">匯出日期：${new Date().toLocaleDateString('zh-TW')}</p>` : ''}
             <table>`;
 
@@ -1974,8 +2138,8 @@
             }
 
             // 3. 大屏列在最下方
-            if (displaySettings.export.frontLabel) htmlString += `<tr><td colspan="${gridConfig.cols + 1}" class="front">大 屏 ( 白 板 )</td></tr>`;
-            htmlString += `</table></body></html>`;
+            if (displaySettings.export.frontLabel) htmlString += `<tr><td colspan="${gridConfig.cols + 1}" class="front">${frontLabel || '大屏'}</td></tr>`;
+            htmlString += `</table>${(displaySettings.export.frontDoor && frontDoor) ? `<p><b>${frontDoor}</b></p>` : ''}${(displaySettings.export.seatMapNote && seatMapNote) ? `<p style="text-align:right;">${seatMapNote}</p>` : ''}</body></html>`;
 
             const blob = new Blob(['\ufeff', htmlString], { type: 'application/msword' });
             const url = URL.createObjectURL(blob);
