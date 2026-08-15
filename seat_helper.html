@@ -1064,7 +1064,22 @@
             return candidateIndices;
         }
 
+        function checkCapacityGuard() {
+            const totalSeats = gridConfig.cols * gridConfig.rows;
+            const disabledCount = seating.filter(s => s === "disabled").length;
+            const availableSeats = totalSeats - disabledCount;
+            const studentCount = students.length;
+
+            if (studentCount > availableSeats) {
+                alert(`⚠️ 座位容量不足！\n\n目前學生人數 (${studentCount}人) 已超過可排座位數 (${availableSeats}席)。\n請增加座位行列數擴充座位、調整禁排座位數量或更新學生名單。`);
+                return false;
+            }
+            return true;
+        }
+
         async function runSinglePhase(phaseId) {
+            if (!checkCapacityGuard()) return;
+
             const hasPendingPriority = students.some(s => s.tags.has('priority') && !s.currentPos);
             const hasPendingRear = students.some(s => s.tags.has('rear') && !s.currentPos);
             const hasPendingNoBack = students.some(s => s.tags.has('noBack') && !s.currentPos);
@@ -1093,6 +1108,8 @@
         }
 
         async function runFinalPhase() {
+            if (!checkCapacityGuard()) return;
+
             const pendingSpecial = students.filter(s => s.tags.size > 0 && !s.currentPos);
             if (pendingSpecial.length > 0) {
                 showAlert();
