@@ -9,7 +9,8 @@
 
 ## 📜 完整版本演進歷程 (Version History & Changelog)
 
-### 🚀 v3.0-dev (2026-08-15) - TODO-11 學生數 > 可排座位數容量防呆
+### 🚀 v3.0-dev (2026-08-15) - TODO-12 清除抽籤二次確認
+- **⚠️ 清除抽籤二次確認 (TODO-12)**：點擊「清除抽籤」跳出確定對話框，防止誤觸清除。
 - **🛡️ 容量防呆判定 (TODO-11)**：新增 `checkCapacityGuard()` 判定，當學生人數超過可排座位數時阻擋抽籤並彈出警告，確保Seats空間足夠。
 - **🪑 座位卡防換行與雙行結構 (TODO-10)**：座號第 1 行與姓名第 2 行設定 `white-space: nowrap` 與 `text-overflow: ellipsis` 杜絕中途折行與卡片錯位。
 - **🖼️ 5 大匯出按鈕列視覺改善 (TODO-09)**：統一按鈕圖示 (`copy-check`, `file-image`, `file-down`, `table`, `file-text`) 與文字比例 (`text-sm sm:text-base font-black`)。

@@ -1296,9 +1296,12 @@
         };
 
         document.getElementById('btnResetDraw').onclick = () => {
-            seating = seating.map(s => (s === "disabled" || s?.locked) ? s : null);
-            students.forEach(s => { if(s.currentPos) { const [p,w] = s.currentPos.split('-').map(Number); if(!seating[getIdx(p,w)]) s.currentPos = null; }});
-            updateUI();
+            if (confirm("確定要清除所有已安排的座位與抽籤結果嗎？")) {
+                seating = seating.map(s => (s === "disabled" || s?.locked) ? s : null);
+                students.forEach(s => { if(s.currentPos) { const [p,w] = s.currentPos.split('-').map(Number); if(!seating[getIdx(p,w)]) s.currentPos = null; }});
+                updateUI();
+                saveData();
+            }
         };
 
         document.getElementById('btnResetAll').onclick = () => {
