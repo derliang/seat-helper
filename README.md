@@ -12,6 +12,7 @@
 ### 🚀 v3.0-dev (2026-08-15) - 取消 Google/Cloud 開發計畫，回歸純本機版 (Local-first / Local-only)
 - **🔒 取消 Google/Cloud 並恢復純本機安全模式 (FIX-18F)**：依據使用者最新決策，取消目前版本的 Google SSO、OAuth、Sheets API、Cloud AutoSave 與 Cloud 雙模式。完整移除所有 Google SDK 與驗證標籤，恢復 LocalStorage 為唯一自動儲存來源，並解除齒輪登入鎖定，保持純 Lucide `settings` Icon 獨立按鈕。
 - **⚙️ 獨立本機管理後台骨架 (TODO-23)**：設定齒輪可切換至全螢幕 `#adminView`，並可安全返回抽籤主頁；切換過程不重建座位與抽籤狀態。
+- **🏫 班級與教室名稱 (TODO-24, FIX-24A)**：後台可設定並以 LocalStorage 記住班級名稱，同步顯示於頁面與座位表預覽區頂端，並套用至 PNG、PDF、Excel、Word 匯出檔名。
 - **⚙️ 設定齒輪純 Icon (TODO-18, FIX-18A~D)**：設定按鈕純 Icon 化，深色模式與設定按鈕對齊座位設定區最右側；取消登入鎖定。
 - **📐 Header 兩端平衡佈局 (TODO-17)**：最左側保留彈性留白，最右側對齊標題與版號；Theme 主題與 Settings 齒輪按鈕保留於座位設定區最右側。
 - **⛔ Google 官方原生登入按鈕 (TODO-16，使用者取消)**：原 Google Identity Services 登入方案已取消，相關 SDK、Client ID 與登入介面由 FIX-18F 完整移除。
