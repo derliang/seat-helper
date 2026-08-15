@@ -19,15 +19,27 @@
             --color-noSide: #f59e0b;   
             --color-noBack: #8b5cf6;   
             --color-normal: #6366f1;   
-            --color-rear: #64748b; /* 新增靠後顏色：深藍色 Slate */
+            --color-rear: #64748b;
+        }
+
+        html.dark {
+            --bg-main: #0f172a;
+            --dark-text: #f8fafc;
         }
 
         body { 
             background-color: var(--bg-main); 
             color: var(--dark-text); 
             font-family: 'Inter', 'Noto Sans TC', sans-serif;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
+
+        html.dark body { background-color: #0f172a; color: #f8fafc; }
+        html.dark .bg-white { background-color: #1e293b !important; color: #f8fafc !important; border-color: #334155 !important; }
+        html.dark .bg-slate-50, html.dark .bg-slate-50\/90 { background-color: #0f172a !important; color: #f8fafc !important; border-color: #334155 !important; }
+        html.dark .text-slate-800, html.dark .text-slate-700, html.dark .text-slate-600 { color: #f8fafc !important; }
+        html.dark .config-card { background: #1e293b !important; color: #f8fafc !important; border-color: #334155 !important; }
+        html.dark .seat-card { background: #1e293b !important; border-color: #334155 !important; color: #f8fafc !important; }
 
         .unified-title {
             font-size: 1.25rem;
@@ -426,6 +438,9 @@
                             <span>✨ 清除名單按鈕</span>
                         </div>
                     </div>
+                    <button onclick="toggleTheme()" id="themeToggleBtn" title="切換深色/淺色主題" class="p-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 hover:scale-105 transition-all flex items-center justify-center">
+                        <i data-lucide="moon" class="w-5 h-5 text-amber-400"></i>
+                    </button>
                     <div class="bg-indigo-50 p-3 rounded-2xl shadow-sm border border-indigo-100"><i data-lucide="layout-grid" class="text-indigo-600 w-8 h-8"></i></div>
                 </div>
             </div>
@@ -586,6 +601,32 @@
 
     <script>
         const APP_VERSION = "v3.0-dev";
+
+        function initTheme() {
+            const saved = localStorage.getItem('seatHelperTheme');
+            const isDark = saved === 'dark';
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+            updateThemeIcon();
+        }
+
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem('seatHelperTheme', isDark ? 'dark' : 'light');
+            updateThemeIcon();
+        }
+
+        function updateThemeIcon() {
+            const btn = document.getElementById('themeToggleBtn');
+            if (!btn) return;
+            const isDark = document.documentElement.classList.contains('dark');
+            btn.innerHTML = isDark ? `<i data-lucide="sun" class="w-5 h-5 text-amber-400"></i>` : `<i data-lucide="moon" class="w-5 h-5 text-amber-400"></i>`;
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
         let students = [];
         let seating = []; 
         let gridConfig = { cols: 7, rows: 7 };
@@ -1377,6 +1418,7 @@
         if(!loadData()) {
             initGrid();
         }
+        initTheme();
     </script>
 </body>
 </html>

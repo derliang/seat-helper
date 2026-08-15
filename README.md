@@ -9,7 +9,9 @@
 
 ## 📜 完整版本演進歷程 (Version History & Changelog)
 
-### 🚀 v3.0-dev (2026-08-15) - TODO-02 版號與 <title> 連動
+### 🚀 v3.0-dev (2026-08-15) - TODO-03 & FIX-03A 深淺色主題切換
+- **🌙 深色/淺色主題支援 (Dark/Light Theme)**：一鍵切換深淺色視覺風格，自動寫入 `localStorage` 記憶。
+- **☀️ 亮黃高對比圖示 (FIX-03A)**：主題切換按鈕圖示統一採用亮黃色 (`text-amber-400`)，增強強高對比辨識度。
 - **版號常數集中管理**：新增 `APP_VERSION = "v3.0-dev"` 常數。
 - **網頁 Title & Badge 同步**：網頁 `<title>` 與 Header 版號標籤連動更新。
 
