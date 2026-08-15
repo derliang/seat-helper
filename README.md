@@ -9,7 +9,8 @@
 
 ## 📜 完整版本演進歷程 (Version History & Changelog)
 
-### 🚀 v3.0-dev (2026-08-15) - TODO-09 匯出按鈕列視覺改善
+### 🚀 v3.0-dev (2026-08-15) - TODO-10 座位卡防換行
+- **🪑 座位卡防換行與雙行結構 (TODO-10)**：座號第 1 行與姓名第 2 行設定 `white-space: nowrap` 與 `text-overflow: ellipsis` 杜絕中途折行與卡片錯位。
 - **🖼️ 5 大匯出按鈕列視覺改善 (TODO-09)**：統一按鈕圖示 (`copy-check`, `file-image`, `file-down`, `table`, `file-text`) 與文字比例 (`text-sm sm:text-base font-black`)。
 - **🗑️ 三大清除按鈕視覺統一 (TODO-08)**：清除名單、清除需求、清除抽籤統一採用亮紅底純白字與 `trash-2` 圖示。
 - **🎨 高對比標題 (TODO-06, FIX-06A, FIX-06B)**：資訊區標題極高對比顏色修復，確保淺色與深色模式均清晰可見。
