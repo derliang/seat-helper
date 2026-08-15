@@ -9,7 +9,7 @@
 
 ## 📜 完整版本演進歷程 (Version History & Changelog)
 
-### 🚀 v3.0-dev (2026-08-15) - 取消 Google/Cloud 開發計畫，回歸純本機版 (Local-first / Local-only)
+### 🚀 v3.0 (2026-08-15) - 純本機正式版 (Local-first / Local-only)
 - **🔒 取消 Google/Cloud 並恢復純本機安全模式 (FIX-18F)**：依據使用者最新決策，取消目前版本的 Google SSO、OAuth、Sheets API、Cloud AutoSave 與 Cloud 雙模式。完整移除所有 Google SDK 與驗證標籤，恢復 LocalStorage 為唯一自動儲存來源，並解除齒輪登入鎖定，保持純 Lucide `settings` Icon 獨立按鈕。
 - **⚙️ 獨立本機管理後台骨架 (TODO-23)**：設定齒輪可切換至全螢幕 `#adminView`，並可安全返回抽籤主頁；切換過程不重建座位與抽籤狀態。
 - **🏫 班級與教室名稱 (TODO-24, FIX-24A)**：後台可設定並以 LocalStorage 記住班級名稱，同步顯示於頁面與座位表預覽區頂端，並套用至 PNG、PDF、Excel、Word 匯出檔名。
@@ -39,7 +39,7 @@
 - **📊 未定位數據統計 (TODO-04)**：新增「未定位」欄位，實時動態計算 `未定位 = 學生數 - 已定位`。
 - **🌙 深色/淺色主題支援 (Dark/Light Theme)**：一鍵切換深淺色視覺風格，自動寫入 `localStorage` 記憶。
 - **☀️ 亮黃高對比圖示 (FIX-03A)**：主題切換按鈕圖示統一採用亮黃色 (`text-amber-400`)，增強強高對比辨識度。
-- **版號常數集中管理**：新增 `APP_VERSION = "v3.0-dev"` 常數。
+- **版號常數集中管理**：正式版使用 `APP_VERSION = "v3.0"` 常數。
 - **網頁 Title & Badge 同步**：網頁 `<title>` 與 Header 版號標籤連動更新。
 
 ---
