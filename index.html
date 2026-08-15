@@ -398,7 +398,7 @@
         </div>
     </div>
 
-        <!-- 最頂層 Header 列 (TODO-17) -->
+        <!-- 最頂層 Header 列 (TODO-17, FIX-18B) -->
         <div class="flex items-center justify-between w-full mb-4 px-2 gap-4 flex-wrap">
             <!-- 最左側：Google 官方登入按鈕與雲端狀態 -->
             <div class="flex items-center gap-3">
@@ -424,21 +424,19 @@
             <!-- 中間彈性留白 -->
             <div class="flex-1"></div>
 
-            <!-- 最右側：標題、版號與主題按鈕 -->
-            <div class="flex items-center gap-4">
-                <div class="flex flex-col items-end">
-                    <div class="flex items-center gap-2">
-                        <h1 class="text-2xl sm:text-3xl font-black italic text-indigo-600 leading-none">座位小幫手</h1>
-                        <span id="appVersionBadge" class="bg-indigo-600 text-white text-xs sm:text-sm font-black px-3 py-1 rounded-full shadow-md tracking-wider">v3.0-dev</span>
-                    </div>
+            <!-- 頁面最上面靠右：圖示 + 程式名稱「座位小幫手」 + 版號 v3.0-dev -->
+            <div class="flex items-center gap-3">
+                <div class="bg-indigo-50 p-3 rounded-2xl shadow-sm border border-indigo-100 flex items-center justify-center">
+                    <i data-lucide="layout-grid" class="text-indigo-600 w-7 h-7 sm:w-8 sm:h-8"></i>
                 </div>
-                <button onclick="toggleTheme()" id="themeToggleBtn" title="切換深色/淺色主題" class="p-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 hover:scale-105 transition-all flex items-center justify-center">
-                    <i data-lucide="moon" class="w-5 h-5 text-amber-400"></i>
-                </button>
-                <div class="bg-indigo-50 p-3 rounded-2xl shadow-sm border border-indigo-100"><i data-lucide="layout-grid" class="text-indigo-600 w-8 h-8"></i></div>
+                <div class="flex items-center gap-2">
+                    <h1 class="text-2xl sm:text-3xl font-black italic text-indigo-600 leading-none">座位小幫手</h1>
+                    <span id="appVersionBadge" class="bg-indigo-600 text-white text-xs sm:text-sm font-black px-3 py-1 rounded-full shadow-md tracking-wider">v3.0-dev</span>
+                </div>
             </div>
         </div>
 
+        <!-- 座位設定區 (Config Card) -->
         <div class="flex flex-col bg-white p-6 sm:p-8 rounded-[2.5rem] shadow-sm border border-slate-200 mb-8 gap-6">
             <div class="flex flex-wrap items-center justify-between gap-4 w-full">
                 <div class="flex flex-wrap items-center gap-6">
@@ -469,6 +467,16 @@
                         <div id="mergeUIContainer" class="flex flex-wrap items-center gap-1.5 bg-slate-50 p-2 rounded-2xl border border-slate-200/80 min-h-[48px] px-3">
                         </div>
                     </div>
+                </div>
+
+                <!-- 座位設定區的最右邊：深色模式按鈕與設定齒輪按鈕 (FIX-18B) -->
+                <div class="flex items-center gap-3 ml-auto">
+                    <button onclick="toggleTheme()" id="themeToggleBtn" title="切換深色/淺色主題" class="p-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 hover:scale-105 transition-all flex items-center justify-center">
+                        <i data-lucide="moon" class="w-5 h-5 text-amber-400"></i>
+                    </button>
+                    <button id="settingsBtn" onclick="openAdminModal()" title="請先登入 Google 帳號以解鎖後台管理設定" class="p-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 transition-all flex items-center justify-center opacity-50 cursor-not-allowed" disabled>
+                        <i data-lucide="settings" class="w-5 h-5"></i>
+                    </button>
                 </div>
             </div>
 
@@ -828,6 +836,40 @@
             sc.style.gridTemplateColumns = trackStr;
             const totalCols = gridConfig.cols + Math.max(0, gridConfig.cols - 1);
             document.getElementById('screenBar').style.gridColumn = `1 / span ${totalCols}`;
+        }
+
+        let currentUser = null;
+
+        function updateAuthUI(user) {
+            currentUser = user;
+            const settingsBtn = document.getElementById('settingsBtn');
+            const syncArea = document.getElementById('cloudSyncStatusArea');
+
+            if (user) {
+                if (settingsBtn) {
+                    settingsBtn.disabled = false;
+                    settingsBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    settingsBtn.classList.add('hover:scale-105', 'cursor-pointer');
+                    settingsBtn.title = `後台管理設定 (${user.name || '已登入'})`;
+                }
+                if (syncArea) syncArea.classList.remove('hidden');
+            } else {
+                if (settingsBtn) {
+                    settingsBtn.disabled = true;
+                    settingsBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    settingsBtn.classList.remove('hover:scale-105', 'cursor-pointer');
+                    settingsBtn.title = "請先登入 Google 帳號以解鎖後台管理設定";
+                }
+                if (syncArea) syncArea.classList.add('hidden');
+            }
+        }
+
+        function openAdminModal() {
+            if (!currentUser) {
+                alert("🔒 後台管理設定已被鎖定！\n\n請先於左上角登入 Google 帳號，驗證管理者身分後方可開啟進入。");
+                return;
+            }
+            alert(`⚙️ 後台管理系統\n\n目前管理者：${currentUser.name || 'Google 使用者'}\n雲端同步狀態：正常連線中`);
         }
 
         function changeDimension(type, delta) {
