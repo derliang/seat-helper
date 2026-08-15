@@ -1089,11 +1089,10 @@
 
         function updateClassroomNameUI() {
             const previewMeta = [
-                displaySettings.preview.schoolName && schoolName,
-                displaySettings.preview.schoolYear && schoolYear ? `${schoolYear}學年度` : '',
-                displaySettings.preview.semester && semester,
-                displaySettings.preview.className && className,
-                displaySettings.preview.advisorName && advisorName ? `導師：${advisorName}` : ''
+                schoolName,
+                schoolYear ? `${schoolYear}學年度` : '',
+                semester,
+                className
             ].filter(Boolean);
             document.getElementById('appTitle').textContent = '座位小幫手';
             document.getElementById('classroomNameDisplay').textContent = previewMeta.join('｜');
