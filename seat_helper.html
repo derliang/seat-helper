@@ -888,6 +888,36 @@
                     </div>
                     <div id="phaseSoundSettings" class="flex flex-col gap-3"></div>
                 </section>
+
+                <section id="wordTemplateSection" class="xl:col-span-12 bg-white dark:bg-slate-900 p-7 sm:p-8 rounded-[2rem] shadow-sm border border-slate-200 dark:border-slate-700 border-t-4 border-t-amber-500">
+                    <div class="flex flex-col lg:flex-row lg:items-start justify-between gap-5 mb-6">
+                        <div class="flex items-center gap-3">
+                            <div class="bg-amber-50 dark:bg-amber-950/50 p-3 rounded-xl"><i data-lucide="file-type-2" class="w-7 h-7 text-amber-500"></i></div>
+                            <div>
+                                <h2 class="text-xl sm:text-2xl font-black text-slate-800 dark:text-white">Word 模板管理</h2>
+                                <p class="text-sm font-bold text-slate-500 dark:text-slate-400">下載內建模板修改後，可上傳成為目前瀏覽器的自訂模板</p>
+                            </div>
+                        </div>
+                        <div id="wordTemplateStatus" class="shrink-0 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 px-4 py-3 text-sm font-black text-amber-800 dark:text-amber-300">正在讀取模板狀態…</div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                        <button type="button" onclick="downloadBuiltInWordTemplate()" class="btn-main bg-amber-500 hover:bg-amber-400 text-slate-950 px-5 py-3 flex items-center justify-center gap-2">
+                            <i data-lucide="download" class="w-5 h-5"></i> 下載內建模板
+                        </button>
+                        <button type="button" onclick="document.getElementById('wordTemplateInput').click()" class="btn-main bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-3 flex items-center justify-center gap-2">
+                            <i data-lucide="upload" class="w-5 h-5"></i> 上傳自訂模板
+                        </button>
+                        <button type="button" onclick="restoreBuiltInWordTemplate()" class="btn-main bg-slate-700 hover:bg-slate-600 text-white px-5 py-3 flex items-center justify-center gap-2">
+                            <i data-lucide="rotate-ccw" class="w-5 h-5"></i> 恢復內建模板
+                        </button>
+                    </div>
+                    <input id="wordTemplateInput" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="hidden" onchange="handleWordTemplateUpload(this)">
+                    <div class="mt-5 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 text-sm font-bold text-slate-600 dark:text-slate-300 leading-7">
+                        <p class="font-black text-slate-800 dark:text-white">可修改字型、圖片、頁框、標題位置與版面；請務必保留 <code class="px-2 py-1 rounded bg-slate-200 dark:bg-slate-700 text-rose-600 dark:text-rose-300">{{seatTable}}</code>。</p>
+                        <p class="mt-1">可選標記：{{schoolName}}、{{title}}、{{metadata}}、{{exportDate}}、{{rearDoor}}、{{frontDoor}}、{{seatMapNote}}。刪除可選標記，就不會在 Word 中顯示該欄位。</p>
+                        <p class="mt-1 text-slate-500 dark:text-slate-400">自訂模板只保存在目前瀏覽器，且不包含在 JSON 備份；更換瀏覽器或裝置時請重新上傳。</p>
+                    </div>
+                </section>
             </div>
         </div>
     </div>
@@ -964,6 +994,12 @@
         let displayPreviewMode = 'preview';
 
         const validPhaseSoundIds = ['priority', 'rear', 'noBack', 'noSide', 'final', 'gentleBell', 'crystalRise', 'digitalPop', 'warmChord', 'celebration'];
+        const WORD_TEMPLATE_DB_NAME = 'seatHelperWordTemplates';
+        const WORD_TEMPLATE_DB_VERSION = 1;
+        const WORD_TEMPLATE_STORE = 'templates';
+        const WORD_TEMPLATE_KEY = 'active';
+        const BUILT_IN_WORD_TEMPLATE_URL = './templates/seat-helper-word-template.docx';
+        const REQUIRED_WORD_TEMPLATE_PLACEHOLDERS = ['seatTable'];
 
         function getSerializableData() {
             return {
@@ -1132,9 +1168,11 @@
         function openAdminModal() {
             const adminGrid = document.getElementById('adminSettingsGrid');
             const displaySection = document.getElementById('displaySettingsSection');
+            const wordTemplateSection = document.getElementById('wordTemplateSection');
             const jsonSection = document.getElementById('jsonBackupSection');
-            if (displaySection.parentElement !== adminGrid) adminGrid.appendChild(displaySection);
-            if (jsonSection.parentElement !== adminGrid) adminGrid.appendChild(jsonSection);
+            adminGrid.appendChild(displaySection);
+            adminGrid.appendChild(wordTemplateSection);
+            adminGrid.appendChild(jsonSection);
             document.getElementById('classroomNameInput').value = classroomName;
             document.getElementById('schoolNameInput').value = schoolName;
             document.getElementById('schoolYearInput').value = schoolYear;
@@ -1149,6 +1187,7 @@
             updateSoundSettingUI();
             renderDisplaySettingRows();
             renderDisplaySettingsPreview();
+            updateWordTemplateUI();
             document.getElementById('mainView').classList.add('hidden');
             document.getElementById('adminView').classList.remove('hidden');
             window.scrollTo(0, 0);
@@ -2278,6 +2317,174 @@
             }
         }
 
+        function openWordTemplateDb() {
+            return new Promise((resolve, reject) => {
+                if (!window.indexedDB) {
+                    reject(new Error('目前瀏覽器不支援 IndexedDB。'));
+                    return;
+                }
+                const request = indexedDB.open(WORD_TEMPLATE_DB_NAME, WORD_TEMPLATE_DB_VERSION);
+                request.onupgradeneeded = () => {
+                    const db = request.result;
+                    if (!db.objectStoreNames.contains(WORD_TEMPLATE_STORE)) {
+                        db.createObjectStore(WORD_TEMPLATE_STORE, { keyPath: 'id' });
+                    }
+                };
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error || new Error('無法開啟模板資料庫。'));
+            });
+        }
+
+        async function readCustomWordTemplate() {
+            const db = await openWordTemplateDb();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(WORD_TEMPLATE_STORE, 'readonly');
+                const request = transaction.objectStore(WORD_TEMPLATE_STORE).get(WORD_TEMPLATE_KEY);
+                request.onsuccess = () => resolve(request.result || null);
+                request.onerror = () => reject(request.error || new Error('無法讀取自訂模板。'));
+                transaction.oncomplete = () => db.close();
+            });
+        }
+
+        async function saveCustomWordTemplate(record) {
+            const db = await openWordTemplateDb();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(WORD_TEMPLATE_STORE, 'readwrite');
+                transaction.objectStore(WORD_TEMPLATE_STORE).put(record);
+                transaction.oncomplete = () => {
+                    db.close();
+                    resolve();
+                };
+                transaction.onerror = () => {
+                    db.close();
+                    reject(transaction.error || new Error('無法儲存自訂模板。'));
+                };
+            });
+        }
+
+        async function deleteCustomWordTemplate() {
+            const db = await openWordTemplateDb();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(WORD_TEMPLATE_STORE, 'readwrite');
+                transaction.objectStore(WORD_TEMPLATE_STORE).delete(WORD_TEMPLATE_KEY);
+                transaction.oncomplete = () => {
+                    db.close();
+                    resolve();
+                };
+                transaction.onerror = () => {
+                    db.close();
+                    reject(transaction.error || new Error('無法移除自訂模板。'));
+                };
+            });
+        }
+
+        async function fetchBuiltInWordTemplate() {
+            const response = await fetch(BUILT_IN_WORD_TEMPLATE_URL, { cache: 'no-store' });
+            if (!response.ok) throw new Error(`無法讀取內建模板（HTTP ${response.status}）。`);
+            return response.arrayBuffer();
+        }
+
+        async function validateWordTemplate(data) {
+            if (!window.docx?.patchDetector) throw new Error('Word 模板檢查元件尚未載入。');
+            const bytes = new Uint8Array(data);
+            if (bytes.length < 4 || bytes[0] !== 0x50 || bytes[1] !== 0x4B) {
+                throw new Error('檔案不是有效的 DOCX。');
+            }
+            const detected = await window.docx.patchDetector({ data });
+            const names = (detected || []).map(item => typeof item === 'string' ? item : (item.name || item.key || '')).filter(Boolean);
+            const missing = REQUIRED_WORD_TEMPLATE_PLACEHOLDERS.filter(name => !names.includes(name));
+            if (missing.length) throw new Error(`模板缺少必要標記：${missing.map(name => `{{${name}}}`).join('、')}`);
+            return names;
+        }
+
+        async function getActiveWordTemplate() {
+            try {
+                const custom = await readCustomWordTemplate();
+                if (custom?.data) {
+                    await validateWordTemplate(custom.data);
+                    return { data: custom.data, source: 'custom', name: custom.name || '自訂模板' };
+                }
+            } catch (error) {
+                console.warn('Custom Word template unavailable, using built-in template:', error);
+            }
+            const data = await fetchBuiltInWordTemplate();
+            await validateWordTemplate(data);
+            return { data, source: 'built-in', name: '內建模板' };
+        }
+
+        async function updateWordTemplateUI(message = '') {
+            const status = document.getElementById('wordTemplateStatus');
+            if (!status) return;
+            if (message) status.textContent = message;
+            try {
+                const custom = await readCustomWordTemplate();
+                if (!custom) {
+                    status.textContent = message || '目前使用：內建模板';
+                    return;
+                }
+                const date = custom.updatedAt ? new Date(custom.updatedAt).toLocaleString('zh-TW') : '';
+                status.textContent = message || `目前使用：${custom.name || '自訂模板'}${date ? `｜${date}` : ''}`;
+            } catch (error) {
+                console.error('Word template status failed:', error);
+                status.textContent = '模板狀態讀取失敗，匯出時將嘗試使用內建模板';
+            }
+        }
+
+        async function downloadBuiltInWordTemplate() {
+            try {
+                const data = await fetchBuiltInWordTemplate();
+                await validateWordTemplate(data);
+                const blob = new Blob([data], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = '座位小幫手_Word模板.docx';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                updateWordTemplateUI('內建模板已下載，可用 Word 修改後再上傳');
+            } catch (error) {
+                console.error('Built-in Word template download failed:', error);
+                alert(`內建模板下載失敗：${error.message}`);
+            }
+        }
+
+        async function handleWordTemplateUpload(input) {
+            const file = input.files?.[0];
+            if (!file) return;
+            try {
+                if (!file.name.toLowerCase().endsWith('.docx')) throw new Error('請選擇 .docx 檔案。');
+                if (file.size > 10 * 1024 * 1024) throw new Error('模板檔案不可超過 10 MB。');
+                const data = await file.arrayBuffer();
+                await validateWordTemplate(data);
+                await saveCustomWordTemplate({
+                    id: WORD_TEMPLATE_KEY,
+                    name: file.name,
+                    updatedAt: new Date().toISOString(),
+                    data
+                });
+                await updateWordTemplateUI(`已套用自訂模板：${file.name}`);
+            } catch (error) {
+                console.error('Custom Word template upload failed:', error);
+                alert(`自訂模板無法使用：${error.message}`);
+                await updateWordTemplateUI();
+            } finally {
+                input.value = '';
+            }
+        }
+
+        async function restoreBuiltInWordTemplate() {
+            if (!confirm('確定要移除目前的自訂 Word 模板，恢復使用內建模板嗎？')) return;
+            try {
+                await deleteCustomWordTemplate();
+                await updateWordTemplateUI('已恢復使用內建模板');
+            } catch (error) {
+                console.error('Restore built-in Word template failed:', error);
+                alert(`無法恢復內建模板：${error.message}`);
+            }
+        }
+
         async function exportToWord() {
             if (!window.docx) {
                 alert('Word 匯出元件尚未載入完成，請確認網路連線後重新整理頁面。');
@@ -2339,9 +2546,10 @@
                 displaySettings.export.className && className ? className : '',
                 displaySettings.export.advisorName && advisorName ? `導師 ${advisorName}` : ''
             ].filter(Boolean).join('　');
+            const exportDateText = displaySettings.export.exportDate ? `匯出日期 ${new Date().toLocaleDateString('zh-TW')}` : '';
             if (metadata) children.push(makeParagraph(metadata, { size: 48, after: 40 }));
             if (displaySettings.export.exportDate) {
-                children.push(makeParagraph(`匯出日期 ${new Date().toLocaleDateString('zh-TW')}`, {
+                children.push(makeParagraph(exportDateText, {
                     size: 20, alignment: AlignmentType.RIGHT, after: 80
                 }));
             }
@@ -2409,7 +2617,7 @@
                 }));
             }
 
-            children.push(new Table({
+            const seatTable = new Table({
                 rows: tableRows,
                 width: { size: tableWidth, type: WidthType.DXA },
                 columnWidths: Array(totalColumns).fill(cellWidth),
@@ -2419,7 +2627,8 @@
                     top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder,
                     insideHorizontal: thinBorder, insideVertical: thinBorder
                 }
-            }));
+            });
+            children.push(seatTable);
 
             if (displaySettings.export.frontDoor && frontDoor) {
                 children.push(makeParagraph(frontDoor, { size: 22, alignment: AlignmentType.LEFT, before: 40 }));
@@ -2455,7 +2664,43 @@
             });
 
             try {
-                const blob = await Packer.toBlob(wordDocument);
+                let blob;
+                try {
+                    const activeTemplate = await getActiveWordTemplate();
+                    const detected = await window.docx.patchDetector({ data: activeTemplate.data });
+                    const detectedNames = (detected || []).map(item => typeof item === 'string' ? item : (item.name || item.key || '')).filter(Boolean);
+                    const textValues = {
+                        schoolName: displaySettings.export.schoolName ? schoolName : '',
+                        title: displaySettings.export.classroomName ? (classroomName || '座位表') : '',
+                        metadata,
+                        exportDate: exportDateText,
+                        rearDoor: displaySettings.export.rearDoor ? rearDoor : '',
+                        frontDoor: displaySettings.export.frontDoor ? frontDoor : '',
+                        seatMapNote: displaySettings.export.seatMapNote ? seatMapNote : ''
+                    };
+                    const patches = {
+                        seatTable: {
+                            type: window.docx.PatchType.DOCUMENT,
+                            children: [seatTable]
+                        }
+                    };
+                    Object.entries(textValues).forEach(([name, value]) => {
+                        if (!detectedNames.includes(name)) return;
+                        patches[name] = {
+                            type: window.docx.PatchType.PARAGRAPH,
+                            children: [new TextRun(String(value || ''))]
+                        };
+                    });
+                    blob = await window.docx.patchDocument({
+                        outputType: 'blob',
+                        data: activeTemplate.data,
+                        keepOriginalStyles: true,
+                        patches
+                    });
+                } catch (templateError) {
+                    console.warn('Word template export failed, using generated fallback:', templateError);
+                    blob = await Packer.toBlob(wordDocument);
+                }
                 const url = URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = url;
