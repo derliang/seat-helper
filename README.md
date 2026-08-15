@@ -9,7 +9,8 @@
 
 ## 📜 完整版本演進歷程 (Version History & Changelog)
 
-### 🚀 v3.0-dev (2026-08-15) - TODO-16 Google 官方原生登入按鈕
+### 🚀 v3.0-dev (2026-08-15) - TODO-17 Header 兩端平衡佈局
+- **📐 Header 兩端平衡佈局 (TODO-17)**：最左側放置 Google 登入與雲端狀態，中間 `flex-1` 留白，最右側對齊標題、版號與主題按鈕。
 - **🔑 Google 官方原生登入按鈕 (TODO-16)**：引入 Google Identity Services (`gsi/client`) 官方 SDK 與原生彩色 G Logo 登入容器。
 - **🎵 5 階段 Web Audio 儀式音效 (TODO-15, FIX-15A)**：零外部檔 Web Audio 音效，各階段抽籤完成播放靈動水晶鐘聲與 Victory Fanfare 勝利號角。
 - **💣 全站資料清理 (TODO-14)**：新增「清除所有資料」高警示按鈕 (`bomb` 圖示)，點擊警告並徹底清空名單、座位表、需求標籤與 `localStorage` 歷史紀錄。
