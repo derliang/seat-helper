@@ -226,33 +226,33 @@
             font-style: italic;
         }
 
-        #captureArea.hide-classroom-name #classroomNameSeatPreview,
-        #captureArea.hide-school-name .meta-school-name,
-        #captureArea.hide-school-year .meta-school-year,
-        #captureArea.hide-semester .meta-semester,
-        #captureArea.hide-advisor-name .meta-advisor-name,
-        #captureArea.hide-class-name .meta-class-name,
-        #captureArea.hide-front-door #frontDoorDisplay,
-        #captureArea.hide-rear-door #rearDoorDisplay,
-        #captureArea.hide-seat-map-note #seatMapNoteDisplay,
-        #captureArea.hide-front-label #screenContainer,
-        #captureArea.hide-row-labels #labelWrapper,
-        #captureArea.hide-seat-coordinates .coord-badge,
-        #captureArea.hide-needs .seat-card.has-needs .seat-indicator { display: none !important; }
-        #captureArea.hide-needs .seat-card.has-needs {
+        .seat-map-display-surface.hide-classroom-name #classroomNameSeatPreview,
+        .seat-map-display-surface.hide-school-name .meta-school-name,
+        .seat-map-display-surface.hide-school-year .meta-school-year,
+        .seat-map-display-surface.hide-semester .meta-semester,
+        .seat-map-display-surface.hide-advisor-name .meta-advisor-name,
+        .seat-map-display-surface.hide-class-name .meta-class-name,
+        .seat-map-display-surface.hide-front-door #frontDoorDisplay,
+        .seat-map-display-surface.hide-rear-door #rearDoorDisplay,
+        .seat-map-display-surface.hide-seat-map-note #seatMapNoteDisplay,
+        .seat-map-display-surface.hide-front-label #screenContainer,
+        .seat-map-display-surface.hide-row-labels #labelWrapper,
+        .seat-map-display-surface.hide-seat-coordinates .coord-badge,
+        .seat-map-display-surface.hide-needs .seat-card.has-needs .seat-indicator { display: none !important; }
+        .seat-map-display-surface.hide-needs .seat-card.has-needs {
             background: #f8faff !important;
             border-color: #e0e7ff !important;
         }
-        #captureArea.hide-needs .seat-card.has-needs .seat-name { color: #3730a3 !important; }
-        #captureArea.hide-disabled-seats .seat-card.seat-disabled {
+        .seat-map-display-surface.hide-needs .seat-card.has-needs .seat-name { color: #3730a3 !important; }
+        .seat-map-display-surface.hide-disabled-seats .seat-card.seat-disabled {
             background: #fff !important;
             border: 1px solid #f1f5f9 !important;
         }
-        #captureArea.hide-disabled-seats .seat-card.seat-disabled > :not(.coord-badge) { display: none !important; }
-        #captureArea.hide-empty-seats .seat-card.seat-empty,
-        #captureArea.hide-empty-seats.hide-disabled-seats .seat-card.seat-disabled { visibility: hidden; }
-        #captureArea .export-date { display: none; }
-        #captureArea.export-layout.show-export-date .export-date { display: block; }
+        .seat-map-display-surface.hide-disabled-seats .seat-card.seat-disabled > :not(.coord-badge) { display: none !important; }
+        .seat-map-display-surface.hide-empty-seats .seat-card.seat-empty,
+        .seat-map-display-surface.hide-empty-seats.hide-disabled-seats .seat-card.seat-disabled { visibility: hidden; }
+        .seat-map-display-surface .export-date { display: none; }
+        .seat-map-display-surface.export-layout.show-export-date .export-date { display: block; }
 
         .config-input-group {
             display: flex;
@@ -359,15 +359,14 @@
         }
         .seat-name {
             font-size: clamp(11px, 1.4vw, 18px);
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                max-width: 90%;
-                text-align: center;
-            }
-            .screen-bar { font-size: 1.5rem; letter-spacing: 1rem; text-indent: 1rem; }
-            .row-label-text { font-size: 12px; }
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 90%;
+            text-align: center;
         }
+        .screen-bar { font-size: 1.5rem; letter-spacing: 1rem; text-indent: 1rem; }
+        .row-label-text { font-size: 12px; }
         .tag-toggle {
             font-size: 13px;
             padding: 0 8px;
@@ -401,6 +400,20 @@
         }
         .history-item { cursor: pointer; transition: background-color 0.2s; }
         .history-item:hover { background-color: #f8fafc; }
+
+        button, input, select, textarea, .seat-card { touch-action: manipulation; }
+
+        @media (max-width: 767px) {
+            body { padding: 0.75rem !important; }
+            #seatPreviewColumn { overflow-x: auto; padding-bottom: 0.5rem; }
+            #captureArea { min-width: 720px; min-height: 720px; padding: 2rem; border-width: 8px; }
+            #captureArea .seat-card { min-height: 82px; }
+            #studentPicker, #historyModal { width: calc(100% - 1rem); border-radius: 1.5rem; }
+            #drawStatusBanner { padding: 0.75rem; }
+            #drawStatusText, #drawCurrentStudent { font-size: 1rem; }
+            button, select, input[type="checkbox"] { min-height: 44px; }
+            .tag-toggle { min-height: 44px; }
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -628,8 +641,8 @@
                 </div>
             </div>
 
-            <div class="xl:col-span-7">
-                <div id="captureArea" class="bg-white rounded-[3.5rem] p-10 md:p-14 shadow-2xl min-h-[850px] flex flex-col justify-between border-[12px] border-slate-50 relative">
+            <div id="seatPreviewColumn" class="xl:col-span-7 min-w-0">
+                <div id="captureArea" class="seat-map-display-surface bg-white rounded-[3.5rem] p-10 md:p-14 shadow-2xl min-h-[850px] flex flex-col justify-between border-[12px] border-slate-50 relative">
                     <h2 id="classroomNameSeatPreview" class="text-center text-2xl sm:text-3xl font-black mb-8" style="color: #1e293b;"></h2>
                     <p id="seatMapMetadata" class="text-center text-sm font-bold text-slate-500 -mt-5 mb-8"></p>
                     <div id="rearDoorDisplay" class="absolute left-3 top-[34%] text-lg font-black text-slate-700"></div>
@@ -755,21 +768,39 @@
                     <p id="jsonBackupStatus" class="text-sm font-bold text-slate-500 dark:text-slate-400 mt-3 min-h-[1.25rem]">匯入時會先驗證檔案，再詢問是否覆蓋。</p>
                 </section>
 
-                <section class="bg-white dark:bg-slate-900 p-7 sm:p-8 rounded-[2rem] shadow-sm border border-slate-200 dark:border-slate-700 border-t-4 border-t-sky-500">
+                <section id="displaySettingsSection" class="xl:col-span-12 bg-white dark:bg-slate-900 p-7 sm:p-8 rounded-[2rem] shadow-sm border border-slate-200 dark:border-slate-700 border-t-4 border-t-sky-500">
                     <div class="flex items-center gap-3 mb-5">
-                        <div class="bg-sky-50 dark:bg-sky-950/50 p-2.5 rounded-xl"><i data-lucide="layout-template" class="w-6 h-6 text-sky-500"></i></div>
+                        <div class="bg-sky-50 dark:bg-sky-950/50 p-3 rounded-xl"><i data-lucide="layout-template" class="w-7 h-7 text-sky-500"></i></div>
                         <div>
-                            <h2 class="text-lg font-black text-slate-800 dark:text-white">座位表顯示內容</h2>
-                            <p class="text-xs font-bold text-slate-500 dark:text-slate-400">預覽與匯出可分開設定</p>
+                            <h2 class="text-xl sm:text-2xl font-black text-slate-800 dark:text-white">座位表顯示內容</h2>
+                            <p class="text-sm font-bold text-slate-500 dark:text-slate-400">預覽與匯出可分開設定</p>
                         </div>
                     </div>
-                    <div class="grid grid-cols-[1fr_68px_68px] gap-x-2 gap-y-3 items-center text-sm">
-                        <div class="font-black text-slate-500">顯示項目</div>
-                        <div class="font-black text-center text-sky-600">預覽</div>
-                        <div class="font-black text-center text-indigo-600">匯出</div>
-                        <div id="displaySettingRows" class="contents"></div>
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                        <div class="lg:col-span-5">
+                            <div class="grid grid-cols-[1fr_76px_76px] gap-x-2 gap-y-3 items-center text-sm">
+                                <div class="font-black text-slate-500">顯示項目</div>
+                                <label class="font-black text-center text-sky-600 flex flex-col items-center gap-1 cursor-pointer">預覽
+                                    <input id="selectAllPreview" type="checkbox" onchange="toggleAllDisplaySettings('preview', this.checked)" class="w-5 h-5 accent-sky-600">
+                                </label>
+                                <label class="font-black text-center text-indigo-600 flex flex-col items-center gap-1 cursor-pointer">匯出
+                                    <input id="selectAllExport" type="checkbox" onchange="toggleAllDisplaySettings('export', this.checked)" class="w-5 h-5 accent-indigo-600">
+                                </label>
+                                <div id="displaySettingRows" class="contents"></div>
+                            </div>
+                            <p class="text-xs font-bold text-slate-400 mt-4">學生姓名固定顯示；匯出設定套用所有匯出格式。</p>
+                        </div>
+                        <div class="lg:col-span-7 bg-slate-100 dark:bg-slate-950 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 overflow-hidden">
+                            <div class="flex items-center justify-between gap-3 mb-3">
+                                <span class="font-black text-slate-700 dark:text-white">即時效果</span>
+                                <div class="flex gap-2">
+                                    <button id="previewModeBtn" type="button" onclick="setDisplayPreviewMode('preview')" class="px-3 py-2 rounded-xl text-xs font-black bg-sky-600 text-white">預覽效果</button>
+                                    <button id="exportModeBtn" type="button" onclick="setDisplayPreviewMode('export')" class="px-3 py-2 rounded-xl text-xs font-black bg-slate-200 text-slate-600">匯出效果</button>
+                                </div>
+                            </div>
+                            <div id="displaySettingsPreview" class="relative w-full overflow-hidden rounded-xl bg-white"></div>
+                        </div>
                     </div>
-                    <p class="text-xs font-bold text-slate-400 mt-4">學生姓名固定顯示；匯出設定套用所有匯出格式。</p>
                 </section>
                 </div>
 
@@ -858,10 +889,11 @@
         let soundEnabled = true;
         let phaseSoundMap = { priority: 'priority', rear: 'rear', noBack: 'noBack', noSide: 'noSide', final: 'final' };
         const defaultDisplaySettings = {
-            preview: { classroomName: true, schoolName: true, schoolYear: true, semester: true, advisorName: false, className: true, frontLabel: true, frontDoor: true, rearDoor: true, seatMapNote: false, rowLabels: true, seatCoordinates: true, needs: true, disabledSeats: true, emptySeats: true },
-            export: { classroomName: true, schoolName: true, schoolYear: true, semester: true, advisorName: true, className: true, frontLabel: true, frontDoor: true, rearDoor: true, seatMapNote: true, rowLabels: true, seatCoordinates: true, needs: false, disabledSeats: false, emptySeats: true, exportDate: false }
+            preview: { classroomName: false, schoolName: false, schoolYear: false, semester: false, advisorName: false, className: false, frontLabel: true, frontDoor: false, rearDoor: false, seatMapNote: false, rowLabels: true, seatCoordinates: true, needs: true, disabledSeats: true, emptySeats: true },
+            export: { classroomName: true, schoolName: true, schoolYear: true, semester: true, advisorName: true, className: true, frontLabel: true, frontDoor: false, rearDoor: false, seatMapNote: true, rowLabels: true, seatCoordinates: true, needs: false, disabledSeats: false, emptySeats: true, exportDate: true }
         };
         let displaySettings = JSON.parse(JSON.stringify(defaultDisplaySettings));
+        let displayPreviewMode = 'preview';
 
         const validPhaseSoundIds = ['priority', 'rear', 'noBack', 'noSide', 'final', 'gentleBell', 'crystalRise', 'digitalPop', 'warmChord', 'celebration'];
 
@@ -1031,7 +1063,9 @@
 
         function openAdminModal() {
             const adminGrid = document.getElementById('adminSettingsGrid');
+            const displaySection = document.getElementById('displaySettingsSection');
             const jsonSection = document.getElementById('jsonBackupSection');
+            if (displaySection.parentElement !== adminGrid) adminGrid.appendChild(displaySection);
             if (jsonSection.parentElement !== adminGrid) adminGrid.appendChild(jsonSection);
             document.getElementById('classroomNameInput').value = classroomName;
             document.getElementById('schoolNameInput').value = schoolName;
@@ -1046,6 +1080,7 @@
             document.getElementById('classroomNameStatus').textContent = '';
             updateSoundSettingUI();
             renderDisplaySettingRows();
+            renderDisplaySettingsPreview();
             document.getElementById('mainView').classList.add('hidden');
             document.getElementById('adminView').classList.remove('hidden');
             window.scrollTo(0, 0);
@@ -1094,6 +1129,7 @@
             seatMapNote = document.getElementById('seatMapNoteInput').value.trim();
             updateClassroomNameUI();
             saveData();
+            renderDisplaySettingsPreview();
             document.getElementById('classroomNameStatus').textContent = '已自動儲存於本機';
         }
 
@@ -1124,6 +1160,8 @@
                 <span class="text-center text-slate-300">—</span>
                 <label class="flex justify-center"><input type="checkbox" ${displaySettings.export.exportDate ? 'checked' : ''} onchange="saveDisplaySetting('export','exportDate',this.checked)" class="w-5 h-5 accent-indigo-600"></label>
             `;
+            document.getElementById('selectAllPreview').checked = Object.values(displaySettings.preview).every(Boolean);
+            document.getElementById('selectAllExport').checked = Object.values(displaySettings.export).every(Boolean);
         }
 
         function saveDisplaySetting(target, key, checked) {
@@ -1131,10 +1169,55 @@
             updateClassroomNameUI();
             applyCaptureDisplaySettings('preview');
             saveData();
+            renderDisplaySettingRows();
+            renderDisplaySettingsPreview();
+        }
+
+        function toggleAllDisplaySettings(target, checked) {
+            Object.keys(displaySettings[target]).forEach(key => displaySettings[target][key] = checked);
+            updateClassroomNameUI();
+            applyCaptureDisplaySettings('preview');
+            saveData();
+            renderDisplaySettingRows();
+            renderDisplaySettingsPreview();
+        }
+
+        function setDisplayPreviewMode(mode) {
+            displayPreviewMode = mode;
+            renderDisplaySettingsPreview();
+        }
+
+        function renderDisplaySettingsPreview() {
+            const host = document.getElementById('displaySettingsPreview');
+            const source = document.getElementById('captureArea');
+            if (!host || !source) return;
+            const clone = source.cloneNode(true);
+            clone.removeAttribute('id');
+            clone.className = source.className;
+            clone.style.width = '900px';
+            clone.style.minWidth = '900px';
+            clone.style.minHeight = '760px';
+            clone.style.transformOrigin = 'top left';
+            clone.style.pointerEvents = 'none';
+            applyDisplayClassesToArea(clone, displayPreviewMode);
+            clone.classList.toggle('export-layout', displayPreviewMode === 'export');
+            clone.classList.toggle('show-export-date', displayPreviewMode === 'export' && displaySettings.export.exportDate);
+            const cloneDate = clone.querySelector('#seatMapExportDate');
+            if (cloneDate) cloneDate.textContent = `匯出日期：${new Date().toLocaleDateString('zh-TW')}`;
+            host.replaceChildren(clone);
+            const scale = Math.min(0.72, Math.max(0.25, host.clientWidth / 900));
+            clone.style.transform = `scale(${scale})`;
+            const contentHeight = Math.max(clone.scrollHeight, clone.offsetHeight, 850);
+            host.style.height = `${Math.ceil(contentHeight * scale) + 8}px`;
+            document.getElementById('previewModeBtn').className = `px-3 py-2 rounded-xl text-xs font-black ${displayPreviewMode === 'preview' ? 'bg-sky-600 text-white' : 'bg-slate-200 text-slate-600'}`;
+            document.getElementById('exportModeBtn').className = `px-3 py-2 rounded-xl text-xs font-black ${displayPreviewMode === 'export' ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-600'}`;
         }
 
         function applyCaptureDisplaySettings(target) {
-            const area = document.getElementById('captureArea');
+            applyDisplayClassesToArea(document.getElementById('captureArea'), target);
+        }
+
+        function applyDisplayClassesToArea(area, target) {
             const settings = displaySettings[target];
             const classMap = {
                 classroomName: 'hide-classroom-name', schoolName: 'hide-school-name', schoolYear: 'hide-school-year', semester: 'hide-semester', advisorName: 'hide-advisor-name',
