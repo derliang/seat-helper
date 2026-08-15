@@ -1758,16 +1758,31 @@
         };
 
         document.getElementById('btnResetAll').onclick = () => {
-            if (confirm("⚠️ 警告！這將會清除全站所有資料（包含學生名單、座位表設定、個別需求標籤與儲存的歷史紀錄），確定要清除嗎？")) {
-                students = [];
-                seating = [];
-                drawHistory = [];
-                const rawInput = document.getElementById('rawInput');
-                if (rawInput) rawInput.value = '';
-                localStorage.removeItem('seatHelperData_v2');
-                localStorage.removeItem('seatHelperHistory_v2');
-                initGrid();
-            }
+            if (!confirm("⚠️ 警告！這會清除名單、座位、需求、歷史紀錄及所有本機設定。\n\n此操作無法復原，確定要繼續嗎？")) return;
+            if (!confirm("最後確認：是否清除座位小幫手的所有本機資料？")) return;
+
+            students = [];
+            seating = [];
+            gridConfig = { cols: 7, rows: 7 };
+            activeSeatIdx = null;
+            mergeRight = [];
+            drawHistory = [];
+            classroomName = '113學年度 3年1班';
+            soundEnabled = true;
+            phaseSoundMap = { priority: 'priority', rear: 'rear', noBack: 'noBack', noSide: 'noSide', final: 'final' };
+            displaySettings = JSON.parse(JSON.stringify(defaultDisplaySettings));
+
+            document.getElementById('rawInput').value = '';
+            document.getElementById('cfgCols').value = gridConfig.cols;
+            document.getElementById('cfgRows').value = gridConfig.rows;
+            ['seatHelperDataV2', 'seatHelperTheme', 'seatHelperData_v2', 'seatHelperHistory_v2'].forEach(key => localStorage.removeItem(key));
+
+            initGrid();
+            updateClassroomNameUI();
+            updateSoundSettingUI();
+            renderDisplaySettingRows();
+            initTheme();
+            localStorage.removeItem('seatHelperDataV2');
         };
 
         document.getElementById('cfgCols').oninput = initGrid;
