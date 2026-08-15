@@ -8,6 +8,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/docx@9.7.1/dist/index.umd.cjs"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
@@ -2277,68 +2278,196 @@
             }
         }
 
-        function exportToWord() {
-            let htmlString = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
-            <head><meta charset="utf-8"><title>座位表</title>
-            <style>
-                table { border-collapse: collapse; width: 100%; text-align: center; font-family: 'Microsoft JhengHei', sans-serif; margin-bottom: 20px; }
-                td, th { border: 1px solid #000; padding: 12px; font-size: 14pt; height: 50px; }
-                .empty { background-color: #ffffff; ${displaySettings.export.emptySeats ? '' : 'border-color: transparent;'} }
-                .disabled { background-color: #ffe4e6; color: #e11d48; }
-                .header-row { background-color: #ffffff; font-weight: bold; }
-                .front { background-color: #1e293b; color: white; font-weight: bold; font-size: 18pt; letter-spacing: 15px; text-align: center; }
-            </style>
-            </head><body>
-            ${displaySettings.export.classroomName ? `<h2 style="text-align:center;">${classroomName}</h2>` : ''}
-            ${(displaySettings.export.schoolName && schoolName) ? `<p style="text-align:center;">${schoolName}</p>` : ''}
-            ${(displaySettings.export.schoolYear && schoolYear) ? `<p style="text-align:center;">${schoolYear}學年度</p>` : ''}
-            ${(displaySettings.export.semester && semester) ? `<p style="text-align:center;">${semester}</p>` : ''}
-            ${(displaySettings.export.className && className) ? `<p style="text-align:center;">${className}</p>` : ''}
-            ${(displaySettings.export.advisorName && advisorName) ? `<p style="text-align:center;">導師：${advisorName}</p>` : ''}
-            ${(displaySettings.export.rearDoor && rearDoor) ? `<p><b>${rearDoor}</b></p>` : ''}
-            ${displaySettings.export.exportDate ? `<p style="text-align:center;">匯出日期：${new Date().toLocaleDateString('zh-TW')}</p>` : ''}
-            <table>`;
+        async function exportToWord() {
+            if (!window.docx) {
+                alert('Word 匯出元件尚未載入完成，請確認網路連線後重新整理頁面。');
+                return;
+            }
 
-            // 1. 深位從大到小 (gridConfig.rows 倒數到 1)
+            const {
+                Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
+                WidthType, BorderStyle, AlignmentType, VerticalAlign, ShadingType,
+                TableLayoutType, HeightRule, PageOrientation, PageBorderDisplay,
+                PageBorderOffsetFrom, PageBorderZOrder
+            } = window.docx;
+            const templateFont = 'DFKai-SB';
+            const totalColumns = gridConfig.cols + 1;
+            const tableWidth = 10200;
+            const cellWidth = Math.floor(tableWidth / totalColumns);
+            const rowHeight = Math.max(560, Math.min(1240, Math.floor(8680 / gridConfig.rows)));
+            const thinBorder = { style: BorderStyle.SINGLE, size: 6, color: '000000' };
+            const hiddenBorder = { style: BorderStyle.SINGLE, size: 1, color: 'FFFFFF' };
+
+            const makeParagraph = (text, options = {}) => new Paragraph({
+                alignment: options.alignment || AlignmentType.CENTER,
+                spacing: { before: options.before || 0, after: options.after || 0 },
+                children: [new TextRun({
+                    text,
+                    font: templateFont,
+                    size: options.size || 24,
+                    bold: options.bold || false,
+                    color: options.color || '000000',
+                    characterSpacing: options.characterSpacing || 0
+                })]
+            });
+
+            const makeCell = (paragraphs, options = {}) => new TableCell({
+                children: paragraphs,
+                columnSpan: options.columnSpan,
+                width: { size: options.width || cellWidth, type: WidthType.DXA },
+                verticalAlign: VerticalAlign.CENTER,
+                margins: { top: 30, bottom: 30, left: 50, right: 50 },
+                borders: options.borders || {
+                    top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder
+                },
+                shading: options.fill ? { type: ShadingType.CLEAR, fill: options.fill, color: 'auto' } : undefined
+            });
+
+            const children = [];
+            if (displaySettings.export.schoolName && schoolName) {
+                children.push(makeParagraph(schoolName, { size: 48, after: 90 }));
+            }
+            if (displaySettings.export.classroomName) {
+                children.push(makeParagraph(classroomName || '座位表', {
+                    size: 72, bold: true, after: 120, characterSpacing: 180
+                }));
+            }
+
+            const metadata = [
+                displaySettings.export.schoolYear && schoolYear ? `${schoolYear}學年度` : '',
+                displaySettings.export.semester && semester ? semester : '',
+                displaySettings.export.className && className ? className : '',
+                displaySettings.export.advisorName && advisorName ? `導師 ${advisorName}` : ''
+            ].filter(Boolean).join('　');
+            if (metadata) children.push(makeParagraph(metadata, { size: 48, after: 40 }));
+            if (displaySettings.export.exportDate) {
+                children.push(makeParagraph(`匯出日期 ${new Date().toLocaleDateString('zh-TW')}`, {
+                    size: 20, alignment: AlignmentType.RIGHT, after: 80
+                }));
+            }
+            if (displaySettings.export.rearDoor && rearDoor) {
+                children.push(makeParagraph(rearDoor, { size: 22, alignment: AlignmentType.LEFT, after: 30 }));
+            }
+
+            const tableRows = [];
             for (let w = gridConfig.rows; w >= 1; w--) {
-                htmlString += `<tr><th style="background-color:#ffffff;">${displaySettings.export.rowLabels ? `深位 ${w}` : ''}</th>`;
+                const cells = [makeCell([
+                    makeParagraph(displaySettings.export.rowLabels ? String(w) : '', { size: 28, bold: true })
+                ])];
+
                 for (let p = 1; p <= gridConfig.cols; p++) {
                     const idx = getIdx(p, w);
-                    const s = seating[idx];
-                    if (s === "disabled") {
-                        htmlString += displaySettings.export.disabledSeats ? `<td class="disabled">[禁排區]</td>` : `<td class="empty"></td>`;
-                    } else if (s?.name) {
-                        const student = students.find(st => st.name === s.name || st.displayName === s.name);
-                        htmlString += `<td><b>${getExportStudentText(student, s.name)}</b>${displaySettings.export.seatCoordinates ? `<br><small>${getCoord(idx).str}</small>` : ''}</td>`;
-                    } else {
-                        htmlString += `<td class="empty"></td>`;
+                    const seat = seating[idx];
+                    let paragraphs = [makeParagraph('', { size: 24 })];
+                    let fill;
+                    let borders;
+
+                    if (seat === 'disabled') {
+                        if (displaySettings.export.disabledSeats) {
+                            paragraphs = [makeParagraph('禁排', { size: 22, bold: true, color: 'E11D48' })];
+                            fill = 'FFE4E6';
+                        } else if (!displaySettings.export.emptySeats) {
+                            borders = { top: hiddenBorder, bottom: hiddenBorder, left: hiddenBorder, right: hiddenBorder };
+                        }
+                    } else if (seat?.name) {
+                        const student = students.find(st => st.name === seat.name || st.displayName === seat.name);
+                        paragraphs = [makeParagraph(getExportStudentText(student, seat.name), { size: 24, bold: true })];
+                        if (displaySettings.export.seatCoordinates) {
+                            paragraphs.push(makeParagraph(getCoord(idx).str, { size: 16, color: '64748B' }));
+                        }
+                    } else if (!displaySettings.export.emptySeats) {
+                        borders = { top: hiddenBorder, bottom: hiddenBorder, left: hiddenBorder, right: hiddenBorder };
                     }
+
+                    cells.push(makeCell(paragraphs, { fill, borders }));
                 }
-                htmlString += `</tr>`;
+                tableRows.push(new TableRow({
+                    height: { value: rowHeight, rule: HeightRule.ATLEAST },
+                    children: cells
+                }));
             }
 
-            // 2. 橫排標題列在深位 1 下方
             if (displaySettings.export.rowLabels) {
-                htmlString += `<tr class="header-row"><th>深位 \\ 橫排</th>`;
+                const labelCells = [makeCell([makeParagraph('', { size: 22 })])];
                 for (let p = 1; p <= gridConfig.cols; p++) {
-                    htmlString += `<th>第 ${p} 排</th>`;
+                    labelCells.push(makeCell([makeParagraph(`第 ${p} 排`, { size: 22, bold: true })]));
                 }
-                htmlString += `</tr>`;
+                tableRows.push(new TableRow({
+                    height: { value: 900, rule: HeightRule.ATLEAST },
+                    children: labelCells
+                }));
             }
 
-            // 3. 大屏列在最下方
-            if (displaySettings.export.frontLabel) htmlString += `<tr><td colspan="${gridConfig.cols + 1}" class="front">${frontLabel || '大屏'}</td></tr>`;
-            htmlString += `</table>${(displaySettings.export.frontDoor && frontDoor) ? `<p><b>${frontDoor}</b></p>` : ''}${(displaySettings.export.seatMapNote && seatMapNote) ? `<p style="text-align:right;">${seatMapNote}</p>` : ''}</body></html>`;
+            if (displaySettings.export.frontLabel) {
+                tableRows.push(new TableRow({
+                    height: { value: 1000, rule: HeightRule.ATLEAST },
+                    children: [makeCell([
+                        makeParagraph(frontLabel || '講台／大屏', {
+                            size: 48, bold: true, color: 'FFFFFF', characterSpacing: 100
+                        })
+                    ], { columnSpan: totalColumns, width: tableWidth, fill: '000000' })]
+                }));
+            }
 
-            const blob = new Blob(['\ufeff', htmlString], { type: 'application/msword' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = getExportFileName('doc');
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
+            children.push(new Table({
+                rows: tableRows,
+                width: { size: tableWidth, type: WidthType.DXA },
+                columnWidths: Array(totalColumns).fill(cellWidth),
+                layout: TableLayoutType.FIXED,
+                alignment: AlignmentType.CENTER,
+                borders: {
+                    top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder,
+                    insideHorizontal: thinBorder, insideVertical: thinBorder
+                }
+            }));
+
+            if (displaySettings.export.frontDoor && frontDoor) {
+                children.push(makeParagraph(frontDoor, { size: 22, alignment: AlignmentType.LEFT, before: 40 }));
+            }
+            if (displaySettings.export.seatMapNote && seatMapNote) {
+                children.push(makeParagraph(seatMapNote, { size: 20, alignment: AlignmentType.RIGHT, before: 30 }));
+            }
+
+            const pageBorder = { style: BorderStyle.DOUBLE, size: 12, color: '000000', space: 12 };
+            const wordDocument = new Document({
+                creator: '座位小幫手',
+                title: classroomName || '座位表',
+                sections: [{
+                    properties: {
+                        page: {
+                            size: { width: 11906, height: 16838, orientation: PageOrientation.PORTRAIT },
+                            margin: { top: 850, right: 850, bottom: 850, left: 850 },
+                            borders: {
+                                pageBorders: {
+                                    display: PageBorderDisplay.ALL_PAGES,
+                                    offsetFrom: PageBorderOffsetFrom.PAGE,
+                                    zOrder: PageBorderZOrder.FRONT
+                                },
+                                pageBorderTop: pageBorder,
+                                pageBorderRight: pageBorder,
+                                pageBorderBottom: pageBorder,
+                                pageBorderLeft: pageBorder
+                            }
+                        }
+                    },
+                    children
+                }]
+            });
+
+            try {
+                const blob = await Packer.toBlob(wordDocument);
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = getExportFileName('docx');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error('Word export failed:', error);
+                alert('Word 匯出失敗，請重新整理後再試一次。');
+            }
         }
 
         if(!loadData()) {
