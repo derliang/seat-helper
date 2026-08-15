@@ -534,7 +534,12 @@
                     </div>
 
                     <div class="pt-6 border-t border-slate-100">
-                        <span class="unified-title"><i data-lucide="play-circle" class="text-indigo-500"></i> 第三步：執行抽籤</span>
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="unified-title mb-0"><i data-lucide="play-circle" class="text-indigo-500"></i> 第三步：執行抽籤</span>
+                            <button id="btnResetDraw" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-black border border-rose-400/50 shadow-sm transition-colors flex items-center gap-1">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> 清除抽籤
+                            </button>
+                        </div>
                         <div class="grid grid-cols-2 gap-4 mb-6">
                             <button id="btnDrawPriority" onclick="runSinglePhase('priority')" class="btn-main bg-emerald-500 hover:bg-emerald-600 text-white py-4 shadow-lg">
                                 <i data-lucide="arrow-up-to-line"></i> 1. 抽【坐靠前】
@@ -577,11 +582,10 @@
                         </div>
                     </div>
 
-                    <div class="pt-6 mt-6 border-t border-slate-100 grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <button id="btnResetDraw" class="btn-main bg-rose-600 hover:bg-rose-500 text-white py-3 text-sm font-black flex items-center justify-center gap-1 shadow-sm"><i data-lucide="trash-2" class="w-4 h-4"></i> 清除抽籤</button>
-                        <button id="btnResetAll" class="btn-main bg-rose-50 text-rose-500 py-3 text-sm">全部重置</button>
-                        <button onclick="saveHistory()" class="btn-main bg-indigo-50 text-indigo-600 py-3 text-sm"><i data-lucide="save"></i>儲存結果</button>
-                        <button onclick="openHistory()" class="btn-main bg-slate-800 text-white py-3 text-sm"><i data-lucide="history"></i>歷史紀錄</button>
+                    <div class="pt-6 mt-6 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <button onclick="saveHistory()" class="btn-main bg-indigo-50 text-indigo-600 py-3 text-sm font-black flex items-center justify-center gap-1 shadow-sm"><i data-lucide="save" class="w-4 h-4"></i> 儲存結果</button>
+                        <button onclick="openHistory()" class="btn-main bg-slate-800 text-white py-3 text-sm font-black flex items-center justify-center gap-1 shadow-sm"><i data-lucide="history" class="w-4 h-4"></i> 歷史紀錄</button>
+                        <button id="btnResetAll" class="btn-main bg-rose-50 text-rose-500 py-3 text-sm font-black flex items-center justify-center gap-1 shadow-sm">全部重置</button>
                     </div>
                 </div>
             </div>
