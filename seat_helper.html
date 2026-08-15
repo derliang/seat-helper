@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>座位小幫手 v3.1</title>
+    <title>座位小幫手 v3.1.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>tailwind.config = { darkMode: 'class' };</script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -311,7 +311,9 @@
         .seat-map-display-surface.hide-rear-door #rearDoorDisplay,
         .seat-map-display-surface.hide-seat-map-note #seatMapNoteDisplay,
         .seat-map-display-surface.hide-front-label #screenContainer,
-        .seat-map-display-surface.hide-row-labels #labelWrapper,
+        .seat-map-display-surface.hide-row-labels #labelWrapper {
+            display: none !important;
+        }
         /* 五階段分類色條是抽籤結果的必要辨識資訊，不隨需求底色設定隱藏。 */
         .seat-map-display-surface.hide-needs .seat-card.has-needs {
             background: #f8faff !important;
@@ -663,7 +665,7 @@
                             <i data-lucide="layout-grid" class="text-indigo-600 w-6 h-6 sm:w-7 sm:h-7"></i>
                         </div>
                         <h1 id="appTitle" class="text-2xl sm:text-3xl font-black italic text-indigo-600 leading-none">座位小幫手</h1>
-                        <span id="appVersionBadge" class="bg-indigo-600 text-white text-xs sm:text-sm font-black px-3 py-1 rounded-full shadow-md tracking-wider">v3.1</span>
+                        <span id="appVersionBadge" class="bg-indigo-600 text-white text-xs sm:text-sm font-black px-3 py-1 rounded-full shadow-md tracking-wider">v3.1.1</span>
                     </div>
                     <p id="classroomNameDisplay" class="text-xs sm:text-sm font-black text-slate-500 dark:text-slate-400"></p>
             </div>
@@ -1149,7 +1151,7 @@
     </div>
 
     <script>
-        const APP_VERSION = "v3.1";
+        const APP_VERSION = "v3.1.1";
 
         function initTheme() {
             const saved = localStorage.getItem('seatHelperTheme');
@@ -1222,8 +1224,8 @@
 
         let drawPreferences = normalizeDrawPreferences();
         const defaultDisplaySettings = {
-            preview: { classroomName: false, schoolName: false, schoolYear: false, semester: false, advisorName: false, className: false, frontLabel: true, frontDoor: false, rearDoor: false, seatMapNote: false, rowLabels: true, needs: true, disabledSeats: true, emptySeats: true },
-            export: { classroomName: true, schoolName: true, schoolYear: true, semester: true, advisorName: true, className: true, frontLabel: true, frontDoor: false, rearDoor: false, seatMapNote: true, rowLabels: true, needs: false, disabledSeats: false, emptySeats: true, exportDate: true }
+            preview: { classroomName: true, schoolName: true, schoolYear: true, semester: true, advisorName: false, className: true, frontLabel: true, frontDoor: false, rearDoor: false, seatMapNote: false, rowLabels: true, needs: false, disabledSeats: true, emptySeats: true },
+            export: { classroomName: true, schoolName: true, schoolYear: true, semester: true, advisorName: true, className: true, frontLabel: true, frontDoor: false, rearDoor: false, seatMapNote: true, rowLabels: true, needs: false, disabledSeats: false, emptySeats: false, exportDate: true }
         };
         let displaySettings = JSON.parse(JSON.stringify(defaultDisplaySettings));
         let displayPreviewMode = 'preview';
@@ -2074,7 +2076,11 @@
         function updateUI() {
             const tbody = document.getElementById('studentTableBody');
             tbody.innerHTML = '';
+            const tableRows = document.createDocumentFragment();
+            const studentBySeatName = new Map();
             students.forEach((s, i) => {
+                if (!studentBySeatName.has(s.name)) studentBySeatName.set(s.name, s);
+                if (s.displayName && !studentBySeatName.has(s.displayName)) studentBySeatName.set(s.displayName, s);
                 const seatNo = s.seatNo || (i + 1);
                 const tr = document.createElement('tr');
                 const ps = s.currentPos ? `<span class="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-lg font-black text-sm whitespace-nowrap">${s.currentPos}</span>` : `<span class="text-slate-300 text-sm whitespace-nowrap">未安排</span>`;
@@ -2093,8 +2099,9 @@
                         <button onclick="toggleTag(${i}, 'noSide')" ${disAttr} class="tag-toggle noSide ${s.tags.has('noSide')?'active':''} ${disClass}">不邊</button>
                     </td>
                 `;
-                tbody.appendChild(tr);
+                tableRows.appendChild(tr);
             });
+            tbody.appendChild(tableRows);
 
             seating.forEach((data, i) => {
                 const seat = document.getElementById(`seat-${i}`);
@@ -2113,7 +2120,7 @@
                     seat.className = `seat-card seat-disabled bg-rose-50 border-rose-200 border-2 border-dashed flex items-center justify-center ${mergeBorder}`;
                     seat.innerHTML = `${badge}<i data-lucide="ban" class="text-rose-400"></i>`;
                 } else if (data?.name) {
-                    const student = students.find(s => s.name === data.name || (s.displayName && s.displayName === data.name));
+                    const student = studentBySeatName.get(data.name);
                     const dispName = student ? (student.displayName || `${student.seatNo || ''}${student.name}`) : data.name;
                     let statusClass = 'status-normal';
                     if (student) {
@@ -2135,24 +2142,28 @@
             ['priority', 'rear', 'noBack', 'noSide'].forEach(id => {
                 const list = document.getElementById(`list-${id}`);
                 const box = document.getElementById(`box-${id}`);
-                list.innerHTML = '';
                 const targets = students.filter(s => s.tags.has(id));
                 box.classList.toggle('finished', targets.length > 0 && targets.every(s => s.currentPos));
-                if(targets.length === 0) list.innerHTML = `<span class="text-[9px] text-slate-300">無需求</span>`;
-                targets.forEach(s => {
+                list.innerHTML = targets.length === 0
+                    ? `<span class="text-[9px] text-slate-300">無需求</span>`
+                    : targets.map(s => {
                     const c = s.currentPos ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-400';
                     const dispName = s.displayName || `${s.seatNo || ''}${s.name}`;
                     const posStr = s.currentPos ? ` (${s.currentPos})` : '';
-                    list.innerHTML += `<span class="${c} px-2 py-0.5 text-[10px] font-bold rounded border border-slate-200">${dispName}${posStr}</span>`;
-                });
+                    return `<span class="${c} px-2 py-0.5 text-[10px] font-bold rounded border border-slate-200">${dispName}${posStr}</span>`;
+                }).join('');
             });
 
             const totalSeats = gridConfig.cols * gridConfig.rows;
-            const disabledCount = seating.filter(s => s === "disabled").length;
+            let disabledCount = 0;
+            let assignedCount = 0;
+            seating.forEach(seat => {
+                if (seat === 'disabled') disabledCount++;
+                else if (seat?.name) assignedCount++;
+            });
             const availableSeats = totalSeats - disabledCount;
 
             const studentCount = students.length;
-            const assignedCount = seating.filter(s => s?.name).length;
             const unassignedCount = Math.max(0, studentCount - assignedCount);
 
             document.getElementById('seatCountText').textContent = totalSeats;
@@ -2265,13 +2276,9 @@
             return { lastSeating, lastConfig, lastPos };
         }
 
-        function findStudentBySeatName(seatName) {
-            return students.find(candidate => candidate.name === seatName || candidate.displayName === seatName);
-        }
-
-        function getIdealHeightDepth(student) {
+        function getIdealHeightDepth(student, measuredStudents = null) {
             if (!Number.isFinite(student.height)) return null;
-            const measured = students.filter(candidate => Number.isFinite(candidate.height)).sort((a, b) => a.height - b.height);
+            const measured = measuredStudents || students.filter(candidate => Number.isFinite(candidate.height)).sort((a, b) => a.height - b.height);
             if (measured.length < 2 || measured[0].height === measured[measured.length - 1].height) return null;
             const matchingRanks = measured.map((candidate, index) => candidate.height === student.height ? index : -1).filter(index => index >= 0);
             const averageRank = matchingRanks.reduce((sum, rank) => sum + rank, 0) / matchingRanks.length;
@@ -2298,6 +2305,24 @@
                 if (pair[1] === student.seatNo) return [pair[0]];
                 return [];
             }));
+            const studentBySeatName = new Map();
+            students.forEach(candidate => {
+                if (!studentBySeatName.has(candidate.name)) studentBySeatName.set(candidate.name, candidate);
+                if (candidate.displayName && !studentBySeatName.has(candidate.displayName)) studentBySeatName.set(candidate.displayName, candidate);
+            });
+            const useHeightPreference = drawPreferences.considerHeight && hasCompleteHeightData() && Number.isFinite(student.height);
+            const measuredStudents = useHeightPreference
+                ? [...students].sort((a, b) => a.height - b.height)
+                : null;
+            const idealHeightDepth = useHeightPreference ? getIdealHeightDepth(student, measuredStudents) : null;
+            const occupiedStudentSeats = useHeightPreference
+                ? seating.reduce((occupied, seat, index) => {
+                    if (!seat?.name) return occupied;
+                    const occupiedStudent = studentBySeatName.get(seat.name);
+                    if (Number.isFinite(occupiedStudent?.height)) occupied.push({ student: occupiedStudent, coord: getCoord(index) });
+                    return occupied;
+                }, [])
+                : [];
 
             const scoredCandidates = candidateIndices.map(idx => {
                 const { p, w } = getCoord(idx);
@@ -2316,16 +2341,11 @@
                         }
                     });
                 }
-                if (drawPreferences.considerHeight && hasCompleteHeightData() && Number.isFinite(student.height)) {
-                    const idealDepth = getIdealHeightDepth(student);
-                    if (idealDepth !== null) {
-                        penalty += Math.abs(w - idealDepth) * drawPriorityWeights[drawPreferences.considerHeightPriority];
+                if (useHeightPreference) {
+                    if (idealHeightDepth !== null) {
+                        penalty += Math.abs(w - idealHeightDepth) * drawPriorityWeights[drawPreferences.considerHeightPriority];
                     }
-                    seating.forEach((seat, otherIdx) => {
-                        if (!seat?.name) return;
-                        const otherStudent = findStudentBySeatName(seat.name);
-                        if (!Number.isFinite(otherStudent?.height)) return;
-                        const otherCoord = getCoord(otherIdx);
+                    occupiedStudentSeats.forEach(({ student: otherStudent, coord: otherCoord }) => {
                         if (otherCoord.p !== p) return;
                         const threshold = drawPreferences.heightThreshold;
                         const blocksOther = w < otherCoord.w && student.height > otherStudent.height + threshold;
@@ -2335,7 +2355,7 @@
                 }
                 if (drawPreferences.separateStudents && separatedSeatNos.size > 0) {
                     getSurroundingSeatIndices(idx, gridConfig).forEach(neighborIdx => {
-                        const neighborStudent = findStudentBySeatName(seating[neighborIdx]?.name);
+                        const neighborStudent = studentBySeatName.get(seating[neighborIdx]?.name);
                         if (neighborStudent && separatedSeatNos.has(neighborStudent.seatNo)) {
                             penalty += drawPriorityWeights[drawPreferences.separateStudentsPriority];
                         }
