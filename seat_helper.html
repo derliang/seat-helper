@@ -557,7 +557,7 @@
                             <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> 清除名單
                         </button>
                     </div>
-                    <textarea id="rawInput" class="w-full h-36 bg-white/10 border border-white/20 rounded-2xl p-4 text-base focus:ring-2 focus:ring-indigo-400 outline-none resize-none mb-4 text-white placeholder-white/30 font-bold" placeholder="每行輸入一個姓名..."></textarea>
+                    <textarea id="rawInput" class="w-full h-36 bg-white/10 border border-white/20 rounded-2xl p-4 text-base focus:ring-2 focus:ring-indigo-400 outline-none resize-none mb-4 text-white placeholder-white/30 font-bold" placeholder="每行一位學生，可貼上姓名、座號＋姓名，或試算表兩欄資料..."></textarea>
                     <button id="btnInit" class="btn-main w-full bg-indigo-500 hover:bg-indigo-400 py-4 text-white shadow-xl">
                         <i data-lucide="arrow-right-circle"></i> 匯入並進行下一步
                     </button>
@@ -1954,17 +1954,57 @@
             document.getElementById('historyModal').classList.add('hidden');
         }
 
+        function parseRosterInput(raw) {
+            const parsed = [];
+            raw.replace(/\r/g, '').split('\n').forEach(line => {
+                const value = line.trim();
+                if (!value || /^(座號|學號)\s*([,，\t ]+\s*)?(姓名|學生姓名)?$/i.test(value)) return;
+                const cells = value.split(/[\t,，]/).map(cell => cell.trim()).filter(Boolean);
+                if (cells.length > 1) {
+                    if (/^\d{1,3}$/.test(cells[0])) {
+                        const name = cells.find((cell, index) => index > 0 && !/^\d+$/.test(cell));
+                        if (name && !/^(姓名|學生姓名)$/i.test(name)) parsed.push({ seatNo: Number(cells[0]), name });
+                    } else {
+                        cells.filter(cell => !/^(座號|學號|姓名|學生姓名)$/i.test(cell)).forEach(name => parsed.push({ seatNo: null, name }));
+                    }
+                    return;
+                }
+                const numbered = value.match(/^(\d{1,3})(?:[\s.、,，\-_:：]+)?(.+)$/);
+                if (numbered && numbered[2].trim()) parsed.push({ seatNo: Number(numbered[1]), name: numbered[2].trim() });
+                else parsed.push({ seatNo: null, name: value });
+            });
+
+            const explicitNumbers = parsed.filter(item => item.seatNo !== null).map(item => item.seatNo);
+            const duplicateNumber = explicitNumbers.find((number, index) => explicitNumbers.indexOf(number) !== index);
+            if (duplicateNumber !== undefined) throw new Error(`座號 ${duplicateNumber} 重複，請修正後再匯入。`);
+            const usedNumbers = new Set(explicitNumbers);
+            let nextNumber = 1;
+            parsed.forEach(item => {
+                if (item.seatNo !== null) return;
+                while (usedNumbers.has(nextNumber)) nextNumber++;
+                item.seatNo = nextNumber;
+                usedNumbers.add(nextNumber);
+            });
+            return parsed;
+        }
+
         document.getElementById('btnInit').onclick = () => {
             const input = document.getElementById('rawInput').value.trim();
             if(!input) return;
-            students = input.split('\n').map(n => n.trim()).filter(n => n).map((name, i) => {
-                const seatNo = i + 1;
-                const displayName = `${seatNo}${name}`;
+            let roster;
+            try {
+                roster = parseRosterInput(input);
+                if (!roster.length) throw new Error('找不到可匯入的學生資料。');
+            } catch (error) {
+                alert(error.message);
+                return;
+            }
+            students = roster.map(({ seatNo, name }, i) => {
                 return {
                     id: i,
                     seatNo: seatNo,
                     name: name,
-                    displayName: displayName,
+                    displayName: `${seatNo}${name}`,
                     tags: new Set(),
                     currentPos: null
                 };
