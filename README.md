@@ -9,7 +9,8 @@
 
 ## 📜 完整版本演進歷程 (Version History & Changelog)
 
-### 🚀 v3.0-dev (2026-08-15) - TODO-15 & FIX-15A 5 階段 Web Audio 儀式音效
+### 🚀 v3.0-dev (2026-08-15) - TODO-16 Google 官方原生登入按鈕
+- **🔑 Google 官方原生登入按鈕 (TODO-16)**：引入 Google Identity Services (`gsi/client`) 官方 SDK 與原生彩色 G Logo 登入容器。
 - **🎵 5 階段 Web Audio 儀式音效 (TODO-15, FIX-15A)**：零外部檔 Web Audio 音效，各階段抽籤完成播放靈動水晶鐘聲與 Victory Fanfare 勝利號角。
 - **💣 全站資料清理 (TODO-14)**：新增「清除所有資料」高警示按鈕 (`bomb` 圖示)，點擊警告並徹底清空名單、座位表、需求標籤與 `localStorage` 歷史紀錄。
 - **📐 三步驟對稱清除按鈕架構 (TODO-13)**：將「清除抽籤」按鈕移至第三步標題列右側，使 1~3 步驟清除按鈕形成完美視覺對稱。

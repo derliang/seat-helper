@@ -9,6 +9,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -441,6 +442,21 @@
                             <span>✨ 併排彩色標籤</span>
                             <span>✨ 清除名單按鈕</span>
                         </div>
+                    </div>
+                    <!-- Google 官方原生 Sign-in 按鈕容器 (TODO-16) -->
+                    <div id="g_id_onload"
+                         data-client_id="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
+                         data-context="signin"
+                         data-ux_mode="popup"
+                         data-auto_prompt="false">
+                    </div>
+                    <div class="g_id_signin"
+                         data-type="standard"
+                         data-shape="pill"
+                         data-theme="outline"
+                         data-text="signin_with"
+                         data-size="medium"
+                         data-logo_alignment="left">
                     </div>
                     <button onclick="toggleTheme()" id="themeToggleBtn" title="切換深色/淺色主題" class="p-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 hover:scale-105 transition-all flex items-center justify-center">
                         <i data-lucide="moon" class="w-5 h-5 text-amber-400"></i>
