@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>座位小幫手 v2.7</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --bg-main: #f1f5f9;
+            --dark-text: #1e293b;
+            --color-priority: #10b981; 
+            --color-noSide: #f59e0b;   
+            --color-noBack: #8b5cf6;   
+            --color-normal: #6366f1;   
+            --color-rear: #64748b; /* 新增靠後顏色：深藍色 Slate */
+        }
+
+        body { 
+            background-color: var(--bg-main); 
+            color: var(--dark-text); 
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            transition: background-color 0.3s ease;
+        }
+
+        .unified-title {
+            font-size: 1.25rem;
+            font-weight: 900;
+            font-style: italic;
+            color: var(--dark-text);
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .step-card {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            border-radius: 2rem;
+            padding: 2.2rem;
+            color: white;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .config-card {
+            background: #ffffff;
+            border-radius: 2rem;
+            padding: 2rem;
+            color: var(--dark-text);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            border: 1px solid #e2e8f0;
+        }
+
+        .btn-main {
+            border-radius: 1rem;
+            font-weight: 800;
+            font-size: 1.15rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+        .btn-main:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        .btn-main:active { transform: translateY(0) scale(0.97); }
+        .btn-main:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+        .tag-toggle {
+            font-size: 14px;
+            padding: 0 10px;
+            height: 44px;
+            min-width: 75px;
+            border-radius: 12px;
+            font-weight: 800;
+            border: 1.5px solid #e2e8f0;
+            background: #ffffff;
+            color: #64748b;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .tag-toggle.active { color: white; border-color: transparent; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .tag-toggle.priority.active { background: var(--color-priority); }
+        .tag-toggle.noSide.active { background: var(--color-noSide); }
+        .tag-toggle.noBack.active { background: var(--color-noBack); }
+        .tag-toggle.rear.active { background: var(--color-rear); } /* 靠後激活樣式 */
+
+        .seat-card { 
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); 
+            min-height: 95px;
+            border-radius: 1.25rem;
+            border: 1px solid #e2e8f0;
+            background: #ffffff;
+            position: relative;
+            overflow: hidden; 
+        }
+        
+        .seat-card.occupied {
+            animation: seatDrop 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        .seat-indicator {
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 6px;
+            z-index: 5;
+        }
+        
+        .status-priority { border-color: #a7f3d0; background-color: #f0fdf4; }
+        .status-priority .seat-indicator { background-color: var(--color-priority); }
+        .status-priority .seat-name { color: #065f46; }
+
+        .status-noSide { border-color: #fde68a; background-color: #fffbeb; }
+        .status-noSide .seat-indicator { background-color: var(--color-noSide); }
+        .status-noSide .seat-name { color: #92400e; }
+
+        .status-noBack { border-color: #ddd6fe; background-color: #f5f3ff; }
+        .status-noBack .seat-indicator { background-color: var(--color-noBack); }
+        .status-noBack .seat-name { color: #5b21b6; }
+
+        .status-rear { border-color: #cbd5e1; background-color: #f8fafc; } /* 靠後座位樣式 */
+        .status-rear .seat-indicator { background-color: var(--color-rear); }
+        .status-rear .seat-name { color: #334155; }
+
+        .status-normal { border-color: #e0e7ff; background-color: #f8faff; }
+        .status-normal .seat-indicator { background-color: var(--color-normal); }
+        .status-normal .seat-name { color: #3730a3; }
+
+        @keyframes seatDrop {
+            0% { transform: translateY(-30px) scale(0.5); opacity: 0; }
+            100% { transform: translateY(0) scale(1.0); opacity: 1; }
+        }
+
+        .summary-box {
+            background: #ffffff;
+            border-radius: 1.25rem;
+            padding: 1.2rem;
+            border-top: 5px solid #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            position: relative;
+        }
+        .summary-title {
+            font-size: 1.3rem;
+            font-weight: 900;
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.05rem;
+        }
+        .summary-box.priority { border-top-color: var(--color-priority); }
+        .summary-box.noSide { border-top-color: var(--color-noSide); }
+        .summary-box.noBack { border-top-color: var(--color-noBack); }
+        .summary-box.rear { border-top-color: var(--color-rear); } /* 靠後統計盒顏色 */
+
+        .finish-badge {
+            display: none;
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            background: #10b981;
+            color: white;
+            font-size: 8px;
+            padding: 2px 6px;
+            border-radius: 9999px;
+            font-weight: 800;
+        }
+        .finished .finish-badge { display: flex; align-items: center; gap: 2px; }
+
+        .screen-bar {
+            background: linear-gradient(90deg, #0f172a 0%, #1e293b 100%);
+            color: white;
+            font-weight: 900;
+            font-style: italic;
+            font-size: 2.2rem;
+            letter-spacing: 2rem;
+            padding: 1.2rem 0;
+            border-radius: 1.25rem;
+            text-align: center;
+            width: 100%;
+            margin-top: 1rem;
+            text-indent: 2rem;
+        }
+
+        .coord-badge {
+            position: absolute;
+            top: 6px; right: 8px; 
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 900;
+            color: #94a3b8;
+            background: rgba(255,255,255,0.8);
+            border: 1px solid rgba(0,0,0,0.05);
+            z-index: 10;
+        }
+
+        .row-label-text {
+            text-align: center;
+            font-weight: 900;
+            color: #94a3b8;
+            font-size: 16px;
+            font-style: italic;
+        }
+
+        .config-input-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            width: 80px;
+        }
+        .config-input-group input {
+            font-size: 1.75rem;
+            font-weight: 900;
+            width: 100%;
+            text-align: center;
+            background: transparent;
+            color: #4f46e5;
+            outline: none;
+        }
+        .config-input-group span {
+            font-size: 12px;
+            font-weight: 900;
+            color: #64748b;
+            margin-top: -2px;
+        }
+        .config-input-group .eng-label {
+            font-size: 10px;
+            color: #94a3b8;
+            font-family: 'Inter', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        #drawStatusBanner {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            color: white;
+            z-index: 200;
+            display: none;
+            padding: 1.2rem;
+            text-align: center;
+        }
+
+        #customAlert {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 2.5rem;
+            border-radius: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            z-index: 500;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .lock-icon {
+            position: absolute;
+            bottom: 6px;
+            left: 10px;
+            color: rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+
+        #copyTemp {
+            position: absolute;
+            left: -9999px;
+            top: 0;
+        }
+
+        #copySuccess {
+            position: fixed;
+            bottom: 32px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: bold;
+            display: none;
+            z-index: 1000;
+            animation: fadeInOut 2s ease-in-out forwards;
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translate(-50%, 20px); }
+            15% { opacity: 1; transform: translate(-50%, 0); }
+            85% { opacity: 1; transform: translate(-50%, 0); }
+            100% { opacity: 0; transform: translate(-50%, -20px); }
+        }
+
+        .btn-main:disabled, .btn-main.is-disabled {
+            opacity: 0.35 !important;
+            cursor: not-allowed !important;
+            pointer-events: none !important;
+            box-shadow: none !important;
+            filter: grayscale(40%);
+        }
+        .seat-name {
+            font-size: clamp(11px, 1.4vw, 18px);
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 90%;
+                text-align: center;
+            }
+            .screen-bar { font-size: 1.5rem; letter-spacing: 1rem; text-indent: 1rem; }
+            .row-label-text { font-size: 12px; }
+        }
+        .tag-toggle {
+            font-size: 13px;
+            padding: 0 8px;
+            height: 38px;
+            min-width: 62px;
+            border-radius: 10px;
+            font-weight: 800;
+            border: 1.5px solid #e2e8f0;
+            background: #ffffff;
+            color: #64748b;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .tag-toggle.active { color: white; border-color: transparent; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .tag-toggle.priority.active { background: var(--color-priority); }
+        .tag-toggle.noSide.active { background: var(--color-noSide); }
+        .tag-toggle.noBack.active { background: var(--color-noBack); }
+        .tag-toggle.rear.active { background: var(--color-rear); }
+        .tag-toggle:disabled, .tag-toggle.is-disabled {
+            opacity: 0.35;
+            cursor: not-allowed !important;
+            pointer-events: none;
+            background: #f1f5f9 !important;
+            border-color: #cbd5e1 !important;
+            color: #94a3b8 !important;
+            box-shadow: none !important;
+        }
+        .history-item { cursor: pointer; transition: background-color 0.2s; }
+        .history-item:hover { background-color: #f8fafc; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div id="copySuccess">已成功複製圖片至剪貼簿！</div>
+    <div id="copyTemp"></div>
+
+    <div id="customAlert">
+        <div class="bg-rose-100 p-4 rounded-full mb-4">
+            <i data-lucide="alert-triangle" class="text-rose-500 w-10 h-10"></i>
+        </div>
+        <h3 class="text-xl font-black text-slate-800 mb-2">請先處理特定需求</h3>
+        <p class="text-slate-500 font-bold mb-6">尚有學生標註了「靠前」、「靠後」、「不靠邊」或「不最後」的需求，請先完成前四項抽籤！</p>
+        <button onclick="closeAlert()" class="btn-main bg-slate-800 text-white w-full py-3">確認</button>
+    </div>
+
+    <div id="drawStatusBanner">
+        <div class="max-w-4xl mx-auto flex items-center justify-between px-6">
+            <div id="drawStatusText" class="text-2xl font-black italic flex items-center gap-3">
+                <i data-lucide="loader-2" class="animate-spin"></i> 抽籤中
+            </div>
+            <div id="drawCurrentStudent" class="bg-white/20 px-6 py-2 rounded-xl font-black text-2xl border border-white/30">---</div>
+        </div>
+    </div>
+
+    <div class="max-w-[1700px] mx-auto">
+        <div class="flex flex-col bg-white p-6 sm:p-8 rounded-[2.5rem] shadow-sm border border-slate-200 mb-8 gap-6">
+            <div class="flex flex-wrap items-center justify-between gap-4 w-full">
+                <div class="flex flex-wrap items-center gap-6">
+                    <div class="flex items-center gap-3 bg-slate-50 p-2.5 sm:p-3 rounded-2xl border border-slate-200/80 shadow-inner">
+                        <div class="flex flex-col items-center">
+                            <span class="text-xs sm:text-sm font-black text-slate-600 mb-1">橫排 (Cols)</span>
+                            <div class="flex items-center bg-white rounded-xl border border-slate-200 p-1">
+                                <button onclick="changeDimension('cols', -1)" class="w-8 h-8 flex items-center justify-center text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg font-black text-lg transition-colors">-</button>
+                                <input type="number" id="cfgCols" value="7" min="1" max="15" class="w-10 text-center font-black text-slate-800 text-lg outline-none bg-transparent" onchange="initGrid()">
+                                <button onclick="changeDimension('cols', 1)" class="w-8 h-8 flex items-center justify-center text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg font-black text-lg transition-colors">+</button>
+                            </div>
+                        </div>
+
+                        <div class="w-px h-10 bg-slate-200 mx-1"></div>
+
+                        <div class="flex flex-col items-center">
+                            <span class="text-xs sm:text-sm font-black text-slate-600 mb-1">深位 (Rows)</span>
+                            <div class="flex items-center bg-white rounded-xl border border-slate-200 p-1">
+                                <button onclick="changeDimension('rows', -1)" class="w-8 h-8 flex items-center justify-center text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg font-black text-lg transition-colors">-</button>
+                                <input type="number" id="cfgRows" value="7" min="1" max="15" class="w-10 text-center font-black text-slate-800 text-lg outline-none bg-transparent" onchange="initGrid()">
+                                <button onclick="changeDimension('rows', 1)" class="w-8 h-8 flex items-center justify-center text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg font-black text-lg transition-colors">+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col items-start">
+                        <span class="text-xs sm:text-sm font-black text-slate-600 mb-1">併排 (雙人桌) 設定</span>
+                        <div id="mergeUIContainer" class="flex flex-wrap items-center gap-1.5 bg-slate-50 p-2 rounded-2xl border border-slate-200/80 min-h-[48px] px-3">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4 ml-auto">
+                    <div class="flex flex-col items-end">
+                        <div class="flex items-center gap-2">
+                            <h1 class="text-2xl sm:text-3xl font-black italic text-indigo-600 leading-none">座位小幫手</h1>
+                            <span class="bg-indigo-600 text-white text-xs sm:text-sm font-black px-3 py-1 rounded-full shadow-md tracking-wider">v2.4</span>
+                        </div>
+                        <div class="flex gap-2 mt-1.5 justify-end text-[10px] text-slate-400 font-bold">
+                            <span>✨ 座號連動顯示</span>
+                            <span>✨ 併排彩色標籤</span>
+                            <span>✨ 清除名單按鈕</span>
+                        </div>
+                    </div>
+                    <div class="bg-indigo-50 p-3 rounded-2xl shadow-sm border border-indigo-100"><i data-lucide="layout-grid" class="text-indigo-600 w-8 h-8"></i></div>
+                </div>
+            </div>
+
+            <div class="flex justify-around items-center text-center w-full bg-slate-50/90 p-4 rounded-2xl border border-slate-200/80 shadow-inner flex-wrap gap-2">
+                <div class="px-4"><p class="text-xs sm:text-sm text-slate-400 font-black uppercase tracking-wider mb-1">總座位</p><p id="seatCountText" class="text-2xl sm:text-3xl font-black text-slate-700">49</p></div>
+                <div class="w-px h-10 bg-slate-200 hidden sm:block"></div>
+                <div class="px-4"><p class="text-xs sm:text-sm text-rose-400 font-black uppercase tracking-wider mb-1">禁排數</p><p id="disabledCountText" class="text-2xl sm:text-3xl font-black text-rose-500">0</p></div>
+                <div class="w-px h-10 bg-slate-200 hidden sm:block"></div>
+                <div class="px-4"><p class="text-xs sm:text-sm text-indigo-500 font-black uppercase tracking-wider mb-1">可排數</p><p id="availableCountText" class="text-2xl sm:text-3xl font-black text-indigo-600">49</p></div>
+                <div class="w-px h-10 bg-slate-200 hidden sm:block"></div>
+                <div class="px-4"><p class="text-xs sm:text-sm text-slate-400 font-black uppercase tracking-wider mb-1">學生數</p><p id="studentCountText" class="text-2xl sm:text-3xl font-black text-slate-700">0</p></div>
+                <div class="w-px h-10 bg-slate-200 hidden sm:block"></div>
+                <div class="px-4"><p class="text-xs sm:text-sm text-emerald-400 font-black uppercase tracking-wider mb-1">已定位</p><p id="assignedCountText" class="text-2xl sm:text-3xl font-black text-emerald-500">0</p></div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-8">
+            <div class="xl:col-span-5 flex flex-col gap-6">
+                <div class="step-card">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="unified-title !text-white mb-0"><i data-lucide="users"></i> 第一步：匯入名單</span>
+                        <button onclick="clearStudentList()" class="px-3 py-1.5 bg-rose-500/20 text-rose-200 hover:bg-rose-500 hover:text-white rounded-xl text-xs font-black border border-rose-300/30 transition-colors flex items-center gap-1">
+                            <i data-lucide="user-minus" class="w-3.5 h-3.5"></i> 清除名單
+                        </button>
+                    </div>
+                    <textarea id="rawInput" class="w-full h-36 bg-white/10 border border-white/20 rounded-2xl p-4 text-base focus:ring-2 focus:ring-indigo-400 outline-none resize-none mb-4 text-white placeholder-white/30 font-bold" placeholder="每行輸入一個姓名..."></textarea>
+                    <button id="btnInit" class="btn-main w-full bg-indigo-500 hover:bg-indigo-400 py-4 text-white shadow-xl">
+                        <i data-lucide="arrow-right-circle"></i> 匯入並進行下一步
+                    </button>
+                </div>
+
+                <div class="config-card">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="unified-title mb-0"><i data-lucide="settings-2" class="text-indigo-500"></i> 第二步：需求設定</span>
+                        <button onclick="clearAllTags()" class="px-3 py-1.5 bg-rose-50 text-rose-500 rounded-xl text-xs font-black border border-rose-100 hover:bg-rose-500 hover:text-white transition-colors flex items-center gap-1">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> 清除需求
+                        </button>
+                    </div>
+                    <div class="max-h-[350px] overflow-y-auto pr-1 mb-6 border rounded-2xl bg-slate-50/50">
+                        <table class="w-full border-separate border-spacing-0">
+                            <thead class="sticky top-0 bg-white z-10 shadow-sm text-slate-500 text-xs sm:text-sm font-black uppercase">
+                                <tr>
+                                    <th class="p-3 text-center whitespace-nowrap">座號</th>
+                                    <th class="p-3 text-left whitespace-nowrap">學生姓名</th>
+                                    <th class="p-3 text-center whitespace-nowrap">目前座位</th>
+                                    <th class="p-3 text-center whitespace-nowrap">個別需求</th>
+                                </tr>
+                            </thead>
+                            <tbody id="studentTableBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="pt-6 border-t border-slate-100">
+                        <span class="unified-title"><i data-lucide="play-circle" class="text-indigo-500"></i> 第三步：執行抽籤</span>
+                        <div class="grid grid-cols-2 gap-4 mb-6">
+                            <button id="btnDrawPriority" onclick="runSinglePhase('priority')" class="btn-main bg-emerald-500 hover:bg-emerald-600 text-white py-4 shadow-lg">
+                                <i data-lucide="arrow-up-to-line"></i> 1. 抽【坐靠前】
+                            </button>
+                            <button id="btnDrawRear" onclick="runSinglePhase('rear')" class="btn-main bg-slate-500 hover:bg-slate-600 text-white py-4 shadow-lg">
+                                <i data-lucide="arrow-down-to-line"></i> 2. 抽【坐靠後】
+                            </button>
+                            <button id="btnDrawNoBack" onclick="runSinglePhase('noBack')" class="btn-main bg-purple-500 hover:bg-purple-600 text-white py-4 shadow-lg">
+                                <i data-lucide="shield-alert"></i> 3. 抽【不最後】
+                            </button>
+                            <button id="btnDrawNoSide" onclick="runSinglePhase('noSide')" class="btn-main bg-amber-500 hover:bg-amber-600 text-white py-4 shadow-lg">
+                                <i data-lucide="columns"></i> 4. 抽【不靠邊】
+                            </button>
+                            <button id="btnDrawFinal" onclick="runFinalPhase()" class="btn-main bg-indigo-600 hover:bg-indigo-700 text-white py-4 shadow-lg col-span-2">
+                                <i data-lucide="shuffle"></i> 5. 抽【其他人】
+                            </button>
+                        </div>
+                        
+                        <div class="grid grid-cols-4 gap-2">
+                            <div id="box-priority" class="summary-box priority px-2">
+                                <div class="finish-badge">已完成</div>
+                                <p class="summary-title text-emerald-600 text-center text-xs font-black">坐靠前</p>
+                                <div id="list-priority" class="flex flex-wrap gap-1 justify-center"></div>
+                            </div>
+                            <div id="box-rear" class="summary-box rear px-2">
+                                <div class="finish-badge">已完成</div>
+                                <p class="summary-title text-slate-600 text-center text-xs font-black">坐靠後</p>
+                                <div id="list-rear" class="flex flex-wrap gap-1 justify-center"></div>
+                            </div>
+                            <div id="box-noBack" class="summary-box noBack px-2">
+                                <div class="finish-badge">已完成</div>
+                                <p class="summary-title text-purple-600 text-center text-xs font-black">不最後</p>
+                                <div id="list-noBack" class="flex flex-wrap gap-1 justify-center"></div>
+                            </div>
+                            <div id="box-noSide" class="summary-box noSide px-2">
+                                <div class="finish-badge">已完成</div>
+                                <p class="summary-title text-amber-600 text-center text-xs font-black">不靠邊</p>
+                                <div id="list-noSide" class="flex flex-wrap gap-1 justify-center"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-6 mt-6 border-t border-slate-100 grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <button id="btnResetDraw" class="btn-main bg-slate-100 text-slate-500 py-3 text-sm">清除抽籤</button>
+                        <button id="btnResetAll" class="btn-main bg-rose-50 text-rose-500 py-3 text-sm">全部重置</button>
+                        <button onclick="saveHistory()" class="btn-main bg-indigo-50 text-indigo-600 py-3 text-sm"><i data-lucide="save"></i>儲存結果</button>
+                        <button onclick="openHistory()" class="btn-main bg-slate-800 text-white py-3 text-sm"><i data-lucide="history"></i>歷史紀錄</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="xl:col-span-7">
+                <div id="captureArea" class="bg-white rounded-[3.5rem] p-10 md:p-14 shadow-2xl min-h-[850px] flex flex-col justify-between border-[12px] border-slate-50 relative">
+                    <div class="flex-1 relative z-10">
+                        <div id="gridWrapper" class="grid gap-y-4 w-full"></div>
+                    </div>
+                    <div class="w-full flex flex-col items-center mt-10 relative z-10">
+                        <div id="labelWrapper" class="grid w-full mb-4"></div>
+                        <div id="screenContainer" class="grid w-full">
+                            <div class="screen-bar" id="screenBar">大屏</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mt-8">
+                    <button onclick="copyImageToClipboard()" class="btn-main px-4 py-4 bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-200 border border-indigo-500">
+                        <i data-lucide="copy" class="w-5 h-5"></i> 複製圖片
+                    </button>
+                    <button onclick="exportToImage()" class="btn-main px-4 py-4 bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-200 border border-emerald-500">
+                        <i data-lucide="image" class="w-5 h-5"></i> 下載 PNG
+                    </button>
+                    <button onclick="exportToPDF()" class="btn-main px-4 py-4 bg-rose-600 hover:bg-rose-500 text-white shadow-lg shadow-rose-200 border border-rose-500">
+                        <i data-lucide="file-text" class="w-5 h-5"></i> 匯出 PDF
+                    </button>
+                    <button onclick="exportToExcel()" class="btn-main px-4 py-4 bg-teal-600 hover:bg-teal-500 text-white shadow-lg shadow-teal-200 border border-teal-500">
+                        <i data-lucide="sheet" class="w-5 h-5"></i> 匯出 Excel
+                    </button>
+                    <button onclick="exportToWord()" class="btn-main px-4 py-4 bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-200 border border-blue-500 col-span-2 sm:col-span-1">
+                        <i data-lucide="file-type-2" class="w-5 h-5"></i> 匯出 Word
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalOverlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[90] hidden" onclick="closePicker()"></div>
+    <div id="studentPicker" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white rounded-[3rem] shadow-2xl z-[100] hidden flex flex-col max-h-[85vh] overflow-hidden">
+        <div class="p-8 bg-indigo-600 text-white">
+            <h3 class="text-2xl font-black italic">指定座位：<span id="pickerSeatLabel"></span></h3>
+        </div>
+        <div id="pickerActionArea" class="p-6 grid grid-cols-2 gap-4 bg-slate-50/80"></div>
+        <div id="pickerList" class="p-8 grid grid-cols-2 gap-3 overflow-y-auto bg-white"></div>
+        <div class="p-6 border-t border-slate-50"><button onclick="closePicker()" class="w-full py-4 text-slate-400 font-bold">取消操作</button></div>
+    </div>
+
+    <div id="historyModal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white rounded-[2rem] shadow-2xl z-[100] hidden flex flex-col max-h-[80vh] overflow-hidden">
+        <div class="p-6 bg-slate-800 text-white flex justify-between items-center">
+            <h3 class="text-xl font-black italic flex items-center gap-2"><i data-lucide="history"></i> 歷史紀錄</h3>
+            <button onclick="closeHistory()" class="text-white/50 hover:text-white"><i data-lucide="x"></i></button>
+        </div>
+        <div id="historyList" class="p-4 overflow-y-auto bg-slate-50 flex-1 flex flex-col gap-2"></div>
+    </div>
+
+    <script>
+        let students = [];
+        let seating = []; 
+        let gridConfig = { cols: 7, rows: 7 };
+        let activeSeatIdx = null;
+        let mergeRight = [];
+        let drawHistory = [];
+
+        function saveData() {
+            const data = {
+                students: students.map(s => ({...s, tags: Array.from(s.tags)})),
+                seating,
+                gridConfig,
+                mergeRight,
+                drawHistory
+            };
+            localStorage.setItem('seatHelperDataV2', JSON.stringify(data));
+        }
+
+        function loadData() {
+            try {
+                const raw = localStorage.getItem('seatHelperDataV2');
+                if (raw) {
+                    const data = JSON.parse(raw);
+                    gridConfig = data.gridConfig || { cols: 7, rows: 7 };
+                    document.getElementById('cfgCols').value = gridConfig.cols;
+                    document.getElementById('cfgRows').value = gridConfig.rows;
+                    mergeRight = data.mergeRight || new Array(Math.max(0, gridConfig.cols - 1)).fill(false);
+                    drawHistory = data.drawHistory || [];
+                    if (data.students) {
+                        students = data.students.map(s => ({...s, tags: new Set(s.tags)}));
+                    }
+                    if (data.seating) {
+                        seating = data.seating;
+                    }
+                    updateMergeUI();
+                    updateGridUI();
+                    updateUI();
+                    return true;
+                }
+            } catch(e) { console.error('Load Error:', e); }
+            return false;
+        }
+
+        const initIcons = () => lucide.createIcons();
+        const getIdx = (p, w) => (w - 1) * gridConfig.cols + (p - 1);
+        const getCoord = (idx) => {
+            const p = (idx % gridConfig.cols) + 1;
+            const w = Math.floor(idx / gridConfig.cols) + 1;
+            return { p, w, str: `${p}-${w}` };
+        };
+
+        function showAlert() {
+            document.getElementById('modalOverlay').classList.remove('hidden');
+            document.getElementById('customAlert').style.display = 'flex';
+        }
+
+        function closeAlert() {
+            document.getElementById('modalOverlay').classList.add('hidden');
+            document.getElementById('customAlert').style.display = 'none';
+        }
+
+        function initGrid() {
+            gridConfig.cols = Math.max(1, parseInt(document.getElementById('cfgCols').value) || 1);
+            gridConfig.rows = Math.max(1, parseInt(document.getElementById('cfgRows').value) || 1);
+            const total = gridConfig.cols * gridConfig.rows;
+            const old = seating;
+            seating = new Array(total).fill(null);
+            for(let i=0; i<Math.min(old.length, total); i++) {
+                if(old[i] === "disabled") seating[i] = "disabled";
+                else if (old[i]?.locked) seating[i] = old[i];
+            }
+            if (mergeRight.length !== Math.max(0, gridConfig.cols - 1)) {
+                mergeRight = new Array(Math.max(0, gridConfig.cols - 1)).fill(false);
+            }
+            updateMergeUI();
+            updateGridUI();
+            updateUI();
+            saveData();
+        }
+
+        function updateGridUI() {
+            let tracks = [];
+            for (let p = 1; p <= gridConfig.cols; p++) {
+                tracks.push("minmax(0, 1fr)");
+                if (p < gridConfig.cols) {
+                    tracks.push(mergeRight[p-1] ? "0px" : "24px");
+                }
+            }
+            const trackStr = tracks.join(" ");
+
+            const wrapper = document.getElementById('gridWrapper');
+            wrapper.style.gridTemplateColumns = trackStr;
+            wrapper.innerHTML = '';
+            for (let w = gridConfig.rows; w >= 1; w--) {
+                for (let p = 1; p <= gridConfig.cols; p++) {
+                    const idx = getIdx(p, w);
+                    const seat = document.createElement('div');
+                    seat.id = `seat-${idx}`;
+                    
+                    const isMergedRight = mergeRight[p-1];
+                    const isMergedLeft = p > 1 && mergeRight[p-2];
+                    let mergeBorder = "";
+                    if (isMergedRight && !isMergedLeft) mergeBorder = "rounded-r-none border-r border-r-dashed border-r-indigo-300 bg-indigo-50/40 border-2 border-indigo-400/80 shadow-md";
+                    else if (isMergedLeft && !isMergedRight) mergeBorder = "rounded-l-none border-l-0 bg-indigo-50/40 border-2 border-l-0 border-indigo-400/80 shadow-md";
+                    else if (isMergedLeft && isMergedRight) mergeBorder = "rounded-none border-x-0 bg-indigo-50/40 border-t-2 border-b-2 border-indigo-400/80 shadow-md";
+
+                    seat.className = `seat-card flex flex-col items-center justify-center cursor-pointer p-2 ${mergeBorder}`;
+                    seat.onclick = () => handleSeatClick(idx);
+                    seat.innerHTML = `<div class="coord-badge">${p}-${w}</div>`;
+                    wrapper.appendChild(seat);
+                    if (p < gridConfig.cols) {
+                        wrapper.appendChild(document.createElement('div'));
+                    }
+                }
+            }
+            const labelWrapper = document.getElementById('labelWrapper');
+            labelWrapper.style.gridTemplateColumns = trackStr;
+            labelWrapper.innerHTML = '';
+            for (let p = 1; p <= gridConfig.cols; p++) {
+                const isMergedRight = mergeRight[p-1];
+                const isMergedLeft = p > 1 && mergeRight[p-2];
+                let mergeStyle = "row-label-text text-center py-1";
+                if (isMergedRight && !isMergedLeft) mergeStyle = "row-label-text rounded-r-none border-r border-r-dashed border-r-indigo-300 bg-indigo-50/60 border-2 border-indigo-400/80 shadow-xs text-indigo-700 font-black py-1";
+                else if (isMergedLeft && !isMergedRight) mergeStyle = "row-label-text rounded-l-none border-l-0 bg-indigo-50/60 border-2 border-l-0 border-indigo-400/80 shadow-xs text-indigo-700 font-black py-1";
+                else if (isMergedLeft && isMergedRight) mergeStyle = "row-label-text rounded-none border-x-0 bg-indigo-50/60 border-t-2 border-b-2 border-indigo-400/80 shadow-xs text-indigo-700 font-black py-1";
+
+                labelWrapper.innerHTML += `<div class="${mergeStyle}">第${p}排</div>`;
+                if (p < gridConfig.cols) {
+                    labelWrapper.innerHTML += `<div></div>`;
+                }
+            }
+            const sc = document.getElementById('screenContainer');
+            sc.style.gridTemplateColumns = trackStr;
+            const totalCols = gridConfig.cols + Math.max(0, gridConfig.cols - 1);
+            document.getElementById('screenBar').style.gridColumn = `1 / span ${totalCols}`;
+        }
+
+        function changeDimension(type, delta) {
+            const input = document.getElementById(type === 'cols' ? 'cfgCols' : 'cfgRows');
+            let val = Math.max(1, (parseInt(input.value) || 1) + delta);
+            input.value = val;
+            initGrid();
+        }
+
+        function clearStudentList() {
+            if (confirm("確定要清除所有匯入的學生名單嗎？")) {
+                document.getElementById('rawInput').value = '';
+                students = [];
+                seating = seating.map(s => s === "disabled" ? "disabled" : null);
+                updateUI();
+                saveData();
+            }
+        }
+
+        function updateMergeUI() {
+            const cont = document.getElementById('mergeUIContainer');
+            if(!cont) return;
+            cont.innerHTML = '';
+            for (let p = 1; p <= gridConfig.cols; p++) {
+                const label = document.createElement('span');
+                label.className = "text-xs font-black text-slate-600 bg-white px-2.5 py-1 rounded-lg border border-slate-200 shadow-2xs";
+                label.textContent = `第${p}排`;
+                cont.appendChild(label);
+                if (p < gridConfig.cols) {
+                    const isMerged = mergeRight[p-1];
+                    const btn = document.createElement('button');
+                    btn.className = "px-2.5 py-1 text-xs font-black rounded-lg transition-all flex items-center gap-1 border " + 
+                        (isMerged 
+                            ? "bg-indigo-600 text-white border-indigo-600 shadow-md scale-105" 
+                            : "bg-white text-slate-400 border-slate-200 hover:border-indigo-300 hover:text-indigo-600");
+                    btn.innerHTML = isMerged 
+                        ? `<i data-lucide="link" class="w-3 h-3"></i>併排` 
+                        : `<i data-lucide="split" class="w-3 h-3"></i>合併`;
+                    btn.onclick = () => {
+                        mergeRight[p-1] = !mergeRight[p-1];
+                        updateMergeUI();
+                        updateGridUI();
+                        updateUI();
+                        saveData();
+                    };
+                    cont.appendChild(btn);
+                }
+            }
+            initIcons();
+        }
+
+        function updateUI() {
+            const tbody = document.getElementById('studentTableBody');
+            tbody.innerHTML = '';
+            students.forEach((s, i) => {
+                const seatNo = s.seatNo || (i + 1);
+                const tr = document.createElement('tr');
+                const ps = s.currentPos ? `<span class="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-lg font-black text-sm whitespace-nowrap">${s.currentPos}</span>` : `<span class="text-slate-300 text-sm whitespace-nowrap">未安排</span>`;
+                const isAssigned = !!s.currentPos;
+                const disClass = isAssigned ? 'is-disabled' : '';
+                const disAttr = isAssigned ? 'disabled' : '';
+
+                tr.innerHTML = `
+                    <td class="p-3 text-center font-black text-slate-400 text-base whitespace-nowrap">${seatNo}</td>
+                    <td class="p-3 font-black text-slate-800 text-base whitespace-nowrap">${s.name}</td>
+                    <td class="p-3 text-center whitespace-nowrap">${ps}</td>
+                    <td class="p-3 flex justify-center gap-1.5 whitespace-nowrap">
+                        <button onclick="toggleTag(${i}, 'priority')" ${disAttr} class="tag-toggle priority ${s.tags.has('priority')?'active':''} ${disClass}">靠前</button>
+                        <button onclick="toggleTag(${i}, 'rear')" ${disAttr} class="tag-toggle rear ${s.tags.has('rear')?'active':''} ${disClass}">靠後</button>
+                        <button onclick="toggleTag(${i}, 'noBack')" ${disAttr} class="tag-toggle noBack ${s.tags.has('noBack')?'active':''} ${disClass}">不後</button>
+                        <button onclick="toggleTag(${i}, 'noSide')" ${disAttr} class="tag-toggle noSide ${s.tags.has('noSide')?'active':''} ${disClass}">不邊</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            seating.forEach((data, i) => {
+                const seat = document.getElementById(`seat-${i}`);
+                if (!seat) return;
+                const p = (i % gridConfig.cols) + 1;
+                const isMergedRight = mergeRight[p-1];
+                const isMergedLeft = p > 1 && mergeRight[p-2];
+                let mergeBorder = "";
+                if (isMergedRight && !isMergedLeft) mergeBorder = "rounded-r-none border-r border-r-dashed border-r-indigo-300 bg-indigo-50/40 border-2 border-indigo-400/80 shadow-md";
+                else if (isMergedLeft && !isMergedRight) mergeBorder = "rounded-l-none border-l-0 bg-indigo-50/40 border-2 border-l-0 border-indigo-400/80 shadow-md";
+                else if (isMergedLeft && isMergedRight) mergeBorder = "rounded-none border-x-0 bg-indigo-50/40 border-t-2 border-b-2 border-indigo-400/80 shadow-md";
+
+                const coordStr = getCoord(i).str;
+                const badge = `<div class="coord-badge">${coordStr}</div>`;
+                if (data === "disabled") {
+                    seat.className = `seat-card bg-rose-50 border-rose-200 border-2 border-dashed flex items-center justify-center ${mergeBorder}`;
+                    seat.innerHTML = `${badge}<i data-lucide="ban" class="text-rose-400"></i>`;
+                } else if (data?.name) {
+                    const student = students.find(s => s.name === data.name || (s.displayName && s.displayName === data.name));
+                    const dispName = student ? (student.displayName || `${student.seatNo || ''}${student.name}`) : data.name;
+                    let statusClass = 'status-normal';
+                    if (student) {
+                        if (student.tags.has('priority')) statusClass = 'status-priority';
+                        else if (student.tags.has('rear')) statusClass = 'status-rear';
+                        else if (student.tags.has('noSide')) statusClass = 'status-noSide';
+                        else if (student.tags.has('noBack')) statusClass = 'status-noBack';
+                    }
+                    seat.className = `seat-card occupied shadow-sm flex items-center justify-center ${statusClass} ${mergeBorder}`;
+                    const lockIcon = data.locked ? `<div class="lock-icon"><i data-lucide="pin" class="w-3 h-3"></i></div>` : '';
+                    seat.innerHTML = `${badge}<div class="seat-indicator"></div>${lockIcon}<div class="seat-name font-black italic z-10">${dispName}</div>`;
+                } else {
+                    seat.className = `seat-card bg-white border-slate-100 ${mergeBorder}`;
+                    seat.innerHTML = badge;
+                }
+            });
+
+            ['priority', 'rear', 'noBack', 'noSide'].forEach(id => {
+                const list = document.getElementById(`list-${id}`);
+                const box = document.getElementById(`box-${id}`);
+                list.innerHTML = '';
+                const targets = students.filter(s => s.tags.has(id));
+                box.classList.toggle('finished', targets.length > 0 && targets.every(s => s.currentPos));
+                if(targets.length === 0) list.innerHTML = `<span class="text-[9px] text-slate-300">無需求</span>`;
+                targets.forEach(s => {
+                    const c = s.currentPos ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-400';
+                    const dispName = s.displayName || `${s.seatNo || ''}${s.name}`;
+                    const posStr = s.currentPos ? ` (${s.currentPos})` : '';
+                    list.innerHTML += `<span class="${c} px-2 py-0.5 text-[10px] font-bold rounded border border-slate-200">${dispName}${posStr}</span>`;
+                });
+            });
+
+            const totalSeats = gridConfig.cols * gridConfig.rows;
+            const disabledCount = seating.filter(s => s === "disabled").length;
+            const availableSeats = totalSeats - disabledCount;
+
+            document.getElementById('seatCountText').textContent = totalSeats;
+            document.getElementById('disabledCountText').textContent = disabledCount;
+            document.getElementById('availableCountText').textContent = availableSeats;
+            document.getElementById('studentCountText').textContent = students.length;
+            document.getElementById('assignedCountText').textContent = seating.filter(s => s?.name).length;
+
+            // 精確抽籤按鈕啟用/停用判定
+            const hasPendingPriority = students.some(s => s.tags.has('priority') && !s.currentPos);
+            const hasPendingRear = students.some(s => s.tags.has('rear') && !s.currentPos);
+            const hasPendingNoBack = students.some(s => s.tags.has('noBack') && !s.currentPos);
+            const hasPendingNoSide = students.some(s => s.tags.has('noSide') && !s.currentPos);
+            const hasPendingOthers = students.some(s => !s.currentPos);
+
+            const btnPriority = document.getElementById('btnDrawPriority');
+            const btnRear = document.getElementById('btnDrawRear');
+            const btnNoBack = document.getElementById('btnDrawNoBack');
+            const btnNoSide = document.getElementById('btnDrawNoSide');
+            const btnFinal = document.getElementById('btnDrawFinal');
+
+            // 1. 坐靠前：必須【有待抽靠前學生】才可點擊
+            if (btnPriority) {
+                const isDis = !hasPendingPriority;
+                btnPriority.disabled = isDis;
+                btnPriority.classList.toggle('is-disabled', isDis);
+            }
+
+            // 2. 坐靠後：必須【有待抽靠後學生】且【靠前無待抽學生】才可點擊
+            if (btnRear) {
+                const isDis = !hasPendingRear || hasPendingPriority;
+                btnRear.disabled = isDis;
+                btnRear.classList.toggle('is-disabled', isDis);
+            }
+
+            // 3. 不最後：必須【有待抽不最後學生】且【靠前、靠後無待抽學生】才可點擊
+            if (btnNoBack) {
+                const isDis = !hasPendingNoBack || hasPendingPriority || hasPendingRear;
+                btnNoBack.disabled = isDis;
+                btnNoBack.classList.toggle('is-disabled', isDis);
+            }
+
+            // 4. 不靠邊：必須【有待抽不靠邊學生】且【靠前、靠後、不最後無待抽學生】才可點擊
+            if (btnNoSide) {
+                const isDis = !hasPendingNoSide || hasPendingPriority || hasPendingRear || hasPendingNoBack;
+                btnNoSide.disabled = isDis;
+                btnNoSide.classList.toggle('is-disabled', isDis);
+            }
+
+            // 5. 其他人：必須【有未定位學生】且【前四項特定需求皆無待抽學生】才可點擊
+            if (btnFinal) {
+                const isDis = !hasPendingOthers || hasPendingPriority || hasPendingRear || hasPendingNoBack || hasPendingNoSide;
+                btnFinal.disabled = isDis;
+                btnFinal.classList.toggle('is-disabled', isDis);
+            }
+
+            initIcons();
+        }
+
+        window.toggleTag = (i, tag) => {
+            const s = students[i];
+            if (s.currentPos) return;
+            if (s.tags.has(tag)) {
+                s.tags.delete(tag);
+            } else {
+                if (tag === 'priority' || tag === 'rear' || tag === 'noBack') {
+                    s.tags.delete('priority');
+                    s.tags.delete('rear');
+                    s.tags.delete('noBack');
+                }
+                s.tags.add(tag);
+            }
+            updateUI();
+            saveData();
+        };
+
+        window.clearAllTags = () => {
+            students.forEach(s => s.tags.clear());
+            updateUI();
+            saveData();
+        };
+
+        function getCandidatePool(student) {
+            let candidateIndices = [];
+            seating.forEach((v, idx) => { if (v === null) candidateIndices.push(idx); });
+            if (candidateIndices.length === 0) return [];
+
+            if (student.tags.has('priority')) {
+                let minW = 99;
+                candidateIndices.forEach(idx => { minW = Math.min(minW, getCoord(idx).w); });
+                const filtered = candidateIndices.filter(idx => getCoord(idx).w === minW);
+                if (filtered.length > 0) candidateIndices = filtered;
+            }
+
+            if (student.tags.has('rear')) {
+                let maxW = 0;
+                candidateIndices.forEach(idx => { maxW = Math.max(maxW, getCoord(idx).w); });
+                const filtered = candidateIndices.filter(idx => getCoord(idx).w === maxW);
+                if (filtered.length > 0) candidateIndices = filtered;
+            }
+
+            if (student.tags.has('noSide')) {
+                const filtered = candidateIndices.filter(idx => {
+                    const { p } = getCoord(idx);
+                    return p > 1 && p < gridConfig.cols;
+                });
+                if (filtered.length > 0) candidateIndices = filtered;
+            }
+
+            if (student.tags.has('noBack')) {
+                const filtered = candidateIndices.filter(idx => {
+                    const { w } = getCoord(idx);
+                    return w < gridConfig.rows;
+                });
+                if (filtered.length > 0) candidateIndices = filtered;
+            }
+
+            if (drawHistory.length > 0) {
+                const lastSeating = drawHistory[drawHistory.length - 1].seating;
+                const lastPos = lastSeating.findIndex(seat => seat?.name === student.name || seat?.name === student.displayName);
+                if (lastPos !== -1) {
+                    const nonPrev = candidateIndices.filter(idx => idx !== lastPos);
+                    if (nonPrev.length > 0) candidateIndices = nonPrev;
+                }
+            }
+
+            return candidateIndices;
+        }
+
+        async function runSinglePhase(phaseId) {
+            const hasPendingPriority = students.some(s => s.tags.has('priority') && !s.currentPos);
+            const hasPendingRear = students.some(s => s.tags.has('rear') && !s.currentPos);
+            const hasPendingNoBack = students.some(s => s.tags.has('noBack') && !s.currentPos);
+
+            if (phaseId === 'rear' && hasPendingPriority) return;
+            if (phaseId === 'noBack' && (hasPendingPriority || hasPendingRear)) return;
+            if (phaseId === 'noSide' && (hasPendingPriority || hasPendingRear || hasPendingNoBack)) return;
+
+            const targets = students.filter(s => s.tags.has(phaseId) && !s.currentPos);
+            if(targets.length === 0) return;
+            document.getElementById('drawStatusBanner').style.display = 'block';
+            targets.sort(() => Math.random() - 0.5);
+            for(const s of targets) {
+                const pool = getCandidatePool(s);
+                if(pool.length > 0) {
+                    const t = pool[Math.floor(Math.random()*pool.length)];
+                    seating[t] = { name: s.displayName || s.name, locked: false };
+                    s.currentPos = getCoord(t).str;
+                    const disp = s.displayName || `${s.seatNo || ''}${s.name}`;
+                    document.getElementById('drawCurrentStudent').textContent = `${disp} ➔ ${s.currentPos}`;
+                    updateUI(); await new Promise(r => setTimeout(r, 450));
+                }
+            }
+            document.getElementById('drawStatusBanner').style.display = 'none';
+            saveData();
+        }
+
+        async function runFinalPhase() {
+            const pendingSpecial = students.filter(s => s.tags.size > 0 && !s.currentPos);
+            if (pendingSpecial.length > 0) {
+                showAlert();
+                return;
+            }
+            const targets = students.filter(s => !s.currentPos).sort(() => Math.random() - 0.5);
+            if(targets.length === 0) return;
+            document.getElementById('drawStatusBanner').style.display = 'block';
+            for(const s of targets) {
+                const pool = getCandidatePool(s);
+                if(pool.length > 0) {
+                    const t = pool[Math.floor(Math.random()*pool.length)];
+                    seating[t] = { name: s.displayName || s.name, locked: false };
+                    s.currentPos = getCoord(t).str;
+                    const disp = s.displayName || `${s.seatNo || ''}${s.name}`;
+                    document.getElementById('drawCurrentStudent').textContent = `${disp} ➔ ${s.currentPos}`;
+                    updateUI(); await new Promise(r => setTimeout(r, 450));
+                }
+            }
+            document.getElementById('drawStatusBanner').style.display = 'none';
+            saveData();
+        }
+
+        function handleSeatClick(idx) {
+            activeSeatIdx = idx;
+            const current = seating[idx];
+            document.getElementById('pickerSeatLabel').textContent = getCoord(idx).str;
+            const aa = document.getElementById('pickerActionArea');
+            const pl = document.getElementById('pickerList');
+            aa.innerHTML = ''; pl.innerHTML = '';
+            if(current?.name) {
+                const b = document.createElement('button');
+                b.className = "col-span-2 py-4 bg-rose-500 text-white rounded-2xl font-bold";
+                b.textContent = `移除 ${current.name}`;
+                b.onclick = () => { 
+                    const s = students.find(x => x.name === current.name || x.displayName === current.name);
+                    if(s) s.currentPos = null;
+                    seating[activeSeatIdx] = null; closePicker(); updateUI(); saveData();
+                };
+                aa.appendChild(b);
+            } else {
+                const isD = current === "disabled";
+                const b = document.createElement('button');
+                b.className = `col-span-2 py-4 rounded-2xl font-bold border-2 ${isD ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`;
+                b.textContent = isD ? '恢復座位' : '設為禁排';
+                b.onclick = () => { seating[activeSeatIdx] = isD ? null : "disabled"; closePicker(); updateUI(); saveData(); };
+                aa.appendChild(b);
+                students.filter(s => !s.currentPos).forEach(s => {
+                    const sb = document.createElement('button');
+                    sb.className = "p-3 bg-slate-50 border rounded-xl font-bold text-sm hover:bg-indigo-600 hover:text-white";
+                    sb.textContent = s.displayName || `${s.seatNo}${s.name}`;
+                    sb.onclick = () => {
+                        s.currentPos = getCoord(activeSeatIdx).str;
+                        seating[activeSeatIdx] = { name: s.displayName || s.name, locked: true };
+                        closePicker(); updateUI(); saveData();
+                    };
+                    pl.appendChild(sb);
+                });
+            }
+            document.getElementById('modalOverlay').classList.remove('hidden');
+            document.getElementById('studentPicker').classList.remove('hidden');
+            initIcons();
+        }
+
+        function closePicker() {
+            document.getElementById('modalOverlay').classList.add('hidden');
+            document.getElementById('studentPicker').classList.add('hidden');
+        }
+
+        function saveHistory() {
+            if (seating.every(s => s === null)) return alert("目前沒有排座位");
+            const snapshot = seating.map(s => s ? (typeof s === 'object' ? {...s} : s) : s);
+            const timeStr = new Date().toLocaleString('zh-TW', {hour12: false});
+            drawHistory.push({ time: timeStr, seating: snapshot });
+            saveData();
+            
+            const msg = document.getElementById('copySuccess');
+            msg.textContent = "已儲存至歷史紀錄！";
+            msg.style.display = 'block';
+            setTimeout(() => { msg.style.display = 'none'; msg.textContent = "已成功複製圖片至剪貼簿！"; }, 2000);
+        }
+
+        function deleteHistory(originalIdx) {
+            if(confirm("確定要刪除此筆歷史紀錄嗎？")) {
+                drawHistory.splice(originalIdx, 1);
+                saveData();
+                openHistory();
+            }
+        }
+
+        function restoreHistoryRecord(originalIdx) {
+            if(confirm("確定要還原此紀錄嗎？目前的座位將被覆蓋。")) {
+                const record = drawHistory[originalIdx];
+                seating = record.seating.map(s => s ? (typeof s === 'object' ? {...s} : s) : s);
+                students.forEach(s => s.currentPos = null);
+                seating.forEach((seat, i) => {
+                    if(seat?.name) {
+                        const st = students.find(x => x.name === seat.name || x.displayName === seat.name);
+                        if(st) st.currentPos = getCoord(i).str;
+                    }
+                });
+                updateUI();
+                saveData();
+                closeHistory();
+            }
+        }
+
+        function exportHistoryRecord(originalIdx, format) {
+            const record = drawHistory[originalIdx];
+            if (!record) return;
+            const backupSeating = seating.map(s => s ? (typeof s === 'object' ? {...s} : s) : s);
+            seating = record.seating.map(s => s ? (typeof s === 'object' ? {...s} : s) : s);
+            updateUI();
+            
+            if (format === 'png') exportToImage();
+            else if (format === 'pdf') exportToPDF();
+            else if (format === 'excel') exportToExcel();
+            else if (format === 'word') exportToWord();
+            
+            setTimeout(() => {
+                seating = backupSeating;
+                updateUI();
+            }, 600);
+        }
+
+        function openHistory() {
+            const list = document.getElementById('historyList');
+            list.innerHTML = '';
+            if(drawHistory.length === 0) {
+                list.innerHTML = '<div class="text-center text-slate-400 py-8 font-bold">尚無歷史紀錄</div>';
+            } else {
+                const reversedHistory = drawHistory.map((item, originalIdx) => ({ item, originalIdx })).reverse();
+                reversedHistory.forEach(({ item, originalIdx }, displayIdx) => {
+                    const div = document.createElement('div');
+                    div.className = "history-item bg-white p-4 rounded-2xl border border-slate-200 flex flex-col gap-3 shadow-sm mb-2";
+                    div.innerHTML = `
+                        <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+                            <div>
+                                <span class="font-black text-slate-800 text-lg">紀錄 #${drawHistory.length - displayIdx}</span>
+                                <span class="text-xs text-slate-400 font-bold ml-2"><i data-lucide="clock" class="inline w-3 h-3"></i> ${item.time}</span>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="restoreHistoryRecord(${originalIdx})" class="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-lg font-black text-xs hover:bg-indigo-600 hover:text-white transition-colors">還原</button>
+                                <button onclick="deleteHistory(${originalIdx})" class="px-3 py-1 bg-rose-50 text-rose-500 rounded-lg font-black text-xs hover:bg-rose-500 hover:text-white transition-colors">刪除</button>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="text-xs font-bold text-slate-400">匯出此紀錄：</span>
+                            <button onclick="exportHistoryRecord(${originalIdx}, 'png')" class="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-200">PNG</button>
+                            <button onclick="exportHistoryRecord(${originalIdx}, 'pdf')" class="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-200">PDF</button>
+                            <button onclick="exportHistoryRecord(${originalIdx}, 'excel')" class="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-200">Excel</button>
+                            <button onclick="exportHistoryRecord(${originalIdx}, 'word')" class="px-2.5 py-1 bg-blue-50 text-blue-600 text-xs font-bold rounded-lg hover:bg-blue-100">Word</button>
+                        </div>
+                    `;
+                    list.appendChild(div);
+                });
+            }
+            document.getElementById('modalOverlay').classList.remove('hidden');
+            document.getElementById('historyModal').classList.remove('hidden');
+            initIcons();
+        }
+
+        function closeHistory() {
+            document.getElementById('modalOverlay').classList.add('hidden');
+            document.getElementById('historyModal').classList.add('hidden');
+        }
+
+        document.getElementById('btnInit').onclick = () => {
+            const input = document.getElementById('rawInput').value.trim();
+            if(!input) return;
+            students = input.split('\n').map(n => n.trim()).filter(n => n).map((name, i) => {
+                const seatNo = i + 1;
+                const displayName = `${seatNo}${name}`;
+                return {
+                    id: i,
+                    seatNo: seatNo,
+                    name: name,
+                    displayName: displayName,
+                    tags: new Set(),
+                    currentPos: null
+                };
+            });
+            initGrid();
+        };
+
+        document.getElementById('btnResetDraw').onclick = () => {
+            seating = seating.map(s => (s === "disabled" || s?.locked) ? s : null);
+            students.forEach(s => { if(s.currentPos) { const [p,w] = s.currentPos.split('-').map(Number); if(!seating[getIdx(p,w)]) s.currentPos = null; }});
+            updateUI();
+        };
+
+        document.getElementById('btnResetAll').onclick = () => {
+            if(confirm("確定要重置嗎？")) { students=[]; seating=[]; document.getElementById('rawInput').value=''; initGrid(); }
+        };
+
+        document.getElementById('cfgCols').oninput = initGrid;
+        document.getElementById('cfgRows').oninput = initGrid;
+
+        async function exportToImage() {
+            const canvas = await html2canvas(document.getElementById('captureArea'), { scale: 2 });
+            const link = document.createElement('a');
+            link.download = `教室座位表_${new Date().toLocaleDateString()}.png`; 
+            link.href = canvas.toDataURL(); 
+            link.click();
+        }
+
+        async function copyImageToClipboard() {
+            try {
+                const canvas = await html2canvas(document.getElementById('captureArea'), { scale: 2 });
+                const imgData = canvas.toDataURL('image/png');
+                const tempContainer = document.getElementById('copyTemp');
+                tempContainer.innerHTML = `<img id="tempImg" src="${imgData}" style="max-width:100%;">`;
+                const range = document.createRange();
+                range.selectNode(tempContainer);
+                window.getSelection().removeAllRanges();
+                window.getSelection().addRange(range);
+                const successful = document.execCommand('copy');
+                window.getSelection().removeAllRanges();
+                tempContainer.innerHTML = '';
+                if (successful) {
+                    const msg = document.getElementById('copySuccess');
+                    msg.style.display = 'block';
+                    setTimeout(() => { msg.style.display = 'none'; }, 2000);
+                } else { throw new Error('Copy command failed'); }
+            } catch (err) { exportToImage(); }
+        }
+
+        async function exportToPDF() {
+            const canvas = await html2canvas(document.getElementById('captureArea'), { scale: 2 });
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, 190, (canvas.height*190)/canvas.width);
+            pdf.save(`座位表_${new Date().toLocaleDateString()}.pdf`);
+        }
+
+        function exportToExcel() {
+            try {
+                let layoutData = [];
+
+                // 1. 深位從大到小 (gridConfig.rows 倒數到 1)
+                for (let w = gridConfig.rows; w >= 1; w--) {
+                    let row = [`深位 ${w}`];
+                    for (let p = 1; p <= gridConfig.cols; p++) {
+                        const idx = getIdx(p, w);
+                        const s = seating[idx];
+                        if (s === "disabled") {
+                            row.push("[禁排]");
+                        } else if (s?.name) {
+                            const student = students.find(st => st.name === s.name || st.displayName === s.name);
+                            const dispName = student ? (student.displayName || `${student.seatNo || ''}${student.name}`) : s.name;
+                            row.push(dispName);
+                        } else {
+                            row.push("");
+                        }
+                    }
+                    layoutData.push(row);
+                }
+
+                // 2. 橫排標題列在深位 1 下方
+                let header = ["深位 \\ 橫排"];
+                for (let p = 1; p <= gridConfig.cols; p++) header.push(`第 ${p} 排`);
+                layoutData.push(header);
+
+                // 3. 大屏列在最下方
+                let screenRow = ["大 屏 ( 白 板 )"];
+                for (let p = 1; p <= gridConfig.cols; p++) screenRow.push("");
+                layoutData.push(screenRow);
+
+                let listData = [["座位座標", "學生姓名", "狀態"]];
+                seating.forEach((s, i) => {
+                    const coord = getCoord(i).str;
+                    if(s?.name) {
+                        const student = students.find(st => st.name === s.name || st.displayName === s.name);
+                        const dispName = student ? (student.displayName || `${student.seatNo || ''}${student.name}`) : s.name;
+                        listData.push([coord, dispName, "已定位"]);
+                    } else if(s === "disabled") {
+                        listData.push([coord, "---", "禁排區"]);
+                    }
+                });
+
+                const wb = XLSX.utils.book_new();
+                const wsLayout = XLSX.utils.aoa_to_sheet(layoutData);
+                wsLayout['!cols'] = Array(gridConfig.cols + 1).fill({ wch: 14 });
+                XLSX.utils.book_append_sheet(wb, wsLayout, "教室佈局圖");
+
+                const wsList = XLSX.utils.aoa_to_sheet(listData);
+                XLSX.utils.book_append_sheet(wb, wsList, "學生清單");
+
+                const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+                const blob = new Blob([wbout], { type: 'application/octet-stream' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `座位表匯出_${new Date().getTime()}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                }, 0);
+
+            } catch (err) {
+                console.error("Excel Export Error:", err);
+                const msg = document.getElementById('copySuccess');
+                msg.textContent = "匯出失敗，請檢查瀏覽器設定";
+                msg.style.background = "#f43f5e";
+                msg.style.display = 'block';
+                setTimeout(() => { msg.style.display = 'none'; msg.textContent = "已成功複製圖片至剪貼簿！"; msg.style.background = "#1e293b"; }, 3000);
+            }
+        }
+
+        function exportToWord() {
+            let htmlString = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+            <head><meta charset="utf-8"><title>座位表</title>
+            <style>
+                table { border-collapse: collapse; width: 100%; text-align: center; font-family: 'Microsoft JhengHei', sans-serif; margin-bottom: 20px; }
+                td, th { border: 1px solid #000; padding: 12px; font-size: 14pt; height: 50px; }
+                .empty { background-color: #ffffff; }
+                .disabled { background-color: #ffe4e6; color: #e11d48; }
+                .header-row { background-color: #ffffff; font-weight: bold; }
+                .front { background-color: #1e293b; color: white; font-weight: bold; font-size: 18pt; letter-spacing: 15px; text-align: center; }
+            </style>
+            </head><body>
+            <h2 style="text-align:center;">教室座位表</h2>
+            <table>`;
+
+            // 1. 深位從大到小 (gridConfig.rows 倒數到 1)
+            for (let w = gridConfig.rows; w >= 1; w--) {
+                htmlString += `<tr><th style="background-color:#ffffff;">深位 ${w}</th>`;
+                for (let p = 1; p <= gridConfig.cols; p++) {
+                    const idx = getIdx(p, w);
+                    const s = seating[idx];
+                    if (s === "disabled") {
+                        htmlString += `<td class="disabled">[禁排區]</td>`;
+                    } else if (s?.name) {
+                        const student = students.find(st => st.name === s.name || st.displayName === s.name);
+                        const dispName = student ? (student.displayName || `${student.seatNo || ''}${student.name}`) : s.name;
+                        htmlString += `<td><b>${dispName}</b></td>`;
+                    } else {
+                        htmlString += `<td class="empty"></td>`;
+                    }
+                }
+                htmlString += `</tr>`;
+            }
+
+            // 2. 橫排標題列在深位 1 下方
+            htmlString += `<tr class="header-row"><th>深位 \\ 橫排</th>`;
+            for (let p = 1; p <= gridConfig.cols; p++) {
+                htmlString += `<th>第 ${p} 排</th>`;
+            }
+            htmlString += `</tr>`;
+
+            // 3. 大屏列在最下方
+            htmlString += `<tr><td colspan="${gridConfig.cols + 1}" class="front">大 屏 ( 白 板 )</td></tr>`;
+            htmlString += `</table></body></html>`;
+
+            const blob = new Blob(['\ufeff', htmlString], { type: 'application/msword' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `座位表_${new Date().toLocaleDateString()}.doc`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        if(!loadData()) {
+            initGrid();
+        }
+    </script>
+</body>
+</html>
