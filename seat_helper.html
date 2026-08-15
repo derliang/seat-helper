@@ -585,7 +585,7 @@
                     <div class="pt-6 mt-6 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <button onclick="saveHistory()" class="btn-main bg-indigo-50 text-indigo-600 py-3 text-sm font-black flex items-center justify-center gap-1 shadow-sm"><i data-lucide="save" class="w-4 h-4"></i> 儲存結果</button>
                         <button onclick="openHistory()" class="btn-main bg-slate-800 text-white py-3 text-sm font-black flex items-center justify-center gap-1 shadow-sm"><i data-lucide="history" class="w-4 h-4"></i> 歷史紀錄</button>
-                        <button id="btnResetAll" class="btn-main bg-rose-50 text-rose-500 py-3 text-sm font-black flex items-center justify-center gap-1 shadow-sm">全部重置</button>
+                        <button id="btnResetAll" class="btn-main bg-rose-600 hover:bg-rose-500 text-white py-3 text-sm font-black flex items-center justify-center gap-1 shadow-sm"><i data-lucide="bomb" class="w-4 h-4"></i> 清除所有資料</button>
                     </div>
                 </div>
             </div>
@@ -1309,7 +1309,16 @@
         };
 
         document.getElementById('btnResetAll').onclick = () => {
-            if(confirm("確定要重置嗎？")) { students=[]; seating=[]; document.getElementById('rawInput').value=''; initGrid(); }
+            if (confirm("⚠️ 警告！這將會清除全站所有資料（包含學生名單、座位表設定、個別需求標籤與儲存的歷史紀錄），確定要清除嗎？")) {
+                students = [];
+                seating = [];
+                drawHistory = [];
+                const rawInput = document.getElementById('rawInput');
+                if (rawInput) rawInput.value = '';
+                localStorage.removeItem('seatHelperData_v2');
+                localStorage.removeItem('seatHelperHistory_v2');
+                initGrid();
+            }
         };
 
         document.getElementById('cfgCols').oninput = initGrid;
