@@ -445,18 +445,51 @@
                 </div>
             </div>
 
-            <div class="flex justify-around items-center text-center w-full bg-slate-50/90 p-4 rounded-2xl border border-slate-200/80 shadow-inner flex-wrap gap-2">
-                <div class="px-4"><p class="text-xs sm:text-sm text-slate-400 font-black uppercase tracking-wider mb-1">總座位</p><p id="seatCountText" class="text-2xl sm:text-3xl font-black text-slate-700">49</p></div>
-                <div class="w-px h-10 bg-slate-200 hidden sm:block"></div>
-                <div class="px-4"><p class="text-xs sm:text-sm text-rose-400 font-black uppercase tracking-wider mb-1">禁排數</p><p id="disabledCountText" class="text-2xl sm:text-3xl font-black text-rose-500">0</p></div>
-                <div class="w-px h-10 bg-slate-200 hidden sm:block"></div>
-                <div class="px-4"><p class="text-xs sm:text-sm text-indigo-500 font-black uppercase tracking-wider mb-1">可排數</p><p id="availableCountText" class="text-2xl sm:text-3xl font-black text-indigo-600">49</p></div>
-                <div class="w-px h-10 bg-slate-200 hidden sm:block"></div>
-                <div class="px-4"><p class="text-xs sm:text-sm text-slate-400 font-black uppercase tracking-wider mb-1">學生數</p><p id="studentCountText" class="text-2xl sm:text-3xl font-black text-slate-700">0</p></div>
-                <div class="w-px h-10 bg-slate-200 hidden sm:block"></div>
-                <div class="px-4"><p class="text-xs sm:text-sm text-emerald-400 font-black uppercase tracking-wider mb-1">已定位</p><p id="assignedCountText" class="text-2xl sm:text-3xl font-black text-emerald-500">0</p></div>
-                <div class="w-px h-10 bg-slate-200 hidden sm:block"></div>
-                <div class="px-4"><p class="text-xs sm:text-sm text-amber-500 font-black uppercase tracking-wider mb-1">未定位</p><p id="unassignedCountText" class="text-2xl sm:text-3xl font-black text-amber-500">0</p></div>
+            <!-- 資訊區：雙大語意卡片重構 -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full">
+                <!-- Group 1: 座位空間配置 -->
+                <div class="bg-slate-50/90 p-4 rounded-2xl border border-slate-200/80 shadow-inner">
+                    <div class="flex items-center gap-1.5 mb-3 px-1">
+                        <i data-lucide="layout-grid" class="w-4 h-4 text-indigo-600"></i>
+                        <span class="text-xs font-black text-slate-600 uppercase tracking-wider">🪑 座位空間配置</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="bg-white p-3 rounded-xl border border-slate-200 text-center flex flex-col items-center justify-center shadow-xs">
+                            <p class="text-xs font-black text-slate-400 mb-1">總座位</p>
+                            <p id="seatCountText" class="text-xl sm:text-2xl font-black text-slate-800">49</p>
+                        </div>
+                        <div class="bg-white p-3 rounded-xl border border-slate-200 text-center flex flex-col items-center justify-center shadow-xs">
+                            <p class="text-xs font-black text-rose-500 mb-1">禁排數</p>
+                            <p id="disabledCountText" class="text-xl sm:text-2xl font-black text-rose-600">0</p>
+                        </div>
+                        <div class="bg-white p-3 rounded-xl border border-slate-200 text-center flex flex-col items-center justify-center shadow-xs">
+                            <p class="text-xs font-black text-indigo-500 mb-1">可排數</p>
+                            <p id="availableCountText" class="text-xl sm:text-2xl font-black text-indigo-600">49</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Group 2: 學生與定位進度 -->
+                <div class="bg-slate-50/90 p-4 rounded-2xl border border-slate-200/80 shadow-inner">
+                    <div class="flex items-center gap-1.5 mb-3 px-1">
+                        <i data-lucide="user-check" class="w-4 h-4 text-emerald-600"></i>
+                        <span class="text-xs font-black text-slate-600 uppercase tracking-wider">👥 學生與定位進度</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="bg-white p-3 rounded-xl border border-slate-200 text-center flex flex-col items-center justify-center shadow-xs">
+                            <p class="text-xs font-black text-slate-400 mb-1">學生數</p>
+                            <p id="studentCountText" class="text-xl sm:text-2xl font-black text-slate-800">0</p>
+                        </div>
+                        <div class="bg-white p-3 rounded-xl border border-slate-200 text-center flex flex-col items-center justify-center shadow-xs">
+                            <p class="text-xs font-black text-emerald-500 mb-1">已定位</p>
+                            <p id="assignedCountText" class="text-xl sm:text-2xl font-black text-emerald-600">0</p>
+                        </div>
+                        <div class="bg-white p-3 rounded-xl border border-slate-200 text-center flex flex-col items-center justify-center shadow-xs">
+                            <p class="text-xs font-black text-amber-500 mb-1">未定位</p>
+                            <p id="unassignedCountText" class="text-xl sm:text-2xl font-black text-amber-600">0</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
