@@ -455,6 +455,8 @@
                 <div class="px-4"><p class="text-xs sm:text-sm text-slate-400 font-black uppercase tracking-wider mb-1">學生數</p><p id="studentCountText" class="text-2xl sm:text-3xl font-black text-slate-700">0</p></div>
                 <div class="w-px h-10 bg-slate-200 hidden sm:block"></div>
                 <div class="px-4"><p class="text-xs sm:text-sm text-emerald-400 font-black uppercase tracking-wider mb-1">已定位</p><p id="assignedCountText" class="text-2xl sm:text-3xl font-black text-emerald-500">0</p></div>
+                <div class="w-px h-10 bg-slate-200 hidden sm:block"></div>
+                <div class="px-4"><p class="text-xs sm:text-sm text-amber-500 font-black uppercase tracking-wider mb-1">未定位</p><p id="unassignedCountText" class="text-2xl sm:text-3xl font-black text-amber-500">0</p></div>
             </div>
         </div>
 
@@ -892,11 +894,17 @@
             const disabledCount = seating.filter(s => s === "disabled").length;
             const availableSeats = totalSeats - disabledCount;
 
+            const studentCount = students.length;
+            const assignedCount = seating.filter(s => s?.name).length;
+            const unassignedCount = Math.max(0, studentCount - assignedCount);
+
             document.getElementById('seatCountText').textContent = totalSeats;
             document.getElementById('disabledCountText').textContent = disabledCount;
             document.getElementById('availableCountText').textContent = availableSeats;
-            document.getElementById('studentCountText').textContent = students.length;
-            document.getElementById('assignedCountText').textContent = seating.filter(s => s?.name).length;
+            document.getElementById('studentCountText').textContent = studentCount;
+            document.getElementById('assignedCountText').textContent = assignedCount;
+            const unassignedEl = document.getElementById('unassignedCountText');
+            if (unassignedEl) unassignedEl.textContent = unassignedCount;
 
             // 精確抽籤按鈕啟用/停用判定
             const hasPendingPriority = students.some(s => s.tags.has('priority') && !s.currentPos);
