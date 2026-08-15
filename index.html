@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>座位小幫手 v3.0 - 智慧座位編排系統</title>
+    <title>座位小幫手 v3.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config = { darkMode: 'class' };</script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -42,6 +43,41 @@
         html.dark .tracking-wider { color: #f8fafc !important; }
         html.dark .config-card { background: #1e293b !important; color: #f8fafc !important; border-color: #334155 !important; }
         html.dark .seat-card { background: #1e293b !important; border-color: #334155 !important; color: #f8fafc !important; }
+        html.dark #appTitle, html.dark #mainHeaderBrand .text-indigo-600 { color: #a78bfa !important; }
+        html.dark #mainHeaderBrand .bg-indigo-50 { background: #312e81 !important; border-color: #4f46e5 !important; }
+        html.dark #captureArea { background: #172033 !important; border-color: #334155 !important; }
+        html.dark #classroomNameSeatPreview { color: #f8fafc !important; }
+        html.dark #seatMapMetadata, html.dark #seatMapExportDate,
+        html.dark #rearDoorDisplay, html.dark #frontDoorDisplay, html.dark #seatMapNoteDisplay { color: #cbd5e1 !important; }
+        html.dark .seat-card.status-priority { background: #0b2e26 !important; border-color: #059669 !important; }
+        html.dark .seat-card.status-priority .seat-name { color: #a7f3d0 !important; }
+        html.dark .seat-card.status-noSide { background: #35260a !important; border-color: #d97706 !important; }
+        html.dark .seat-card.status-noSide .seat-name { color: #fde68a !important; }
+        html.dark .seat-card.status-noBack { background: #28194b !important; border-color: #8b5cf6 !important; }
+        html.dark .seat-card.status-noBack .seat-name { color: #e9d5ff !important; }
+        html.dark .seat-card.status-rear { background: #172033 !important; border-color: #64748b !important; }
+        html.dark .seat-card.status-rear .seat-name { color: #f8fafc !important; }
+        html.dark .seat-card.status-normal { background: #20264a !important; border-color: #6366f1 !important; }
+        html.dark .seat-card.status-normal .seat-name { color: #f8fafc !important; }
+        html.dark .seat-card.seat-empty { background: #172033 !important; border-color: #334155 !important; }
+        html.dark .seat-card.seat-disabled { background: #351823 !important; border-color: #fb7185 !important; }
+        html.dark .seat-map-display-surface.hide-needs .seat-card.has-needs { background: #20264a !important; border-color: #6366f1 !important; }
+        html.dark .seat-map-display-surface.hide-needs .seat-card.has-needs .seat-name { color: #c7d2fe !important; }
+        html.dark .seat-map-display-surface.hide-disabled-seats .seat-card.seat-disabled { background: #172033 !important; border-color: #334155 !important; }
+        html.dark .coord-badge { background: #475569; color: #ffffff; border-color: #64748b; }
+        html.dark .row-label-text { color: #cbd5e1; }
+        html.dark .summary-box { background: #111827; border-right: 1px solid #334155; border-bottom: 1px solid #334155; border-left: 1px solid #334155; box-shadow: 0 8px 20px rgba(0,0,0,0.28); }
+        html.dark .summary-box.priority .summary-title { color: #34d399 !important; }
+        html.dark .summary-box.rear .summary-title { color: #cbd5e1 !important; }
+        html.dark .summary-box.noBack .summary-title { color: #c4b5fd !important; }
+        html.dark .summary-box.noSide .summary-title { color: #fbbf24 !important; }
+        html.dark #studentTableBody td { background: #1e293b; color: #e2e8f0 !important; border-top: 1px solid #334155; }
+        html.dark #studentTableBody tr:nth-child(even) td { background: #182235; }
+        html.dark #studentTableBody .bg-indigo-50 { background: #312e81 !important; color: #e0e7ff !important; }
+        html.dark .tag-toggle { background: #293548; border-color: #475569; color: #e2e8f0; }
+        html.dark .tag-toggle:disabled, html.dark .tag-toggle.is-disabled { opacity: 0.72; background: #334155 !important; border-color: #475569 !important; color: #cbd5e1 !important; }
+        html.dark .btn-main:disabled, html.dark .btn-main.is-disabled { opacity: 0.58 !important; filter: grayscale(20%); }
+        html.dark #previewModeBtn.bg-slate-200, html.dark #exportModeBtn.bg-slate-200 { background: #334155 !important; color: #e2e8f0 !important; }
 
         .unified-title {
             font-size: 1.25rem;
@@ -86,6 +122,22 @@
         .btn-main:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
         .btn-main:active { transform: translateY(0) scale(0.97); }
         .btn-main:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+        .clear-icon-btn {
+            width: 3.25rem;
+            height: 3.25rem;
+            border-radius: 1rem;
+            background: #e11d48;
+            color: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+            border: 1px solid #fb7185;
+            box-shadow: 0 8px 18px rgba(225, 29, 72, 0.22);
+            transition: transform 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease;
+        }
+        .clear-icon-btn:hover { background: #be123c; transform: translateY(-2px); box-shadow: 0 10px 22px rgba(225, 29, 72, 0.3); }
+        .clear-icon-btn:active { transform: scale(0.96); }
 
         .tag-toggle {
             font-size: 14px;
@@ -109,14 +161,36 @@
         .tag-toggle.noBack.active { background: var(--color-noBack); }
         .tag-toggle.rear.active { background: var(--color-rear); } /* 靠後激活樣式 */
 
-        .seat-card { 
-            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); 
+        .seat-card {
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
             min-height: 95px;
             border-radius: 1.25rem;
             border: 1px solid #e2e8f0;
             background: #ffffff;
             position: relative;
-            overflow: hidden; 
+            overflow: hidden;
+        }
+
+        .seat-card.seat-empty {
+            background: #f8fafc !important;
+            border: 1.5px solid #cbd5e1 !important;
+        }
+
+        .seat-card.seat-empty .coord-badge {
+            color: #64748b;
+            background: #ffffff;
+            border-color: #e2e8f0;
+        }
+
+        html.dark .seat-card.seat-empty {
+            background: #172033 !important;
+            border-color: #475569 !important;
+        }
+
+        html.dark .seat-card.seat-empty .coord-badge {
+            color: #f8fafc;
+            background: #475569;
+            border-color: #64748b;
         }
         
         .seat-card.occupied {
@@ -238,8 +312,7 @@
         .seat-map-display-surface.hide-seat-map-note #seatMapNoteDisplay,
         .seat-map-display-surface.hide-front-label #screenContainer,
         .seat-map-display-surface.hide-row-labels #labelWrapper,
-        .seat-map-display-surface.hide-seat-coordinates .coord-badge,
-        .seat-map-display-surface.hide-needs .seat-card.has-needs .seat-indicator { display: none !important; }
+        /* 五階段分類色條是抽籤結果的必要辨識資訊，不隨需求底色設定隱藏。 */
         .seat-map-display-surface.hide-needs .seat-card.has-needs {
             background: #f8faff !important;
             border-color: #e0e7ff !important;
@@ -289,12 +362,59 @@
         #drawStatusBanner {
             position: fixed;
             top: 0; left: 0; right: 0;
-            background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            background: linear-gradient(120deg, #312e81 0%, #7c3aed 48%, #db2777 100%);
             color: white;
             z-index: 200;
             display: none;
             padding: 1.2rem;
             text-align: center;
+            box-shadow: 0 14px 35px rgba(76, 29, 149, 0.35);
+            animation: drawBannerEnter 0.32s ease-out;
+        }
+
+        #drawProgressTrack {
+            max-width: 56rem;
+            height: 5px;
+            margin: 0.75rem auto 0;
+            background: rgba(255,255,255,0.22);
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        #drawProgressBar {
+            width: 0;
+            height: 100%;
+            background: white;
+            border-radius: inherit;
+            box-shadow: 0 0 14px rgba(255,255,255,0.85);
+            transition: width 0.25s ease;
+        }
+
+        #drawCurrentStudent {
+            min-width: 15rem;
+            animation: drawResultPulse 0.45s ease-in-out infinite alternate;
+        }
+
+        .seat-card.draw-reveal {
+            position: relative;
+            z-index: 5;
+            animation: drawSeatReveal 0.55s cubic-bezier(0.2, 0.9, 0.25, 1.35) both;
+        }
+
+        @keyframes drawBannerEnter {
+            from { opacity: 0; transform: translateY(-100%); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes drawResultPulse {
+            from { transform: scale(0.98); background: rgba(255,255,255,0.16); }
+            to { transform: scale(1.02); background: rgba(255,255,255,0.28); }
+        }
+
+        @keyframes drawSeatReveal {
+            0% { transform: scale(0.72); filter: brightness(1.8); box-shadow: 0 0 0 rgba(129,140,248,0); }
+            55% { transform: scale(1.12); filter: brightness(1.35); box-shadow: 0 0 28px rgba(129,140,248,0.95); }
+            100% { transform: scale(1); filter: brightness(1); }
         }
 
         #customAlert {
@@ -363,7 +483,10 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-width: 90%;
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            padding: 18px 10px 0;
             text-align: center;
         }
         .screen-bar { font-size: 1.5rem; letter-spacing: 1rem; text-indent: 1rem; }
@@ -495,13 +618,28 @@
         <button onclick="closeAlert()" class="btn-main bg-slate-800 text-white w-full py-3">確認</button>
     </div>
 
-    <div id="drawStatusBanner">
-        <div class="max-w-4xl mx-auto flex items-center justify-between px-6">
-            <div id="drawStatusText" class="text-2xl font-black italic flex items-center gap-3">
-                <i data-lucide="loader-2" class="animate-spin"></i> 抽籤中
+    <div id="drawStatusBanner" role="status" aria-live="polite">
+        <div class="max-w-4xl mx-auto flex items-center justify-between px-6 gap-4">
+            <div class="text-left">
+                <div id="drawStatusText" class="text-xl sm:text-2xl font-black italic">抽籤準備中</div>
+                <div id="drawProgressText" class="text-xs sm:text-sm font-bold text-white/75 mt-1">準備揭曉座位</div>
             </div>
-            <div id="drawCurrentStudent" class="bg-white/20 px-6 py-2 rounded-xl font-black text-2xl border border-white/30">---</div>
+            <div id="drawCurrentStudent" class="bg-white/20 px-4 sm:px-6 py-2 rounded-xl font-black text-lg sm:text-2xl border border-white/30">---</div>
         </div>
+        <div id="drawProgressTrack"><div id="drawProgressBar"></div></div>
+    </div>
+
+    <div id="adminAuthOverlay" class="hidden fixed inset-0 z-[600] bg-slate-950/70 backdrop-blur-sm p-4 items-center justify-center">
+        <form onsubmit="submitAdminAuth(event)" class="w-full max-w-md bg-white dark:bg-slate-900 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-2xl p-7 sm:p-8">
+            <div class="flex items-center gap-3 mb-5">
+                <div class="bg-indigo-50 dark:bg-indigo-950/50 p-3 rounded-2xl"><i data-lucide="shield-check" class="w-7 h-7 text-indigo-600"></i></div>
+                <div><h2 id="adminAuthTitle" class="text-xl font-black text-slate-800 dark:text-white">管理者驗證</h2><p id="adminAuthDescription" class="text-xs font-bold text-slate-500 dark:text-slate-400 mt-1"></p></div>
+            </div>
+            <label class="block text-sm font-black text-slate-600 dark:text-slate-300">四位數 PIN<input id="adminPasswordInput" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" autocomplete="one-time-code" oninput="handleAdminPinInput(this)" class="mt-2 w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-2xl px-4 py-3 text-center tracking-[0.8em] text-xl text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-400"></label>
+            <label id="adminPasswordConfirmGroup" class="hidden mt-4 text-sm font-black text-slate-600 dark:text-slate-300">再次輸入四位數 PIN<input id="adminPasswordConfirmInput" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" autocomplete="new-password" oninput="handleAdminPinInput(this)" class="mt-2 w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-2xl px-4 py-3 text-center tracking-[0.8em] text-xl text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-400"></label>
+            <p id="adminAuthError" class="min-h-[1.25rem] mt-3 text-sm font-bold text-rose-600 dark:text-rose-400"></p>
+            <div class="grid grid-cols-2 gap-3 mt-2"><button type="button" onclick="closeAdminAuth()" class="btn-main bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white py-3">取消</button><button id="adminAuthSubmitBtn" type="submit" class="btn-main bg-indigo-600 hover:bg-indigo-500 text-white py-3">解鎖</button></div>
+        </form>
     </div>
 
     <div id="mainView">
@@ -518,14 +656,14 @@
             <!-- 中間彈性留白 -->
             <div id="mainHeaderSpacer" class="flex-1"></div>
 
-            <!-- 頁面最上面靠右：圖示 + 程式名稱「座位小幫手」 + 版號 v3.0 -->
+            <!-- 頁面最上面靠右：圖示 + 程式名稱「座位小幫手」 + 版號 -->
             <div id="mainHeaderBrand" class="flex flex-col items-end gap-1">
                     <div class="flex items-center gap-2 sm:gap-3">
                         <div class="bg-indigo-50 p-2.5 rounded-2xl shadow-sm border border-indigo-100 flex items-center justify-center">
                             <i data-lucide="layout-grid" class="text-indigo-600 w-6 h-6 sm:w-7 sm:h-7"></i>
                         </div>
                         <h1 id="appTitle" class="text-2xl sm:text-3xl font-black italic text-indigo-600 leading-none">座位小幫手</h1>
-                        <span id="appVersionBadge" class="bg-indigo-600 text-white text-xs sm:text-sm font-black px-3 py-1 rounded-full shadow-md tracking-wider">v3.0</span>
+                        <span id="appVersionBadge" class="bg-indigo-600 text-white text-xs sm:text-sm font-black px-3 py-1 rounded-full shadow-md tracking-wider">v3.1</span>
                     </div>
                     <p id="classroomNameDisplay" class="text-xs sm:text-sm font-black text-slate-500 dark:text-slate-400"></p>
             </div>
@@ -619,11 +757,11 @@
                 <div class="step-card">
                     <div class="flex items-center justify-between mb-4">
                         <span class="unified-title !text-white mb-0"><i data-lucide="users"></i> 第一步：匯入名單</span>
-                        <button onclick="clearStudentList()" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-black border border-rose-400/50 shadow-sm transition-colors flex items-center gap-1">
-                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> 清除名單
+                        <button onclick="clearStudentList()" class="clear-icon-btn" title="清除名單" aria-label="清除名單">
+                            <i data-lucide="trash-2" class="w-6 h-6" aria-hidden="true"></i>
                         </button>
                     </div>
-                    <textarea id="rawInput" class="w-full h-36 bg-white/10 border border-white/20 rounded-2xl p-4 text-base focus:ring-2 focus:ring-indigo-400 outline-none resize-none mb-4 text-white placeholder-white/30 font-bold" placeholder="每行一位學生，可貼上姓名、座號＋姓名，或試算表兩欄資料..."></textarea>
+                    <textarea id="rawInput" class="w-full h-36 bg-white/10 border border-white/20 rounded-2xl p-4 text-base focus:ring-2 focus:ring-indigo-400 outline-none resize-none mb-4 text-white placeholder-white/30 font-bold" placeholder="每行一位學生；可貼上姓名、座號＋姓名，或試算表的座號與姓名兩欄..."></textarea>
                     <button id="btnInit" class="btn-main w-full bg-indigo-500 hover:bg-indigo-400 py-4 text-white shadow-xl">
                         <i data-lucide="arrow-right-circle"></i> 匯入並進行下一步
                     </button>
@@ -632,8 +770,8 @@
                 <div class="config-card">
                     <div class="flex items-center justify-between mb-4">
                         <span class="unified-title mb-0"><i data-lucide="settings-2" class="text-indigo-500"></i> 第二步：需求設定</span>
-                        <button onclick="clearAllTags()" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-black border border-rose-400/50 shadow-sm transition-colors flex items-center gap-1">
-                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> 清除需求
+                        <button onclick="clearAllTags()" class="clear-icon-btn" title="清除需求" aria-label="清除需求">
+                            <i data-lucide="trash-2" class="w-6 h-6" aria-hidden="true"></i>
                         </button>
                     </div>
                     <div class="max-h-[350px] overflow-auto mb-6 border rounded-2xl bg-slate-50/50">
@@ -653,8 +791,8 @@
                     <div class="pt-6 border-t border-slate-100">
                         <div class="flex items-center justify-between mb-4">
                             <span class="unified-title mb-0"><i data-lucide="play-circle" class="text-indigo-500"></i> 第三步：執行抽籤</span>
-                            <button id="btnResetDraw" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-black border border-rose-400/50 shadow-sm transition-colors flex items-center gap-1">
-                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> 清除抽籤
+                            <button id="btnResetDraw" class="clear-icon-btn" title="清除抽籤" aria-label="清除抽籤">
+                                <i data-lucide="trash-2" class="w-6 h-6" aria-hidden="true"></i>
                             </button>
                         </div>
                         <div id="drawActionGrid" class="grid grid-cols-2 gap-4 mb-6">
@@ -702,7 +840,7 @@
                     <div class="pt-6 mt-6 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <button onclick="saveHistory()" class="btn-main bg-indigo-50 text-indigo-600 py-3 text-sm font-black flex items-center justify-center gap-1 shadow-sm"><i data-lucide="save" class="w-4 h-4"></i> 儲存結果</button>
                         <button onclick="openHistory()" class="btn-main bg-slate-800 text-white py-3 text-sm font-black flex items-center justify-center gap-1 shadow-sm"><i data-lucide="history" class="w-4 h-4"></i> 歷史紀錄</button>
-                        <button id="btnResetAll" class="btn-main bg-rose-600 hover:bg-rose-500 text-white py-3 text-sm font-black flex items-center justify-center gap-1 shadow-sm"><i data-lucide="bomb" class="w-4 h-4"></i> 清除所有資料</button>
+                        <button id="btnResetAll" class="clear-icon-btn !w-auto px-5 gap-2 font-black" title="重置所有資料" aria-label="重置所有資料"><i data-lucide="radiation" class="w-6 h-6" aria-hidden="true"></i><span>重置所有資料</span></button>
                     </div>
                 </div>
             </div>
@@ -762,7 +900,7 @@
                     </div>
                 </div>
                 <button type="button" onclick="closeAdminView()" class="order-1 btn-main bg-white hover:bg-indigo-50 text-indigo-700 px-5 py-3 flex items-center justify-center gap-2 shadow-lg">
-                    <i data-lucide="arrow-left" class="w-5 h-5"></i> 返回抽籤頁面
+                    <i data-lucide="arrow-left" class="w-5 h-5"></i> 返回抽籤
                 </button>
             </div>
 
@@ -819,21 +957,18 @@
                 <section id="jsonBackupSection" class="xl:col-span-12 bg-white dark:bg-slate-900 p-7 sm:p-8 rounded-[2rem] shadow-sm border border-slate-200 dark:border-slate-700 border-t-4 border-t-emerald-500">
                     <div class="flex items-center gap-3 mb-5">
                         <div class="bg-emerald-50 dark:bg-emerald-950/50 p-2.5 rounded-xl"><i data-lucide="archive" class="w-6 h-6 text-emerald-500"></i></div>
-                        <div>
-                            <h2 class="text-lg font-black text-slate-800 dark:text-white">JSON 完整備份</h2>
-                            <p class="text-xs font-bold text-slate-500 dark:text-slate-400">跨裝置備份與還原所有本機資料</p>
-                        </div>
+                        <h2 class="text-lg font-black text-slate-800 dark:text-white">備份</h2>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <button type="button" onclick="exportJsonBackup()" class="btn-main bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-3 flex items-center justify-center gap-2">
-                            <i data-lucide="download" class="w-5 h-5"></i> 匯出 JSON
+                            <i data-lucide="download" class="w-5 h-5"></i> 匯出備份
                         </button>
                         <button type="button" onclick="document.getElementById('jsonBackupInput').click()" class="btn-main bg-slate-700 hover:bg-slate-600 text-white px-5 py-3 flex items-center justify-center gap-2">
-                            <i data-lucide="upload" class="w-5 h-5"></i> 匯入 JSON
+                            <i data-lucide="upload" class="w-5 h-5"></i> 匯入備份
                         </button>
                     </div>
                     <input id="jsonBackupInput" type="file" accept=".json,application/json" class="hidden" onchange="importJsonBackup(this)">
-                    <p id="jsonBackupStatus" class="text-sm font-bold text-slate-500 dark:text-slate-400 mt-3 min-h-[1.25rem]">匯入時會先驗證檔案，再詢問是否覆蓋。</p>
+                    <p id="jsonBackupStatus" class="text-sm font-bold text-slate-500 dark:text-slate-400 mt-3"></p>
                 </section>
 
                 <section id="displaySettingsSection" class="xl:col-span-12 bg-white dark:bg-slate-900 p-7 sm:p-8 rounded-[2rem] shadow-sm border border-slate-200 dark:border-slate-700 border-t-4 border-t-sky-500">
@@ -856,7 +991,7 @@
                                 </label>
                                 <div id="displaySettingRows" class="contents"></div>
                             </div>
-                            <p class="text-xs font-bold text-slate-400 mt-4">學生姓名固定顯示；匯出設定套用所有匯出格式。</p>
+                            <p class="text-xs font-bold text-slate-400 mt-4">學生姓名固定顯示；座標固定顯示於頁面、複製圖片、PNG 與 PDF，Word、Excel 固定不顯示座標。</p>
                         </div>
                         <div class="lg:col-span-7 bg-slate-100 dark:bg-slate-950 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 overflow-hidden">
                             <div class="flex items-center justify-between gap-3 mb-3">
@@ -871,6 +1006,71 @@
                     </div>
                 </section>
                 </div>
+
+                <section class="xl:col-span-7 bg-white dark:bg-slate-900 p-7 sm:p-8 rounded-[2rem] shadow-sm border border-slate-200 dark:border-slate-700 border-t-4 border-t-emerald-500">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="bg-emerald-50 dark:bg-emerald-950/50 p-2.5 rounded-xl"><i data-lucide="sparkles" class="w-6 h-6 text-emerald-500"></i></div>
+                        <div>
+                            <h2 class="text-lg font-black text-slate-800 dark:text-white">抽籤偏好</h2>
+                            <p class="text-xs font-bold text-slate-500 dark:text-slate-400">依上一次抽籤結果自動調整；無法兼顧時仍會正常抽籤</p>
+                        </div>
+                    </div>
+                    <div id="drawPreferenceList" class="grid grid-cols-1 gap-3">
+                        <div class="grid grid-cols-[auto_1fr_auto] items-start gap-3 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-2xl p-4">
+                            <input id="avoidSameSeatToggle" type="checkbox" onchange="saveDrawPreferences()" class="mt-1 w-5 h-5 accent-emerald-600">
+                            <div><div class="font-black text-slate-800 dark:text-white">避免重複同一座位</div><div class="mt-1 text-xs font-bold text-slate-500 dark:text-slate-400">優先不要坐上次完全相同的位置。</div></div>
+                            <select id="avoidSameSeatPriority" onchange="saveDrawPreferences()" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-2 py-2 text-sm font-black text-slate-700 dark:text-white"><option value="high">高</option><option value="medium">中</option><option value="low">低</option></select>
+                        </div>
+                        <div class="grid grid-cols-[auto_1fr_auto] items-start gap-3 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-2xl p-4">
+                            <input id="avoidRepeatEdgeToggle" type="checkbox" onchange="saveDrawPreferences()" class="mt-1 w-5 h-5 accent-emerald-600">
+                            <div><div class="font-black text-slate-800 dark:text-white">避免連續坐邊邊</div><div class="mt-1 text-xs font-bold text-slate-500 dark:text-slate-400">上次在最左或最右排，這次優先安排到非邊排。</div></div>
+                            <select id="avoidRepeatEdgePriority" onchange="saveDrawPreferences()" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-2 py-2 text-sm font-black text-slate-700 dark:text-white"><option value="high">高</option><option value="medium">中</option><option value="low">低</option></select>
+                        </div>
+                        <div class="grid grid-cols-[auto_1fr_auto] items-start gap-3 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-2xl p-4">
+                            <input id="avoidPreviousNeighborsToggle" type="checkbox" onchange="saveDrawPreferences()" class="mt-1 w-5 h-5 accent-emerald-600">
+                            <div><div class="font-black text-slate-800 dark:text-white">打散上次座位四周的同學</div><div class="mt-1 text-xs font-bold text-slate-500 dark:text-slate-400">優先避開上次前後左右及斜角相鄰的同學。</div></div>
+                            <select id="avoidPreviousNeighborsPriority" onchange="saveDrawPreferences()" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-2 py-2 text-sm font-black text-slate-700 dark:text-white"><option value="high">高</option><option value="medium">中</option><option value="low">低</option></select>
+                        </div>
+                        <div class="grid grid-cols-[auto_1fr_auto] items-start gap-3 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-2xl p-4">
+                            <input id="considerHeightToggle" type="checkbox" onchange="saveDrawPreferences()" class="mt-1 w-5 h-5 accent-emerald-600">
+                            <div><div class="font-black text-slate-800 dark:text-white">考慮身高</div><div class="mt-1 text-xs font-bold text-slate-500 dark:text-slate-400">同一橫排中，盡量讓矮的在前、高的在後。</div><label class="mt-2 flex items-center gap-2 text-xs font-bold text-slate-500">身高差門檻 <input id="heightThresholdInput" type="number" min="0" max="30" step="1" onchange="saveDrawPreferences()" class="w-20 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1.5 text-slate-700 dark:text-white"> 公分</label></div>
+                            <select id="considerHeightPriority" onchange="saveDrawPreferences()" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-2 py-2 text-sm font-black text-slate-700 dark:text-white"><option value="high">高</option><option value="medium">中</option><option value="low">低</option></select>
+                        </div>
+                        <div class="bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-2xl p-4">
+                            <div class="grid grid-cols-[auto_1fr_auto] items-start gap-3">
+                                <input id="separateStudentsToggle" type="checkbox" onchange="saveDrawPreferences()" class="mt-1 w-5 h-5 accent-emerald-600">
+                                <div><div class="font-black text-slate-800 dark:text-white">指定學生分開</div><div class="mt-1 text-xs font-bold text-slate-500 dark:text-slate-400">指定的兩位學生盡量不要坐在彼此前後左右或斜角。</div></div>
+                                <select id="separateStudentsPriority" onchange="saveDrawPreferences()" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-2 py-2 text-sm font-black text-slate-700 dark:text-white"><option value="high">高</option><option value="medium">中</option><option value="low">低</option></select>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2 mt-3">
+                                <select id="separateStudentA" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm font-bold text-slate-700 dark:text-white"></select>
+                                <select id="separateStudentB" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm font-bold text-slate-700 dark:text-white"></select>
+                                <button type="button" onclick="addSeparationPair()" class="btn-main bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 text-sm">加入</button>
+                            </div>
+                            <div id="separationPairList" class="flex flex-wrap gap-2 mt-3"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="xl:col-span-7 bg-white dark:bg-slate-900 p-7 sm:p-8 rounded-[2rem] shadow-sm border border-slate-200 dark:border-slate-700 border-t-4 border-t-cyan-500">
+                    <div class="flex items-center gap-3 mb-5">
+                        <div class="bg-cyan-50 dark:bg-cyan-950/50 p-2.5 rounded-xl"><i data-lucide="ruler" class="w-6 h-6 text-cyan-500"></i></div>
+                        <div><h2 class="text-lg font-black text-slate-800 dark:text-white">身高資料（僅後台）</h2><p class="text-xs font-bold text-slate-500 dark:text-slate-400">貼上「座號、身高」兩欄；身高不會顯示在抽籤頁、座位表或匯出檔。</p></div>
+                    </div>
+                    <textarea id="heightImportInput" class="w-full h-28 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 text-sm font-bold text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-cyan-400 resize-none" placeholder="座號　身高&#10;1　145&#10;2　168"></textarea>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                        <button type="button" onclick="importHeightData()" class="btn-main bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-3">匯入身高</button>
+                        <button type="button" onclick="clearHeightData()" class="clear-icon-btn justify-self-start sm:justify-self-end" title="清除身高資料" aria-label="清除身高資料"><i data-lucide="trash-2" class="w-6 h-6" aria-hidden="true"></i></button>
+                    </div>
+                    <p id="heightImportStatus" class="mt-3 text-xs font-bold text-slate-500 dark:text-slate-400"></p>
+                </section>
+
+                <section class="xl:col-span-7 bg-white dark:bg-slate-900 p-7 sm:p-8 rounded-[2rem] shadow-sm border border-slate-200 dark:border-slate-700 border-t-4 border-t-indigo-500">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="flex items-center gap-3"><div class="bg-indigo-50 dark:bg-indigo-950/50 p-2.5 rounded-xl"><i data-lucide="lock-keyhole" class="w-6 h-6 text-indigo-500"></i></div><div><h2 class="text-lg font-black text-slate-800 dark:text-white">後台 PIN</h2><p class="text-xs font-bold text-slate-500 dark:text-slate-400">四位數 PIN 經雜湊後只保存在此瀏覽器，不包含於備份。</p></div></div>
+                        <div class="flex gap-2"><button type="button" onclick="openAdminPasswordSetup()" class="btn-main bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 text-sm">變更 PIN</button><button type="button" onclick="removeAdminPassword()" class="btn-main bg-rose-100 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 px-4 py-2 text-sm">移除 PIN</button></div>
+                    </div>
+                </section>
 
                 <section class="xl:col-span-7 bg-white dark:bg-slate-900 p-7 sm:p-8 rounded-[2rem] shadow-sm border border-slate-200 dark:border-slate-700 border-t-4 border-t-violet-500">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
@@ -913,9 +1113,17 @@
                     </div>
                     <input id="wordTemplateInput" type="file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" class="hidden" onchange="handleWordTemplateUpload(this)">
                     <div class="mt-5 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 text-sm font-bold text-slate-600 dark:text-slate-300 leading-7">
-                        <p class="font-black text-slate-800 dark:text-white">可修改字型、圖片、頁框、標題位置與版面；請務必保留 <code class="px-2 py-1 rounded bg-slate-200 dark:bg-slate-700 text-rose-600 dark:text-rose-300">{{seatTable}}</code>。</p>
-                        <p class="mt-1">可選標記：{{schoolName}}、{{title}}、{{metadata}}、{{exportDate}}、{{rearDoor}}、{{frontDoor}}、{{seatMapNote}}。刪除可選標記，就不會在 Word 中顯示該欄位。</p>
-                        <p class="mt-1 text-slate-500 dark:text-slate-400">自訂模板只保存在目前瀏覽器，且不包含在 JSON 備份；更換瀏覽器或裝置時請重新上傳。</p>
+                        <p class="font-black text-slate-800 dark:text-white">使用方式</p>
+                        <ol class="mt-2 list-decimal pl-5 space-y-1">
+                            <li>下載內建模板。</li>
+                            <li>用 Word 修改字型、圖片、頁框或版面；不要刪除模板中的座位表區域。</li>
+                            <li>上傳修改後的模板，之後匯出 Word 就會自動套用。</li>
+                        </ol>
+                        <p class="mt-3 text-slate-500 dark:text-slate-400">自訂模板只保存在目前裝置的這個瀏覽器；更換裝置或瀏覽器時需要重新上傳。</p>
+                        <details class="mt-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-4 py-2">
+                            <summary class="cursor-pointer font-black text-slate-700 dark:text-slate-200">進階說明（一般使用者不用設定）</summary>
+                            <p class="mt-2 text-xs leading-6">座位表區域必須保留 <code class="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-rose-600 dark:text-rose-300">{{seatTable}}</code>。其他欄位標記可依需要保留或刪除。</p>
+                        </details>
                     </div>
                 </section>
             </div>
@@ -941,7 +1149,7 @@
     </div>
 
     <script>
-        const APP_VERSION = "v3.0";
+        const APP_VERSION = "v3.1";
 
         function initTheme() {
             const saved = localStorage.getItem('seatHelperTheme');
@@ -974,9 +1182,11 @@
         let activeSeatIdx = null;
         let mergeRight = [];
         let drawHistory = [];
+        let lastDrawSnapshot = null;
+        let isDrawing = false;
         let classroomName = '座位表';
-        let schoolName = '';
-        let schoolYear = '';
+        let schoolName = '聖功女中';
+        let schoolYear = '115';
         let semester = '';
         let advisorName = '';
         let className = '';
@@ -986,9 +1196,34 @@
         let seatMapNote = '';
         let soundEnabled = true;
         let phaseSoundMap = { priority: 'priority', rear: 'rear', noBack: 'noBack', noSide: 'noSide', final: 'final' };
+        const defaultDrawPreferences = {
+            avoidSameSeat: true, avoidSameSeatPriority: 'high',
+            avoidRepeatEdge: true, avoidRepeatEdgePriority: 'medium',
+            avoidPreviousNeighbors: true, avoidPreviousNeighborsPriority: 'medium',
+            considerHeight: true, considerHeightPriority: 'high', heightThreshold: 5,
+            separateStudents: true, separateStudentsPriority: 'high', separationPairs: []
+        };
+        const drawPriorityWeights = { high: 1000000, medium: 1000, low: 1 };
+
+        function normalizeDrawPreferences(raw = {}) {
+            const normalized = { ...defaultDrawPreferences, ...raw };
+            ['avoidSameSeatPriority', 'avoidRepeatEdgePriority', 'avoidPreviousNeighborsPriority', 'considerHeightPriority', 'separateStudentsPriority'].forEach(key => {
+                if (!drawPriorityWeights[normalized[key]]) normalized[key] = defaultDrawPreferences[key];
+            });
+            ['avoidSameSeat', 'avoidRepeatEdge', 'avoidPreviousNeighbors', 'considerHeight', 'separateStudents'].forEach(key => {
+                if (typeof normalized[key] !== 'boolean') normalized[key] = defaultDrawPreferences[key];
+            });
+            normalized.heightThreshold = Math.min(30, Math.max(0, Number(normalized.heightThreshold) || 0));
+            normalized.separationPairs = Array.isArray(normalized.separationPairs)
+                ? normalized.separationPairs.filter(pair => Array.isArray(pair) && pair.length === 2 && pair.every(Number.isFinite))
+                : [];
+            return normalized;
+        }
+
+        let drawPreferences = normalizeDrawPreferences();
         const defaultDisplaySettings = {
-            preview: { classroomName: false, schoolName: false, schoolYear: false, semester: false, advisorName: false, className: false, frontLabel: true, frontDoor: false, rearDoor: false, seatMapNote: false, rowLabels: true, seatCoordinates: true, needs: true, disabledSeats: true, emptySeats: true },
-            export: { classroomName: true, schoolName: true, schoolYear: true, semester: true, advisorName: true, className: true, frontLabel: true, frontDoor: false, rearDoor: false, seatMapNote: true, rowLabels: true, seatCoordinates: true, needs: false, disabledSeats: false, emptySeats: true, exportDate: true }
+            preview: { classroomName: false, schoolName: false, schoolYear: false, semester: false, advisorName: false, className: false, frontLabel: true, frontDoor: false, rearDoor: false, seatMapNote: false, rowLabels: true, needs: true, disabledSeats: true, emptySeats: true },
+            export: { classroomName: true, schoolName: true, schoolYear: true, semester: true, advisorName: true, className: true, frontLabel: true, frontDoor: false, rearDoor: false, seatMapNote: true, rowLabels: true, needs: false, disabledSeats: false, emptySeats: true, exportDate: true }
         };
         let displaySettings = JSON.parse(JSON.stringify(defaultDisplaySettings));
         let displayPreviewMode = 'preview';
@@ -1000,6 +1235,9 @@
         const WORD_TEMPLATE_KEY = 'active';
         const BUILT_IN_WORD_TEMPLATE_URL = './templates/seat-helper-word-template.docx';
         const REQUIRED_WORD_TEMPLATE_PLACEHOLDERS = ['seatTable'];
+        const ADMIN_LOCK_STORAGE_KEY = 'seatHelperAdminLockV1';
+        let adminAuthMode = 'unlock';
+        let adminPinSubmitting = false;
 
         function getSerializableData() {
             return {
@@ -1008,6 +1246,7 @@
                 gridConfig,
                 mergeRight,
                 drawHistory,
+                lastDrawSnapshot,
                 classroomName,
                 schoolName,
                 schoolYear,
@@ -1021,6 +1260,7 @@
                 seatMapTitle: classroomName,
                 soundEnabled,
                 phaseSoundMap,
+                drawPreferences,
                 displaySettings
             };
         }
@@ -1039,6 +1279,7 @@
                     document.getElementById('cfgRows').value = gridConfig.rows;
                     mergeRight = data.mergeRight || new Array(Math.max(0, gridConfig.cols - 1)).fill(false);
                     drawHistory = data.drawHistory || [];
+                    lastDrawSnapshot = data.lastDrawSnapshot || null;
                     classroomName = data.seatMapTitle || '座位表';
                     schoolName = data.schoolName || '';
                     schoolYear = String(data.schoolYear || '').match(/\d+/)?.[0] || '';
@@ -1052,10 +1293,13 @@
                     seatMapNote = data.seatMapNote || '';
                     soundEnabled = data.soundEnabled !== false;
                     phaseSoundMap = { ...phaseSoundMap, ...(data.phaseSoundMap || {}) };
+                    drawPreferences = normalizeDrawPreferences(data.drawPreferences);
                     displaySettings = {
                         preview: { ...defaultDisplaySettings.preview, ...(data.displaySettings?.preview || {}) },
                         export: { ...defaultDisplaySettings.export, ...(data.displaySettings?.export || {}) }
                     };
+                    delete displaySettings.preview.seatCoordinates;
+                    delete displaySettings.export.seatCoordinates;
                     if (data.students) {
                         students = data.students.map(s => ({...s, tags: new Set(s.tags)}));
                     }
@@ -1165,7 +1409,128 @@
             document.getElementById('screenBar').style.gridColumn = `1 / span ${totalCols}`;
         }
 
-        function openAdminModal() {
+        function bytesToBase64(bytes) {
+            let binary = '';
+            bytes.forEach(byte => binary += String.fromCharCode(byte));
+            return btoa(binary);
+        }
+
+        async function hashAdminPassword(pin, salt) {
+            const data = new TextEncoder().encode(`${salt}:${pin}`);
+            const digest = await crypto.subtle.digest('SHA-256', data);
+            return bytesToBase64(new Uint8Array(digest));
+        }
+
+        function showAdminAuth(mode) {
+            adminAuthMode = mode;
+            adminPinSubmitting = false;
+            const isSetup = mode === 'setup';
+            document.getElementById('adminAuthTitle').textContent = isSetup ? '設定四位數 PIN' : '輸入管理者 PIN';
+            document.getElementById('adminAuthDescription').textContent = isSetup ? '第一次使用設定，請建立四位數字 PIN。' : '輸入第 4 碼後會自動開啟設定。';
+            document.getElementById('adminPasswordConfirmGroup').classList.toggle('hidden', !isSetup);
+            document.getElementById('adminPasswordInput').value = '';
+            document.getElementById('adminPasswordConfirmInput').value = '';
+            document.getElementById('adminAuthError').textContent = '';
+            document.getElementById('adminAuthSubmitBtn').textContent = isSetup ? '設定 PIN' : '解鎖';
+            const overlay = document.getElementById('adminAuthOverlay');
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+            requestAnimationFrame(() => document.getElementById('adminPasswordInput').focus());
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function closeAdminAuth() {
+            const overlay = document.getElementById('adminAuthOverlay');
+            overlay.classList.add('hidden');
+            overlay.classList.remove('flex');
+        }
+
+        async function openAdminModal() {
+            showAdminAuth(hasValidAdminPinLock() ? 'unlock' : 'setup');
+        }
+
+        function openAdminPasswordSetup() {
+            showAdminAuth('setup');
+        }
+
+        function hasValidAdminPinLock() {
+            try {
+                const lock = JSON.parse(localStorage.getItem(ADMIN_LOCK_STORAGE_KEY));
+                return lock?.type === 'pin4' && typeof lock.salt === 'string' && typeof lock.hash === 'string';
+            } catch {
+                return false;
+            }
+        }
+
+        function handleAdminPinInput(input) {
+            input.value = input.value.replace(/\D/g, '').slice(0, 4);
+            document.getElementById('adminAuthError').textContent = '';
+            if (adminPinSubmitting || input.value.length !== 4) return;
+            if (adminAuthMode === 'setup') {
+                if (input.id === 'adminPasswordInput') {
+                    document.getElementById('adminPasswordConfirmInput').focus();
+                } else if (document.getElementById('adminPasswordInput').value.length === 4) {
+                    submitAdminAuth();
+                }
+            } else {
+                submitAdminAuth();
+            }
+        }
+
+        async function submitAdminAuth(event) {
+            event?.preventDefault();
+            if (adminPinSubmitting) return;
+            const password = document.getElementById('adminPasswordInput').value;
+            const error = document.getElementById('adminAuthError');
+            if (!/^\d{4}$/.test(password)) {
+                error.textContent = '請輸入四位數字 PIN。';
+                return;
+            }
+            if (adminAuthMode === 'setup') {
+                const confirmation = document.getElementById('adminPasswordConfirmInput').value;
+                if (!/^\d{4}$/.test(confirmation)) {
+                    error.textContent = '請再次輸入四位數字 PIN。';
+                    return;
+                }
+                if (password !== confirmation) {
+                    error.textContent = '兩次輸入的 PIN 不一致。';
+                    return;
+                }
+                adminPinSubmitting = true;
+                const saltBytes = new Uint8Array(16);
+                crypto.getRandomValues(saltBytes);
+                const salt = bytesToBase64(saltBytes);
+                const hash = await hashAdminPassword(password, salt);
+                localStorage.setItem(ADMIN_LOCK_STORAGE_KEY, JSON.stringify({ type: 'pin4', salt, hash }));
+                adminPinSubmitting = false;
+                closeAdminAuth();
+                showAdminView();
+                return;
+            }
+            adminPinSubmitting = true;
+            try {
+                const lock = JSON.parse(localStorage.getItem(ADMIN_LOCK_STORAGE_KEY));
+                if (await hashAdminPassword(password, lock.salt) !== lock.hash) {
+                    error.textContent = 'PIN 不正確，請重新輸入。';
+                    document.getElementById('adminPasswordInput').value = '';
+                    return;
+                }
+                closeAdminAuth();
+                showAdminView();
+            } catch {
+                error.textContent = 'PIN 資料無法讀取，請清除網站資料後重新設定。';
+            } finally {
+                adminPinSubmitting = false;
+            }
+        }
+
+        function removeAdminPassword() {
+            if (!confirm('確定要移除後台 PIN 嗎？之後開啟設定時會要求重新建立 PIN。')) return;
+            localStorage.removeItem(ADMIN_LOCK_STORAGE_KEY);
+            alert('後台 PIN 已移除。');
+        }
+
+        function showAdminView() {
             const adminGrid = document.getElementById('adminSettingsGrid');
             const displaySection = document.getElementById('displaySettingsSection');
             const wordTemplateSection = document.getElementById('wordTemplateSection');
@@ -1184,13 +1549,15 @@
             document.getElementById('rearDoorInput').value = rearDoor;
             document.getElementById('seatMapNoteInput').value = seatMapNote;
             document.getElementById('classroomNameStatus').textContent = '';
+            updateDrawPreferencesUI();
+            updateHeightDataStatus();
             updateSoundSettingUI();
             renderDisplaySettingRows();
-            renderDisplaySettingsPreview();
             updateWordTemplateUI();
             document.getElementById('mainView').classList.add('hidden');
             document.getElementById('adminView').classList.remove('hidden');
             window.scrollTo(0, 0);
+            requestAnimationFrame(() => renderDisplaySettingsPreview());
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
 
@@ -1202,6 +1569,7 @@
                 className
             ].filter(Boolean);
             document.getElementById('appTitle').textContent = '座位小幫手';
+            document.getElementById('appVersionBadge').textContent = APP_VERSION;
             document.getElementById('classroomNameDisplay').textContent = previewMeta.join('｜');
             document.getElementById('classroomNameSeatPreview').textContent = classroomName.trim() || '座位表';
             const metadataEl = document.getElementById('seatMapMetadata');
@@ -1255,7 +1623,7 @@
                 classroomName: '座位表主標題', schoolName: '校名', schoolYear: '學年度', semester: '學期',
                 className: '班級／課程名稱', advisorName: '導師',
                 frontLabel: '前方設備', frontDoor: '前門', rearDoor: '後門', seatMapNote: '備註', rowLabels: '各排名稱',
-                seatCoordinates: '座位座標', needs: '個別需求標示', disabledSeats: '禁排座位標示', emptySeats: '空座位外框'
+                needs: '個別需求標示', disabledSeats: '禁排座位標示', emptySeats: '空座位外框'
             };
             document.getElementById('displaySettingRows').innerHTML = Object.entries(labels).map(([key, label]) => `
                 <div class="font-bold text-slate-700 dark:text-slate-200">${label}</div>
@@ -1329,15 +1697,18 @@
                 classroomName: 'hide-classroom-name', schoolName: 'hide-school-name', schoolYear: 'hide-school-year', semester: 'hide-semester', advisorName: 'hide-advisor-name',
                 className: 'hide-class-name',
                 frontLabel: 'hide-front-label', frontDoor: 'hide-front-door', rearDoor: 'hide-rear-door', seatMapNote: 'hide-seat-map-note', rowLabels: 'hide-row-labels',
-                seatCoordinates: 'hide-seat-coordinates', needs: 'hide-needs', disabledSeats: 'hide-disabled-seats', emptySeats: 'hide-empty-seats'
+                needs: 'hide-needs', disabledSeats: 'hide-disabled-seats', emptySeats: 'hide-empty-seats'
             };
             Object.entries(classMap).forEach(([key, className]) => area.classList.toggle(className, !settings[key]));
+            if (target === 'preview' && !area.querySelector('.seat-card.occupied')) {
+                area.classList.remove('hide-empty-seats');
+            }
         }
 
         function setJsonBackupStatus(message, isError = false) {
             const status = document.getElementById('jsonBackupStatus');
             status.textContent = message;
-            status.className = `text-sm font-bold mt-3 min-h-[1.25rem] ${isError ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`;
+            status.className = `text-sm font-bold mt-3 ${isError ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`;
         }
 
         function exportJsonBackup() {
@@ -1356,7 +1727,7 @@
             link.download = getExportFileName('json');
             link.click();
             URL.revokeObjectURL(url);
-            setJsonBackupStatus('JSON 完整備份已匯出。');
+            setJsonBackupStatus('備份檔已匯出。');
         }
 
         function validateJsonBackup(backup) {
@@ -1366,10 +1737,12 @@
             if (!data.gridConfig || !Number.isInteger(data.gridConfig.cols) || !Number.isInteger(data.gridConfig.rows) || data.gridConfig.cols < 1 || data.gridConfig.cols > 30 || data.gridConfig.rows < 1 || data.gridConfig.rows > 30) throw new Error('座位行列設定不正確。');
             if (data.seating.length !== data.gridConfig.cols * data.gridConfig.rows) throw new Error('座位資料數量與行列設定不符。');
             if (data.mergeRight.length !== Math.max(0, data.gridConfig.cols - 1) || data.mergeRight.some(value => typeof value !== 'boolean')) throw new Error('併排設定不正確。');
-            if (data.students.some(student => !student || typeof student.name !== 'string' || !Array.isArray(student.tags))) throw new Error('學生名單格式不正確。');
+            if (data.students.some(student => !student || typeof student.name !== 'string' || !Array.isArray(student.tags) || (student.height !== undefined && (!Number.isFinite(student.height) || student.height < 80 || student.height > 250)))) throw new Error('學生名單格式不正確。');
             if (typeof data.classroomName !== 'string' || typeof data.soundEnabled !== 'boolean') throw new Error('班級或音效設定不正確。');
             if (['schoolName', 'schoolYear', 'semester', 'advisorName', 'className', 'frontLabel', 'frontDoor', 'rearDoor', 'seatMapNote', 'seatMapTitle'].some(key => data[key] !== undefined && typeof data[key] !== 'string')) throw new Error('基本資料格式不正確。');
             if (!data.phaseSoundMap || ['priority', 'rear', 'noBack', 'noSide', 'final'].some(phase => !validPhaseSoundIds.includes(data.phaseSoundMap[phase]))) throw new Error('五階段音效設定不正確。');
+            if (data.drawPreferences && typeof data.drawPreferences !== 'object') throw new Error('抽籤偏好設定不正確。');
+            if (data.lastDrawSnapshot && (!Array.isArray(data.lastDrawSnapshot.seating) || !data.lastDrawSnapshot.gridConfig)) throw new Error('上次抽籤資料不正確。');
             if (data.displaySettings && (!data.displaySettings.preview || !data.displaySettings.export)) throw new Error('座位表顯示設定不正確。');
             if (!['light', 'dark'].includes(backup.theme)) throw new Error('主題設定不正確。');
             return data;
@@ -1391,6 +1764,7 @@
                 gridConfig = data.gridConfig;
                 mergeRight = data.mergeRight;
                 drawHistory = data.drawHistory;
+                lastDrawSnapshot = data.lastDrawSnapshot || null;
                 classroomName = data.seatMapTitle || data.classroomName || '座位表';
                 schoolName = data.schoolName || '';
                 schoolYear = String(data.schoolYear || '').match(/\d+/)?.[0] || '';
@@ -1404,10 +1778,13 @@
                 seatMapNote = data.seatMapNote || '';
                 soundEnabled = data.soundEnabled;
                 phaseSoundMap = { ...data.phaseSoundMap };
+                drawPreferences = normalizeDrawPreferences(data.drawPreferences);
                 displaySettings = {
                     preview: { ...defaultDisplaySettings.preview, ...(data.displaySettings?.preview || {}) },
                     export: { ...defaultDisplaySettings.export, ...(data.displaySettings?.export || {}) }
                 };
+                delete displaySettings.preview.seatCoordinates;
+                delete displaySettings.export.seatCoordinates;
                 localStorage.setItem('seatHelperTheme', backup.theme);
                 document.getElementById('cfgCols').value = gridConfig.cols;
                 document.getElementById('cfgRows').value = gridConfig.rows;
@@ -1425,6 +1802,7 @@
                 updateGridUI();
                 updateUI();
                 updateClassroomNameUI();
+                updateDrawPreferencesUI();
                 updateSoundSettingUI();
                 renderDisplaySettingRows();
                 applyCaptureDisplaySettings('preview');
@@ -1432,10 +1810,157 @@
                 saveData();
                 setJsonBackupStatus('備份已完整還原。');
             } catch (error) {
-                setJsonBackupStatus(error instanceof SyntaxError ? 'JSON 格式錯誤，目前資料未變更。' : error.message, true);
+                setJsonBackupStatus(error instanceof SyntaxError ? '備份檔格式錯誤，目前資料未變更。' : error.message, true);
             } finally {
                 input.value = '';
             }
+        }
+
+        function updateDrawPreferencesUI() {
+            document.getElementById('avoidSameSeatToggle').checked = drawPreferences.avoidSameSeat;
+            document.getElementById('avoidSameSeatPriority').value = drawPreferences.avoidSameSeatPriority;
+            document.getElementById('avoidRepeatEdgeToggle').checked = drawPreferences.avoidRepeatEdge;
+            document.getElementById('avoidRepeatEdgePriority').value = drawPreferences.avoidRepeatEdgePriority;
+            document.getElementById('avoidPreviousNeighborsToggle').checked = drawPreferences.avoidPreviousNeighbors;
+            document.getElementById('avoidPreviousNeighborsPriority').value = drawPreferences.avoidPreviousNeighborsPriority;
+            const heightPreferenceAvailable = hasCompleteHeightData();
+            const heightToggle = document.getElementById('considerHeightToggle');
+            if (!heightPreferenceAvailable) drawPreferences.considerHeight = false;
+            heightToggle.checked = heightPreferenceAvailable && drawPreferences.considerHeight;
+            heightToggle.disabled = !heightPreferenceAvailable;
+            heightToggle.title = heightPreferenceAvailable ? '' : '全班身高資料完整後才能開啟';
+            document.getElementById('considerHeightPriority').value = drawPreferences.considerHeightPriority;
+            document.getElementById('considerHeightPriority').disabled = !heightPreferenceAvailable;
+            document.getElementById('heightThresholdInput').value = drawPreferences.heightThreshold;
+            document.getElementById('heightThresholdInput').disabled = !heightPreferenceAvailable;
+            document.getElementById('separateStudentsToggle').checked = drawPreferences.separateStudents;
+            document.getElementById('separateStudentsPriority').value = drawPreferences.separateStudentsPriority;
+            renderSeparationPairUI();
+        }
+
+        function saveDrawPreferences() {
+            drawPreferences.avoidSameSeat = document.getElementById('avoidSameSeatToggle').checked;
+            drawPreferences.avoidSameSeatPriority = document.getElementById('avoidSameSeatPriority').value;
+            drawPreferences.avoidRepeatEdge = document.getElementById('avoidRepeatEdgeToggle').checked;
+            drawPreferences.avoidRepeatEdgePriority = document.getElementById('avoidRepeatEdgePriority').value;
+            drawPreferences.avoidPreviousNeighbors = document.getElementById('avoidPreviousNeighborsToggle').checked;
+            drawPreferences.avoidPreviousNeighborsPriority = document.getElementById('avoidPreviousNeighborsPriority').value;
+            drawPreferences.considerHeight = document.getElementById('considerHeightToggle').checked;
+            drawPreferences.considerHeightPriority = document.getElementById('considerHeightPriority').value;
+            drawPreferences.heightThreshold = Math.min(30, Math.max(0, Number(document.getElementById('heightThresholdInput').value) || 0));
+            drawPreferences.separateStudents = document.getElementById('separateStudentsToggle').checked;
+            drawPreferences.separateStudentsPriority = document.getElementById('separateStudentsPriority').value;
+            saveData();
+        }
+
+        function updateHeightDataStatus(message = '') {
+            const status = document.getElementById('heightImportStatus');
+            if (!status) return;
+            const configuredCount = students.filter(student => Number.isFinite(student.height)).length;
+            const safeguardText = configuredCount < students.length || students.length < 2
+                ? '全班資料補齊前，「考慮身高」會停用。'
+                : '全班身高資料已齊全，可開啟「考慮身高」。';
+            status.textContent = `${message ? `${message}　` : ''}目前已設定 ${configuredCount} / ${students.length} 位。${safeguardText}`;
+        }
+
+        function importHeightData() {
+            const input = document.getElementById('heightImportInput');
+            const lines = input.value.replace(/\r/g, '').split('\n').map(line => line.trim()).filter(Boolean);
+            if (!students.length) {
+                updateHeightDataStatus('請先在抽籤頁匯入學生名單。');
+                return;
+            }
+            let updatedCount = 0;
+            let skippedCount = 0;
+            lines.forEach(line => {
+                if (/座號|學號|身高/.test(line)) return;
+                const values = line.split(/[\t,，\s]+/).map(value => value.trim()).filter(Boolean);
+                const seatNo = Number(values[0]);
+                const height = Number(values[1]);
+                const student = students.find(item => item.seatNo === seatNo);
+                if (!Number.isInteger(seatNo) || !student || !Number.isFinite(height) || height < 80 || height > 250) {
+                    skippedCount++;
+                    return;
+                }
+                student.height = height;
+                updatedCount++;
+            });
+            if (!updatedCount) {
+                updateHeightDataStatus(lines.length ? '沒有可匯入的資料，請確認座號與身高格式。' : '請貼上座號與身高。');
+                return;
+            }
+            input.value = '';
+            saveData();
+            updateHeightDataStatus(`已匯入 ${updatedCount} 位學生的身高${skippedCount ? `，略過 ${skippedCount} 筆無效資料` : ''}。`);
+            updateDrawPreferencesUI();
+        }
+
+        function clearHeightData() {
+            if (!students.some(student => Number.isFinite(student.height))) {
+                updateHeightDataStatus();
+                return;
+            }
+            if (!confirm('確定要清除所有學生身高資料嗎？')) return;
+            students.forEach(student => delete student.height);
+            drawPreferences.considerHeight = false;
+            saveData();
+            updateHeightDataStatus('身高資料已全部清除。');
+            updateDrawPreferencesUI();
+        }
+
+        function renderSeparationPairUI() {
+            const selectors = [document.getElementById('separateStudentA'), document.getElementById('separateStudentB')];
+            selectors.forEach(select => {
+                select.replaceChildren();
+                const placeholder = document.createElement('option');
+                placeholder.value = '';
+                placeholder.textContent = '選擇學生';
+                select.appendChild(placeholder);
+                students.forEach(student => {
+                    const option = document.createElement('option');
+                    option.value = student.seatNo;
+                    option.textContent = `${student.seatNo} ${student.name}`;
+                    select.appendChild(option);
+                });
+            });
+
+            const list = document.getElementById('separationPairList');
+            list.replaceChildren();
+            drawPreferences.separationPairs.forEach((pair, index) => {
+                const first = students.find(student => student.seatNo === pair[0]);
+                const second = students.find(student => student.seatNo === pair[1]);
+                if (!first || !second) return;
+                const badge = document.createElement('button');
+                badge.type = 'button';
+                badge.className = 'px-3 py-1.5 rounded-xl bg-rose-100 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 text-xs font-black';
+                badge.textContent = `${first.seatNo}${first.name} × ${second.seatNo}${second.name}　移除`;
+                badge.onclick = () => removeSeparationPair(index);
+                list.appendChild(badge);
+            });
+            if (!list.children.length) {
+                const empty = document.createElement('span');
+                empty.className = 'text-xs font-bold text-slate-400';
+                empty.textContent = students.length ? '尚未指定需要分開的學生。' : '匯入名單後即可指定學生。';
+                list.appendChild(empty);
+            }
+        }
+
+        function addSeparationPair() {
+            const first = Number(document.getElementById('separateStudentA').value);
+            const second = Number(document.getElementById('separateStudentB').value);
+            if (!first || !second || first === second) return;
+            const pair = [Math.min(first, second), Math.max(first, second)];
+            if (!drawPreferences.separationPairs.some(existing => existing[0] === pair[0] && existing[1] === pair[1])) {
+                drawPreferences.separationPairs.push(pair);
+                saveData();
+            }
+            renderSeparationPairUI();
+        }
+
+        function removeSeparationPair(index) {
+            drawPreferences.separationPairs.splice(index, 1);
+            saveData();
+            renderSeparationPairUI();
         }
 
         function updateSoundSettingUI() {
@@ -1506,6 +2031,7 @@
             if (confirm("確定要清除所有匯入的學生名單嗎？")) {
                 document.getElementById('rawInput').value = '';
                 students = [];
+                drawPreferences.separationPairs = [];
                 seating = seating.map(s => s === "disabled" ? "disabled" : null);
                 updateUI();
                 saveData();
@@ -1652,35 +2178,35 @@
 
             // 1. 坐靠前：必須【有待抽靠前學生】才可點擊
             if (btnPriority) {
-                const isDis = !hasPendingPriority;
+                const isDis = isDrawing || !hasPendingPriority;
                 btnPriority.disabled = isDis;
                 btnPriority.classList.toggle('is-disabled', isDis);
             }
 
             // 2. 坐靠後：必須【有待抽靠後學生】且【靠前無待抽學生】才可點擊
             if (btnRear) {
-                const isDis = !hasPendingRear || hasPendingPriority;
+                const isDis = isDrawing || !hasPendingRear || hasPendingPriority;
                 btnRear.disabled = isDis;
                 btnRear.classList.toggle('is-disabled', isDis);
             }
 
             // 3. 不最後：必須【有待抽不最後學生】且【靠前、靠後無待抽學生】才可點擊
             if (btnNoBack) {
-                const isDis = !hasPendingNoBack || hasPendingPriority || hasPendingRear;
+                const isDis = isDrawing || !hasPendingNoBack || hasPendingPriority || hasPendingRear;
                 btnNoBack.disabled = isDis;
                 btnNoBack.classList.toggle('is-disabled', isDis);
             }
 
             // 4. 不靠邊：必須【有待抽不靠邊學生】且【靠前、靠後、不最後無待抽學生】才可點擊
             if (btnNoSide) {
-                const isDis = !hasPendingNoSide || hasPendingPriority || hasPendingRear || hasPendingNoBack;
+                const isDis = isDrawing || !hasPendingNoSide || hasPendingPriority || hasPendingRear || hasPendingNoBack;
                 btnNoSide.disabled = isDis;
                 btnNoSide.classList.toggle('is-disabled', isDis);
             }
 
             // 5. 其他人：必須【有未定位學生】且【前四項特定需求皆無待抽學生】才可點擊
             if (btnFinal) {
-                const isDis = !hasPendingOthers || hasPendingPriority || hasPendingRear || hasPendingNoBack || hasPendingNoSide;
+                const isDis = isDrawing || !hasPendingOthers || hasPendingPriority || hasPendingRear || hasPendingNoBack || hasPendingNoSide;
                 btnFinal.disabled = isDis;
                 btnFinal.classList.toggle('is-disabled', isDis);
             }
@@ -1710,6 +2236,116 @@
             updateUI();
             saveData();
         };
+
+        function getSurroundingSeatIndices(index, config) {
+            const indices = [];
+            const col = index % config.cols;
+            const row = Math.floor(index / config.cols);
+            for (let rowOffset = -1; rowOffset <= 1; rowOffset++) {
+                for (let colOffset = -1; colOffset <= 1; colOffset++) {
+                    if (rowOffset === 0 && colOffset === 0) continue;
+                    const nextCol = col + colOffset;
+                    const nextRow = row + rowOffset;
+                    if (nextCol >= 0 && nextCol < config.cols && nextRow >= 0 && nextRow < config.rows) {
+                        indices.push(nextRow * config.cols + nextCol);
+                    }
+                }
+            }
+            return indices;
+        }
+
+        function getLastSeatingContext(student) {
+            if (!lastDrawSnapshot && drawHistory.length === 0) return null;
+            const record = lastDrawSnapshot || drawHistory[drawHistory.length - 1];
+            const lastSeating = record.seating;
+            const lastConfig = record.gridConfig || gridConfig;
+            if (!Array.isArray(lastSeating) || !lastConfig || lastSeating.length !== lastConfig.cols * lastConfig.rows) return null;
+            const lastPos = lastSeating.findIndex(seat => seat?.name === student.name || seat?.name === student.displayName);
+            if (lastPos === -1) return null;
+            return { lastSeating, lastConfig, lastPos };
+        }
+
+        function findStudentBySeatName(seatName) {
+            return students.find(candidate => candidate.name === seatName || candidate.displayName === seatName);
+        }
+
+        function getIdealHeightDepth(student) {
+            if (!Number.isFinite(student.height)) return null;
+            const measured = students.filter(candidate => Number.isFinite(candidate.height)).sort((a, b) => a.height - b.height);
+            if (measured.length < 2 || measured[0].height === measured[measured.length - 1].height) return null;
+            const matchingRanks = measured.map((candidate, index) => candidate.height === student.height ? index : -1).filter(index => index >= 0);
+            const averageRank = matchingRanks.reduce((sum, rank) => sum + rank, 0) / matchingRanks.length;
+            return 1 + (averageRank / (measured.length - 1)) * (gridConfig.rows - 1);
+        }
+
+        function hasCompleteHeightData() {
+            return students.length >= 2 && students.every(candidate => Number.isFinite(candidate.height));
+        }
+
+        function applyDrawPreferences(student, candidateIndices) {
+            const context = getLastSeatingContext(student);
+            const lastSeating = context?.lastSeating || [];
+            const lastConfig = context?.lastConfig;
+            const lastPos = context?.lastPos ?? -1;
+            const lastCol = lastPos >= 0 ? lastPos % lastConfig.cols : -1;
+            const lastRow = lastPos >= 0 ? Math.floor(lastPos / lastConfig.cols) : -1;
+            const wasOnEdge = lastPos >= 0 && (lastCol === 0 || lastCol === lastConfig.cols - 1);
+            const previousNeighborNames = new Set(lastPos >= 0
+                ? getSurroundingSeatIndices(lastPos, lastConfig).map(idx => lastSeating[idx]?.name).filter(Boolean)
+                : []);
+            const separatedSeatNos = new Set(drawPreferences.separationPairs.flatMap(pair => {
+                if (pair[0] === student.seatNo) return [pair[1]];
+                if (pair[1] === student.seatNo) return [pair[0]];
+                return [];
+            }));
+
+            const scoredCandidates = candidateIndices.map(idx => {
+                const { p, w } = getCoord(idx);
+                let penalty = 0;
+                if (drawPreferences.avoidSameSeat && lastPos >= 0 && p - 1 === lastCol && w - 1 === lastRow) {
+                    penalty += drawPriorityWeights[drawPreferences.avoidSameSeatPriority];
+                }
+                if (drawPreferences.avoidRepeatEdge && wasOnEdge && (p === 1 || p === gridConfig.cols)) {
+                    penalty += drawPriorityWeights[drawPreferences.avoidRepeatEdgePriority];
+                }
+                if (drawPreferences.avoidPreviousNeighbors && previousNeighborNames.size > 0) {
+                    getSurroundingSeatIndices(idx, gridConfig).forEach(neighborIdx => {
+                        const neighborName = seating[neighborIdx]?.name;
+                        if (neighborName && previousNeighborNames.has(neighborName)) {
+                            penalty += drawPriorityWeights[drawPreferences.avoidPreviousNeighborsPriority];
+                        }
+                    });
+                }
+                if (drawPreferences.considerHeight && hasCompleteHeightData() && Number.isFinite(student.height)) {
+                    const idealDepth = getIdealHeightDepth(student);
+                    if (idealDepth !== null) {
+                        penalty += Math.abs(w - idealDepth) * drawPriorityWeights[drawPreferences.considerHeightPriority];
+                    }
+                    seating.forEach((seat, otherIdx) => {
+                        if (!seat?.name) return;
+                        const otherStudent = findStudentBySeatName(seat.name);
+                        if (!Number.isFinite(otherStudent?.height)) return;
+                        const otherCoord = getCoord(otherIdx);
+                        if (otherCoord.p !== p) return;
+                        const threshold = drawPreferences.heightThreshold;
+                        const blocksOther = w < otherCoord.w && student.height > otherStudent.height + threshold;
+                        const blockedByOther = otherCoord.w < w && otherStudent.height > student.height + threshold;
+                        if (blocksOther || blockedByOther) penalty += drawPriorityWeights[drawPreferences.considerHeightPriority];
+                    });
+                }
+                if (drawPreferences.separateStudents && separatedSeatNos.size > 0) {
+                    getSurroundingSeatIndices(idx, gridConfig).forEach(neighborIdx => {
+                        const neighborStudent = findStudentBySeatName(seating[neighborIdx]?.name);
+                        if (neighborStudent && separatedSeatNos.has(neighborStudent.seatNo)) {
+                            penalty += drawPriorityWeights[drawPreferences.separateStudentsPriority];
+                        }
+                    });
+                }
+                return { idx, penalty };
+            });
+            const minPenalty = Math.min(...scoredCandidates.map(candidate => candidate.penalty));
+            return scoredCandidates.filter(candidate => candidate.penalty === minPenalty).map(candidate => candidate.idx);
+        }
 
         function getCandidatePool(student) {
             let candidateIndices = [];
@@ -1746,16 +2382,7 @@
                 if (filtered.length > 0) candidateIndices = filtered;
             }
 
-            if (drawHistory.length > 0) {
-                const lastSeating = drawHistory[drawHistory.length - 1].seating;
-                const lastPos = lastSeating.findIndex(seat => seat?.name === student.name || seat?.name === student.displayName);
-                if (lastPos !== -1) {
-                    const nonPrev = candidateIndices.filter(idx => idx !== lastPos);
-                    if (nonPrev.length > 0) candidateIndices = nonPrev;
-                }
-            }
-
-            return candidateIndices;
+            return applyDrawPreferences(student, candidateIndices);
         }
 
         function checkCapacityGuard() {
@@ -1858,7 +2485,53 @@
             }
         }
 
+        const drawPhaseLabels = {
+            priority: '第 1 階段・坐靠前',
+            rear: '第 2 階段・坐靠後',
+            noBack: '第 3 階段・不最後',
+            noSide: '第 4 階段・不靠邊',
+            final: '第 5 階段・其他人'
+        };
+
+        function startDrawCeremony(phaseId, total) {
+            document.getElementById('drawStatusText').textContent = drawPhaseLabels[phaseId];
+            document.getElementById('drawProgressText').textContent = `準備抽出 ${total} 位學生的座位`;
+            document.getElementById('drawCurrentStudent').textContent = '準備揭曉…';
+            document.getElementById('drawProgressBar').style.width = '0%';
+            document.getElementById('drawStatusBanner').style.display = 'block';
+        }
+
+        async function revealDrawResult(student, targetIndex, pool, current, total) {
+            const displayName = student.displayName || `${student.seatNo || ''}${student.name}`;
+            const resultBox = document.getElementById('drawCurrentStudent');
+            document.getElementById('drawProgressText').textContent = `正在揭曉 ${current} / ${total}`;
+
+            for (let roll = 0; roll < 3; roll++) {
+                const previewIndex = pool[(current + roll - 1) % pool.length];
+                resultBox.textContent = `${displayName} · ${getCoord(previewIndex).str}？`;
+                await new Promise(resolve => setTimeout(resolve, 75));
+            }
+
+            seating[targetIndex] = { name: student.displayName || student.name, locked: false };
+            student.currentPos = getCoord(targetIndex).str;
+            resultBox.textContent = `${displayName} ➜ ${student.currentPos}`;
+            document.getElementById('drawProgressBar').style.width = `${Math.round(current / total * 100)}%`;
+            updateUI();
+            const revealedSeat = document.getElementById(`seat-${targetIndex}`);
+            if (revealedSeat) revealedSeat.classList.add('draw-reveal');
+            await new Promise(resolve => setTimeout(resolve, 225));
+        }
+
+        async function finishDrawCeremony(phaseId, total) {
+            document.getElementById('drawStatusText').textContent = `${drawPhaseLabels[phaseId]}・完成！`;
+            document.getElementById('drawProgressText').textContent = `${total} 位學生座位已揭曉`;
+            document.getElementById('drawCurrentStudent').textContent = '🎉 抽籤完成';
+            document.getElementById('drawProgressBar').style.width = '100%';
+            await new Promise(resolve => setTimeout(resolve, 650));
+        }
+
         async function runSinglePhase(phaseId) {
+            if (isDrawing) return;
             if (!checkCapacityGuard()) return;
 
             const hasPendingPriority = students.some(s => s.tags.has('priority') && !s.currentPos);
@@ -1871,25 +2544,31 @@
 
             const targets = students.filter(s => s.tags.has(phaseId) && !s.currentPos);
             if(targets.length === 0) return;
-            document.getElementById('drawStatusBanner').style.display = 'block';
-            targets.sort(() => Math.random() - 0.5);
-            for(const s of targets) {
-                const pool = getCandidatePool(s);
-                if(pool.length > 0) {
-                    const t = pool[Math.floor(Math.random()*pool.length)];
-                    seating[t] = { name: s.displayName || s.name, locked: false };
-                    s.currentPos = getCoord(t).str;
-                    const disp = s.displayName || `${s.seatNo || ''}${s.name}`;
-                    document.getElementById('drawCurrentStudent').textContent = `${disp} ➔ ${s.currentPos}`;
-                    updateUI(); await new Promise(r => setTimeout(r, 450));
+            isDrawing = true;
+            updateUI();
+            startDrawCeremony(phaseId, targets.length);
+            try {
+                targets.sort(() => Math.random() - 0.5);
+                for (let i = 0; i < targets.length; i++) {
+                    const s = targets[i];
+                    const pool = getCandidatePool(s);
+                    if(pool.length > 0) {
+                        const t = pool[Math.floor(Math.random()*pool.length)];
+                        await revealDrawResult(s, t, pool, i + 1, targets.length);
+                    }
                 }
+                playPhaseSound(phaseId);
+                await finishDrawCeremony(phaseId, targets.length);
+                saveData();
+            } finally {
+                document.getElementById('drawStatusBanner').style.display = 'none';
+                isDrawing = false;
+                updateUI();
             }
-            document.getElementById('drawStatusBanner').style.display = 'none';
-            playPhaseSound(phaseId);
-            saveData();
         }
 
         async function runFinalPhase() {
+            if (isDrawing) return;
             if (!checkCapacityGuard()) return;
 
             const pendingSpecial = students.filter(s => s.tags.size > 0 && !s.currentPos);
@@ -1899,21 +2578,26 @@
             }
             const targets = students.filter(s => !s.currentPos).sort(() => Math.random() - 0.5);
             if(targets.length === 0) return;
-            document.getElementById('drawStatusBanner').style.display = 'block';
-            for(const s of targets) {
-                const pool = getCandidatePool(s);
-                if(pool.length > 0) {
-                    const t = pool[Math.floor(Math.random()*pool.length)];
-                    seating[t] = { name: s.displayName || s.name, locked: false };
-                    s.currentPos = getCoord(t).str;
-                    const disp = s.displayName || `${s.seatNo || ''}${s.name}`;
-                    document.getElementById('drawCurrentStudent').textContent = `${disp} ➔ ${s.currentPos}`;
-                    updateUI(); await new Promise(r => setTimeout(r, 450));
+            isDrawing = true;
+            updateUI();
+            startDrawCeremony('final', targets.length);
+            try {
+                for (let i = 0; i < targets.length; i++) {
+                    const s = targets[i];
+                    const pool = getCandidatePool(s);
+                    if(pool.length > 0) {
+                        const t = pool[Math.floor(Math.random()*pool.length)];
+                        await revealDrawResult(s, t, pool, i + 1, targets.length);
+                    }
                 }
+                playPhaseSound('final');
+                await finishDrawCeremony('final', targets.length);
+                saveData();
+            } finally {
+                document.getElementById('drawStatusBanner').style.display = 'none';
+                isDrawing = false;
+                updateUI();
             }
-            document.getElementById('drawStatusBanner').style.display = 'none';
-            playPhaseSound('final');
-            saveData();
         }
 
         function handleSeatClick(idx) {
@@ -1966,7 +2650,8 @@
             if (seating.every(s => s === null)) return alert("目前沒有排座位");
             const snapshot = seating.map(s => s ? (typeof s === 'object' ? {...s} : s) : s);
             const timeStr = new Date().toLocaleString('zh-TW', {hour12: false});
-            drawHistory.push({ time: timeStr, seating: snapshot });
+            drawHistory.push({ time: timeStr, seating: snapshot, gridConfig: { ...gridConfig } });
+            lastDrawSnapshot = { seating: snapshot.map(seat => seat ? (typeof seat === 'object' ? { ...seat } : seat) : seat), gridConfig: { ...gridConfig } };
             saveData();
             
             const msg = document.getElementById('copySuccess');
@@ -2066,18 +2751,28 @@
                 const value = line.trim();
                 if (!value || /^(座號|學號)\s*([,，\t ]+\s*)?(姓名|學生姓名)?$/i.test(value)) return;
                 const cells = value.split(/[\t,，]/).map(cell => cell.trim()).filter(Boolean);
+                if (cells.some(cell => /^(姓名|學生姓名)$/i.test(cell))) return;
                 if (cells.length > 1) {
                     if (/^\d{1,3}$/.test(cells[0])) {
                         const name = cells.find((cell, index) => index > 0 && !/^\d+$/.test(cell));
-                        if (name && !/^(姓名|學生姓名)$/i.test(name)) parsed.push({ seatNo: Number(cells[0]), name });
+                        const heightValue = cells.slice(1).map(Number).find(number => Number.isFinite(number) && number >= 80 && number <= 250);
+                        if (name && !/^(姓名|學生姓名)$/i.test(name)) parsed.push({ seatNo: Number(cells[0]), name, height: heightValue });
                     } else {
                         cells.filter(cell => !/^(座號|學號|姓名|學生姓名)$/i.test(cell)).forEach(name => parsed.push({ seatNo: null, name }));
                     }
                     return;
                 }
                 const numbered = value.match(/^(\d{1,3})(?:[\s.、,，\-_:：]+)?(.+)$/);
-                if (numbered && numbered[2].trim()) parsed.push({ seatNo: Number(numbered[1]), name: numbered[2].trim() });
-                else parsed.push({ seatNo: null, name: value });
+                if (numbered && numbered[2].trim()) {
+                    const detail = numbered[2].trim();
+                    const withHeight = detail.match(/^(.+?)[\s,，]+(\d{2,3}(?:\.\d+)?)$/);
+                    const heightValue = withHeight ? Number(withHeight[2]) : undefined;
+                    parsed.push({
+                        seatNo: Number(numbered[1]),
+                        name: withHeight ? withHeight[1].trim() : detail,
+                        height: heightValue >= 80 && heightValue <= 250 ? heightValue : undefined
+                    });
+                } else parsed.push({ seatNo: null, name: value });
             });
 
             const explicitNumbers = parsed.filter(item => item.seatNo !== null).map(item => item.seatNo);
@@ -2105,21 +2800,30 @@
                 alert(error.message);
                 return;
             }
-            students = roster.map(({ seatNo, name }, i) => {
+            students = roster.map(({ seatNo, name, height }, i) => {
                 return {
                     id: i,
                     seatNo: seatNo,
                     name: name,
                     displayName: `${seatNo}${name}`,
+                    height: Number.isFinite(height) ? height : undefined,
                     tags: new Set(),
                     currentPos: null
                 };
             });
+            document.getElementById('rawInput').value = '';
+            drawPreferences.separationPairs = [];
             initGrid();
         };
 
         document.getElementById('btnResetDraw').onclick = () => {
             if (confirm("確定要清除所有已安排的座位與抽籤結果嗎？")) {
+                if (seating.some(seat => seat?.name)) {
+                    lastDrawSnapshot = {
+                        seating: seating.map(seat => seat ? (typeof seat === 'object' ? { ...seat } : seat) : seat),
+                        gridConfig: { ...gridConfig }
+                    };
+                }
                 seating = seating.map(s => (s === "disabled" || s?.locked) ? s : null);
                 students.forEach(s => { if(s.currentPos) { const [p,w] = s.currentPos.split('-').map(Number); if(!seating[getIdx(p,w)]) s.currentPos = null; }});
                 updateUI();
@@ -2137,9 +2841,10 @@
             activeSeatIdx = null;
             mergeRight = [];
             drawHistory = [];
+            lastDrawSnapshot = null;
             classroomName = '座位表';
-            schoolName = '';
-            schoolYear = '';
+            schoolName = '聖功女中';
+            schoolYear = '115';
             semester = '';
             advisorName = '';
             className = '';
@@ -2149,12 +2854,13 @@
             seatMapNote = '';
             soundEnabled = true;
             phaseSoundMap = { priority: 'priority', rear: 'rear', noBack: 'noBack', noSide: 'noSide', final: 'final' };
+            drawPreferences = normalizeDrawPreferences();
             displaySettings = JSON.parse(JSON.stringify(defaultDisplaySettings));
 
             document.getElementById('rawInput').value = '';
             document.getElementById('cfgCols').value = gridConfig.cols;
             document.getElementById('cfgRows').value = gridConfig.rows;
-            ['seatHelperDataV2', 'seatHelperTheme', 'seatHelperData_v2', 'seatHelperHistory_v2'].forEach(key => localStorage.removeItem(key));
+            ['seatHelperDataV2', 'seatHelperTheme', 'seatHelperData_v2', 'seatHelperHistory_v2', ADMIN_LOCK_STORAGE_KEY].forEach(key => localStorage.removeItem(key));
 
             initGrid();
             updateClassroomNameUI();
@@ -2273,16 +2979,14 @@
                 if (displaySettings.export.frontDoor && frontDoor) layoutData.push([frontDoor]);
                 if (displaySettings.export.seatMapNote && seatMapNote) layoutData.push([seatMapNote]);
 
-                let listData = [displaySettings.export.seatCoordinates ? ["座位座標", "學生姓名", "狀態"] : ["學生姓名", "狀態"]];
+                let listData = [["學生姓名", "狀態"]];
                 seating.forEach((s, i) => {
-                    const coord = getCoord(i).str;
                     if(s?.name) {
                         const student = students.find(st => st.name === s.name || st.displayName === s.name);
                         const row = [getExportStudentText(student, s.name), "已定位"];
-                        if (displaySettings.export.seatCoordinates) row.unshift(coord);
                         listData.push(row);
                     } else if(s === "disabled" && displaySettings.export.disabledSeats) {
-                        listData.push(displaySettings.export.seatCoordinates ? [coord, "---", "禁排區"] : ["---", "禁排區"]);
+                        listData.push(["---", "禁排區"]);
                     }
                 });
 
