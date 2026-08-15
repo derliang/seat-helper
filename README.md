@@ -9,11 +9,11 @@
 
 ## 📜 完整版本演進歷程 (Version History & Changelog)
 
-### 🚀 v3.0-dev (2026-08-15) - TODO-18 & FIX-18A~D 設定齒輪純 Icon、權限鎖定與登入驗證
-- **🛡️ Google GIS SSO 身分驗證與 Allowlist 授權解耦 (TODO-18, FIX-18E)**：撤銷所有模擬/對話框與硬編碼登入，採用 Google Identity Services 官方原生 SSO，實現身分 (Authentication) 與管理者權限 (Authorization Allowlist: `derliang@gmail.com` + `email_verified`) 完全獨立解耦，建立 5 大 UI 狀態機機制（未登入/未授權/授權管理者/登出/Session恢復）。
-- **⚙️ 設定齒輪純 Icon 與權限鎖定 (TODO-18, FIX-18A~D)**：設定按鈕純 Icon 化與未登入灰化鎖定，深色模式與設定按鈕對齊座位設定區最右側。
-- **📐 Header 兩端平衡佈局 (TODO-17)**：最左側放置 Google 登入與雲端狀態，中間 `flex-1` 留白，最右側對齊標題、版號與主題按鈕。
-- **🔑 Google 官方原生登入按鈕 (TODO-16)**：引入 Google Identity Services (`gsi/client`) 官方 SDK 與原生彩色 G Logo 登入容器。
+### 🚀 v3.0-dev (2026-08-15) - 取消 Google/Cloud 開發計畫，回歸純本機版 (Local-first / Local-only)
+- **🔒 取消 Google/Cloud 並恢復純本機安全模式 (FIX-18F)**：依據使用者最新決策，取消目前版本的 Google SSO、OAuth、Sheets API、Cloud AutoSave 與 Cloud 雙模式。完整移除所有 Google SDK 與驗證標籤，恢復 LocalStorage 為唯一自動儲存來源，並解除齒輪登入鎖定，保持純 Lucide `settings` Icon 獨立按鈕。
+- **⚙️ 設定齒輪純 Icon (TODO-18, FIX-18A~D)**：設定按鈕純 Icon 化，深色模式與設定按鈕對齊座位設定區最右側；取消登入鎖定。
+- **📐 Header 兩端平衡佈局 (TODO-17)**：最左側保留彈性留白，最右側對齊標題與版號；Theme 主題與 Settings 齒輪按鈕保留於座位設定區最右側。
+- **⛔ Google 官方原生登入按鈕 (TODO-16，使用者取消)**：原 Google Identity Services 登入方案已取消，相關 SDK、Client ID 與登入介面由 FIX-18F 完整移除。
 - **🎵 5 階段 Web Audio 儀式音效 (TODO-15, FIX-15A)**：零外部檔 Web Audio 音效，各階段抽籤完成播放靈動水晶鐘聲與 Victory Fanfare 勝利號角。
 - **💣 全站資料清理 (TODO-14)**：新增「清除所有資料」高警示按鈕 (`bomb` 圖示)，點擊警告並徹底清空名單、座位表、需求標籤與 `localStorage` 歷史紀錄。
 - **📐 三步驟對稱清除按鈕架構 (TODO-13)**：將「清除抽籤」按鈕移至第三步標題列右側，使 1~3 步驟清除按鈕形成完美視覺對稱。

@@ -9,7 +9,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -398,37 +397,8 @@
         </div>
     </div>
 
-        <!-- 最頂層 Header 列 (TODO-17, TODO-18, FIX-18E) -->
+        <!-- 最頂層 Header 列 (TODO-17, TODO-18) -->
         <div class="flex items-center justify-between w-full mb-4 px-2 gap-4 flex-wrap">
-            <!-- 最左側：Google 官方原生登入按鈕與驗證狀態 -->
-            <div class="flex items-center gap-3">
-                <div id="g_id_onload"
-                     data-client_id="833442749714-seathelper.apps.googleusercontent.com"
-                     data-context="signin"
-                     data-ux_mode="popup"
-                     data-callback="handleCredentialResponse"
-                     data-auto_prompt="false">
-                </div>
-                <div id="googleSignInBtnWrapper">
-                    <div class="g_id_signin"
-                         data-type="standard"
-                         data-shape="pill"
-                         data-theme="outline"
-                         data-text="signin_with"
-                         data-size="medium"
-                         data-logo_alignment="left">
-                    </div>
-                </div>
-
-                <!-- 已登入使用者身分與權限標籤 -->
-                <div id="userProfileBadge" class="hidden flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-full shadow-xs">
-                    <i data-lucide="user-check" class="w-4 h-4 text-slate-600"></i>
-                    <span id="userNameText" class="text-xs font-bold text-slate-800">Google 使用者</span>
-                    <span id="userRoleBadge" class="text-[10px] font-black px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">一般帳號</span>
-                    <button onclick="logoutGoogle()" class="text-[10px] bg-slate-200 hover:bg-slate-300 text-slate-700 px-2 py-0.5 rounded-full font-bold transition-colors ml-1" title="登出並重新鎖定">登出</button>
-                </div>
-            </div>
-
             <!-- 中間彈性留白 -->
             <div class="flex-1"></div>
 
@@ -482,7 +452,7 @@
                     <button onclick="toggleTheme()" id="themeToggleBtn" title="切換深色/淺色主題" class="p-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 hover:scale-105 transition-all flex items-center justify-center">
                         <i data-lucide="moon" class="w-5 h-5 text-amber-400"></i>
                     </button>
-                    <button id="settingsBtn" onclick="openAdminModal()" title="請先登入 Google 帳號以解鎖後台管理設定" class="p-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 transition-all flex items-center justify-center opacity-50 cursor-not-allowed" disabled>
+                    <button id="settingsBtn" onclick="openAdminModal()" title="本機管理設定 (TODO-23 後台建置中)" class="p-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 hover:scale-105 transition-all flex items-center justify-center cursor-pointer">
                         <i data-lucide="settings" class="w-5 h-5"></i>
                     </button>
                 </div>
@@ -716,22 +686,6 @@
         let mergeRight = [];
         let drawHistory = [];
 
-        let autoSaveTimer = null;
-
-        function updateCloudStatus(status) {
-            const syncArea = document.getElementById('cloudSyncStatusArea');
-            if (!syncArea || !currentUser) return;
-
-            syncArea.classList.remove('hidden');
-            if (status === 'saving') {
-                syncArea.innerHTML = `<span class="inline-flex items-center gap-1 text-amber-600 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200 font-bold"><i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> 雲端儲存中...</span>`;
-            } else if (status === 'saved') {
-                const timeStr = new Date().toLocaleTimeString('zh-TW', { hour12: false });
-                syncArea.innerHTML = `<span class="inline-flex items-center gap-1 text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 font-bold"><i data-lucide="cloud-check" class="w-3.5 h-3.5"></i> 已自動儲存 (${timeStr})</span>`;
-            }
-            if (typeof lucide !== 'undefined') lucide.createIcons();
-        }
-
         function saveData() {
             const data = {
                 students: students.map(s => ({...s, tags: Array.from(s.tags)})),
@@ -741,14 +695,6 @@
                 drawHistory
             };
             localStorage.setItem('seatHelperDataV2', JSON.stringify(data));
-
-            if (currentUser) {
-                updateCloudStatus('saving');
-                if (autoSaveTimer) clearTimeout(autoSaveTimer);
-                autoSaveTimer = setTimeout(() => {
-                    updateCloudStatus('saved');
-                }, 500);
-            }
         }
 
         function loadData() {
@@ -870,157 +816,8 @@
             document.getElementById('screenBar').style.gridColumn = `1 / span ${totalCols}`;
         }
 
-        let currentUser = null;
-
-        // 管理者白名單 (Allowlist) 與驗證邏輯 (FIX-18E)
-        const ADMIN_EMAILS = ['derliang@gmail.com'];
-
-        function isAuthorizedAdmin(payload) {
-            if (!payload || !payload.email) return false;
-            // 必須確認 email 已通過 Google 驗證 (payload.email_verified === true)
-            const isVerified = payload.email_verified === true || payload.email_verified === 'true';
-            if (!isVerified) return false;
-            return ADMIN_EMAILS.includes(payload.email.toLowerCase().trim());
-        }
-
-        // parseJwt 僅用於前端 UI 解碼呈現姓名頭像，非後端安全簽章驗證
-        function parseJwt(token) {
-            try {
-                const base64Url = token.split('.')[1];
-                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-                }).join(''));
-                return JSON.parse(jsonPayload);
-            } catch (e) {
-                return null;
-            }
-        }
-
-        function updateAuthUI(user) {
-            currentUser = user;
-            const settingsBtn = document.getElementById('settingsBtn');
-            const googleBtnWrapper = document.getElementById('googleSignInBtnWrapper');
-            const userBadge = document.getElementById('userProfileBadge');
-            const userNameText = document.getElementById('userNameText');
-            const userRoleBadge = document.getElementById('userRoleBadge');
-
-            if (user) {
-                if (googleBtnWrapper) googleBtnWrapper.classList.add('hidden');
-                if (userBadge) {
-                    userBadge.classList.remove('hidden');
-                    if (userNameText) userNameText.textContent = user.name || user.email;
-                }
-
-                if (user.isAdmin) {
-                    // 情境 C：授權管理者登入
-                    if (settingsBtn) {
-                        settingsBtn.disabled = false;
-                        settingsBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                        settingsBtn.classList.add('opacity-100', 'hover:scale-105', 'cursor-pointer');
-                        settingsBtn.title = `後台管理設定 (授權管理者: ${user.email})`;
-                    }
-                    if (userRoleBadge) {
-                        userRoleBadge.textContent = "授權管理者";
-                        userRoleBadge.className = "text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300";
-                    }
-                } else {
-                    // 情境 B：Google 登入成功但非授權管理者
-                    if (settingsBtn) {
-                        settingsBtn.disabled = true;
-                        settingsBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                        settingsBtn.classList.remove('opacity-100', 'hover:scale-105', 'cursor-pointer');
-                        settingsBtn.title = `⛔ 存取受限：帳號 (${user.email}) 未具備管理者權限`;
-                    }
-                    if (userRoleBadge) {
-                        userRoleBadge.textContent = "無管理權限";
-                        userRoleBadge.className = "text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-300";
-                    }
-                }
-            } else {
-                // 情境 A / D / E：未登入或登出後重新鎖定
-                if (settingsBtn) {
-                    settingsBtn.disabled = true;
-                    settingsBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                    settingsBtn.classList.remove('opacity-100', 'hover:scale-105', 'cursor-pointer');
-                    settingsBtn.title = "🔒 請先由左上角登入授權 Google 管理者帳號以解鎖後台設定";
-                }
-                if (googleBtnWrapper) googleBtnWrapper.classList.remove('hidden');
-                if (userBadge) userBadge.classList.add('hidden');
-            }
-        }
-
-        function handleCredentialResponse(response) {
-            if (response && response.credential) {
-                const payload = parseJwt(response.credential);
-                if (payload && payload.email) {
-                    const isAdmin = isAuthorizedAdmin(payload);
-                    currentUser = {
-                        name: payload.name || payload.email,
-                        email: payload.email,
-                        picture: payload.picture || '',
-                        emailVerified: payload.email_verified === true || payload.email_verified === 'true',
-                        isAdmin: isAdmin
-                    };
-                    sessionStorage.setItem('seatHelper_sessionUser', JSON.stringify(currentUser));
-                    updateAuthUI(currentUser);
-
-                    if (isAdmin) {
-                        alert(`🎉 登入驗證成功！管理者 ${currentUser.name} (${currentUser.email}) 已授權，後台設定齒輪已解鎖。`);
-                    } else {
-                        alert(`⛔ 登入成功但權限不足：帳號 (${currentUser.email}) 非授權管理者，無法存取後台設定。`);
-                    }
-                }
-            }
-        }
-
-        function logoutGoogle() {
-            if (confirm("確定要登出 Google 帳號並重新鎖定後台管理設定嗎？")) {
-                currentUser = null;
-                sessionStorage.removeItem('seatHelper_sessionUser');
-                updateAuthUI(null);
-                alert("已成功登出 Google 帳號，後台管理設定已重新鎖定。");
-            }
-        }
-
         function openAdminModal() {
-            if (!currentUser) {
-                alert("🔒 後台管理設定已被鎖定！\n\n請先於左上角登入 Google 管理者帳號。");
-                return;
-            }
-            if (!currentUser.isAdmin) {
-                alert(`⛔ 存取受限：帳號 (${currentUser.email}) 未具備管理者權限，無法開啟後台設定。`);
-                return;
-            }
-            alert(`⚙️ 後台管理系統\n\n目前登入管理者：${currentUser.name} (${currentUser.email})`);
-        }
-
-        function restoreFromCloud() {
-            try {
-                const cloudDataRaw = localStorage.getItem('seatHelperCloudData_v2');
-                if (cloudDataRaw) {
-                    const data = JSON.parse(cloudDataRaw);
-                    gridConfig = data.gridConfig || { cols: 7, rows: 7 };
-                    document.getElementById('cfgCols').value = gridConfig.cols;
-                    document.getElementById('cfgRows').value = gridConfig.rows;
-                    mergeRight = data.mergeRight || new Array(Math.max(0, gridConfig.cols - 1)).fill(false);
-                    drawHistory = data.drawHistory || [];
-                    if (data.students) {
-                        students = data.students.map(s => ({...s, tags: new Set(s.tags)}));
-                    }
-                    if (data.seating) {
-                        seating = data.seating;
-                    }
-                    updateMergeUI();
-                    updateGridUI();
-                    updateUI();
-                    alert("✅ 成功從雲端把設定值與歷史資料叫回來！全站座位與歷史紀錄已覆蓋更新。");
-                } else {
-                    alert("ℹ️ 雲端暫無舊資料快照，目前資料已為最新備份。");
-                }
-            } catch(e) {
-                alert("⚠️ 雲端還原失敗：" + e.message);
-            }
+            alert("⚙️ 本機管理設定（TODO-23 後台建置中）");
         }
 
         function changeDimension(type, delta) {
@@ -1766,25 +1563,10 @@
             URL.revokeObjectURL(url);
         }
 
-        function initAuthSession() {
-            try {
-                const sessionUserRaw = sessionStorage.getItem('seatHelper_sessionUser');
-                if (sessionUserRaw) {
-                    const user = JSON.parse(sessionUserRaw);
-                    updateAuthUI(user);
-                } else {
-                    updateAuthUI(null);
-                }
-            } catch(e) {
-                updateAuthUI(null);
-            }
-        }
-
         if(!loadData()) {
             initGrid();
         }
         initTheme();
-        initAuthSession();
     </script>
 </body>
 </html>
