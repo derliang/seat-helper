@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>座位小幫手 v3.1.1</title>
+    <title>座位小幫手 v3.1.2</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>tailwind.config = { darkMode: 'class' };</script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -19,9 +19,13 @@
             --dark-text: #1e293b;
             --color-priority: #10b981; 
             --color-noSide: #f59e0b;   
-            --color-noBack: #8b5cf6;   
-            --color-normal: #6366f1;   
+            --color-noBack: #8b5cf6;
+            --color-normal: #6366f1;
             --color-rear: #64748b;
+            --seat-gap: clamp(6px, 1.6vw, 24px);
+            --seat-card-min-height: clamp(52px, 11vw, 95px);
+            --seat-name-size: clamp(8px, 18cqw, 18px);
+            --coord-badge-size: clamp(8px, 11cqw, 11px);
         }
 
         html.dark {
@@ -138,6 +142,18 @@
         }
         .clear-icon-btn:hover { background: #be123c; transform: translateY(-2px); box-shadow: 0 10px 22px rgba(225, 29, 72, 0.3); }
         .clear-icon-btn:active { transform: scale(0.96); }
+        .reset-all-btn {
+            background: #0f172a !important;
+            color: #ffffff !important;
+            border: 2px solid #ffffff !important;
+            box-shadow: inset 0 0 0 2px #0f172a, 0 10px 22px rgba(15, 23, 42, 0.22) !important;
+        }
+        .reset-all-btn:hover {
+            background: #ffffff !important;
+            color: #0f172a !important;
+            border-color: #0f172a !important;
+            box-shadow: inset 0 0 0 2px #ffffff, 0 12px 26px rgba(15, 23, 42, 0.28) !important;
+        }
 
         .tag-toggle {
             font-size: 14px;
@@ -163,12 +179,13 @@
 
         .seat-card {
             transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-            min-height: 95px;
-            border-radius: 1.25rem;
+            min-height: var(--seat-card-min-height);
+            border-radius: clamp(0.65rem, 2vw, 1.25rem);
             border: 1px solid #e2e8f0;
             background: #ffffff;
             position: relative;
             overflow: hidden;
+            container-type: inline-size;
         }
 
         .seat-card.seat-empty {
@@ -279,10 +296,10 @@
 
         .coord-badge {
             position: absolute;
-            top: 6px; right: 8px; 
-            padding: 2px 6px;
+            top: clamp(3px, 1cqw, 6px); right: clamp(3px, 2cqw, 8px);
+            padding: 2px clamp(3px, 4cqw, 6px);
             border-radius: 6px;
-            font-size: 11px;
+            font-size: var(--coord-badge-size);
             font-weight: 900;
             color: #94a3b8;
             background: rgba(255,255,255,0.8);
@@ -481,14 +498,15 @@
             filter: grayscale(40%);
         }
         .seat-name {
-            font-size: clamp(11px, 1.4vw, 18px);
+            font-size: var(--seat-name-size);
+            line-height: 1.08;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
             width: 100%;
             max-width: 100%;
             box-sizing: border-box;
-            padding: 18px 10px 0;
+            padding: clamp(12px, 18cqw, 18px) clamp(2px, 7cqw, 10px) 0;
             text-align: center;
         }
         .screen-bar { font-size: 1.5rem; letter-spacing: 1rem; text-indent: 1rem; }
@@ -524,12 +542,22 @@
             color: #94a3b8 !important;
             box-shadow: none !important;
         }
+        .student-table-wrap .tag-toggle {
+            width: 100%;
+            min-width: 0;
+            padding-inline: clamp(2px, 1vw, 8px);
+            font-size: clamp(11px, 2.7vw, 13px);
+        }
+        .student-table-wrap th,
+        .student-table-wrap td {
+            min-width: 0;
+        }
         .history-item { cursor: pointer; transition: background-color 0.2s; }
         .history-item:hover { background-color: #f8fafc; }
 
         button, input, select, textarea, .seat-card { touch-action: manipulation; }
         body { overflow-x: hidden; }
-        #seatMapScrollWrapper { max-width: 100%; }
+        #seatMapScrollWrapper { max-width: 100%; overflow-x: hidden; }
 
         @media (hover: none) {
             .btn-main:hover { transform: none; }
@@ -568,19 +596,24 @@
             #drawActionGrid #btnDrawFinal { grid-column: auto; }
             #drawSummaryGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             #seatMapScrollWrapper {
-                overflow-x: auto;
-                padding-bottom: 0.75rem;
-                -webkit-overflow-scrolling: touch;
-                overscroll-behavior-inline: contain;
+                overflow-x: hidden;
+                padding-bottom: 0;
             }
             #captureArea {
-                min-width: 680px;
-                min-height: 700px;
-                padding: 1.75rem;
-                border-width: 8px;
+                width: 100%;
+                min-width: 0;
+                min-height: auto;
+                padding: 1rem;
+                border-width: 6px;
                 border-radius: 2rem;
             }
-            #captureArea .seat-card { min-height: 76px; }
+            #gridWrapper { gap-y: 0.6rem !important; }
+            #captureArea .seat-card { min-height: clamp(46px, 13vw, 76px); }
+            #classroomNameSeatPreview { font-size: 1.4rem; margin-bottom: 1rem; }
+            #seatMapMetadata, #seatMapExportDate { margin-bottom: 1rem; }
+            #labelWrapper { margin-bottom: 0.5rem; }
+            .row-label-text { font-size: 10px; }
+            .screen-bar { font-size: 1rem; letter-spacing: 0.4rem; text-indent: 0.4rem; padding: 0.7rem 0; }
             #exportActions > button:last-child { grid-column: 1 / -1; }
             #studentPicker, #historyModal { width: calc(100% - 1rem); border-radius: 1.5rem; }
             #drawStatusBanner { padding: 0.75rem; }
@@ -588,7 +621,9 @@
             #drawStatusText, #drawCurrentStudent { font-size: 1rem; }
             #drawCurrentStudent { padding-inline: 0.75rem; }
             button, select, input[type="checkbox"] { min-height: 44px; }
-            .tag-toggle { min-height: 44px; }
+            .tag-toggle { min-height: 36px; }
+            .student-table-wrap th { padding: 0.55rem 0.35rem; font-size: 0.72rem; }
+            .student-table-wrap .tag-toggle { height: 36px; }
             #adminHeader { padding: 1rem; border-radius: 1.5rem; margin-bottom: 1rem; }
             #adminHeader > .order-2 { order: 1; margin-left: 0; width: 100%; }
             #adminHeader > button { order: 2; width: 100%; }
@@ -598,12 +633,10 @@
         @media (min-width: 640px) and (max-width: 1279px) {
             #mainContentGrid { gap: 1.5rem; }
             #seatMapScrollWrapper {
-                overflow-x: auto;
-                padding-bottom: 0.75rem;
-                -webkit-overflow-scrolling: touch;
-                overscroll-behavior-inline: contain;
+                overflow-x: hidden;
+                padding-bottom: 0;
             }
-            #captureArea { min-width: 680px; min-height: 760px; padding: 2.5rem; }
+            #captureArea { width: 100%; min-width: 0; min-height: 760px; padding: 2.5rem; }
         }
     </style>
 </head>
@@ -665,7 +698,7 @@
                             <i data-lucide="layout-grid" class="text-indigo-600 w-6 h-6 sm:w-7 sm:h-7"></i>
                         </div>
                         <h1 id="appTitle" class="text-2xl sm:text-3xl font-black italic text-indigo-600 leading-none">座位小幫手</h1>
-                        <span id="appVersionBadge" class="bg-indigo-600 text-white text-xs sm:text-sm font-black px-3 py-1 rounded-full shadow-md tracking-wider">v3.1.1</span>
+                        <span id="appVersionBadge" class="bg-indigo-600 text-white text-xs sm:text-sm font-black px-3 py-1 rounded-full shadow-md tracking-wider">v3.1.2</span>
                     </div>
                     <p id="classroomNameDisplay" class="text-xs sm:text-sm font-black text-slate-500 dark:text-slate-400"></p>
             </div>
@@ -776,8 +809,8 @@
                             <i data-lucide="trash-2" class="w-6 h-6" aria-hidden="true"></i>
                         </button>
                     </div>
-                    <div class="max-h-[350px] overflow-auto mb-6 border rounded-2xl bg-slate-50/50">
-                        <table class="w-full min-w-[640px] border-separate border-spacing-0">
+                    <div class="student-table-wrap max-h-[350px] overflow-y-auto overflow-x-hidden mb-6 border rounded-2xl bg-slate-50/50">
+                        <table class="w-full table-fixed border-separate border-spacing-0">
                             <thead class="sticky top-0 bg-white z-10 shadow-sm text-slate-500 text-xs sm:text-sm font-black uppercase">
                                 <tr>
                                     <th class="p-3 text-center whitespace-nowrap">座號</th>
@@ -842,7 +875,7 @@
                     <div class="pt-6 mt-6 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <button onclick="saveHistory()" class="btn-main bg-indigo-50 text-indigo-600 py-3 text-sm font-black flex items-center justify-center gap-1 shadow-sm"><i data-lucide="save" class="w-4 h-4"></i> 儲存結果</button>
                         <button onclick="openHistory()" class="btn-main bg-slate-800 text-white py-3 text-sm font-black flex items-center justify-center gap-1 shadow-sm"><i data-lucide="history" class="w-4 h-4"></i> 歷史紀錄</button>
-                        <button id="btnResetAll" class="clear-icon-btn !w-auto px-5 gap-2 font-black" title="重置所有資料" aria-label="重置所有資料"><i data-lucide="radiation" class="w-6 h-6" aria-hidden="true"></i><span>重置所有資料</span></button>
+                        <button id="btnResetAll" class="clear-icon-btn reset-all-btn !w-auto px-5 gap-2 font-black" title="全部重設" aria-label="全部重設"><i data-lucide="radiation" class="w-6 h-6" aria-hidden="true"></i><span>全部重設</span></button>
                     </div>
                 </div>
             </div>
@@ -1151,7 +1184,7 @@
     </div>
 
     <script>
-        const APP_VERSION = "v3.1.1";
+        const APP_VERSION = "v3.1.2";
 
         function initTheme() {
             const saved = localStorage.getItem('seatHelperTheme');
@@ -1359,7 +1392,7 @@
             for (let p = 1; p <= gridConfig.cols; p++) {
                 tracks.push("minmax(0, 1fr)");
                 if (p < gridConfig.cols) {
-                    tracks.push(mergeRight[p-1] ? "0px" : "24px");
+                    tracks.push(mergeRight[p-1] ? "0px" : "var(--seat-gap)");
                 }
             }
             const trackStr = tracks.join(" ");
@@ -1409,6 +1442,17 @@
             sc.style.gridTemplateColumns = trackStr;
             const totalCols = gridConfig.cols + Math.max(0, gridConfig.cols - 1);
             document.getElementById('screenBar').style.gridColumn = `1 / span ${totalCols}`;
+        }
+
+        function fitSeatNameText() {
+            document.querySelectorAll('#captureArea .seat-name').forEach(el => {
+                el.style.fontSize = '';
+                let fontSize = parseFloat(getComputedStyle(el).fontSize);
+                while (el.scrollWidth > el.clientWidth + 1 && fontSize > 8) {
+                    fontSize -= 0.5;
+                    el.style.fontSize = `${fontSize}px`;
+                }
+            });
         }
 
         function bytesToBase64(bytes) {
@@ -2089,15 +2133,15 @@
                 const disAttr = isAssigned ? 'disabled' : '';
 
                 tr.innerHTML = `
-                    <td class="p-3 text-center font-black text-slate-400 text-base whitespace-nowrap">${seatNo}</td>
-                    <td class="p-3 font-black text-slate-800 text-base whitespace-nowrap">${s.name}</td>
-                    <td class="p-3 text-center whitespace-nowrap">${ps}</td>
-                    <td class="p-3 flex justify-center gap-1.5 whitespace-nowrap">
+                    <td class="p-2 sm:p-3 text-center font-black text-slate-400 text-sm sm:text-base whitespace-nowrap">${seatNo}</td>
+                    <td class="p-2 sm:p-3 font-black text-slate-800 text-sm sm:text-base whitespace-nowrap overflow-hidden text-ellipsis">${s.name}</td>
+                    <td class="p-2 sm:p-3 text-center whitespace-nowrap">${ps}</td>
+                    <td class="p-2 sm:p-3"><div class="grid grid-cols-2 gap-1.5">
                         <button onclick="toggleTag(${i}, 'priority')" ${disAttr} class="tag-toggle priority ${s.tags.has('priority')?'active':''} ${disClass}">靠前</button>
                         <button onclick="toggleTag(${i}, 'rear')" ${disAttr} class="tag-toggle rear ${s.tags.has('rear')?'active':''} ${disClass}">靠後</button>
                         <button onclick="toggleTag(${i}, 'noBack')" ${disAttr} class="tag-toggle noBack ${s.tags.has('noBack')?'active':''} ${disClass}">不後</button>
                         <button onclick="toggleTag(${i}, 'noSide')" ${disAttr} class="tag-toggle noSide ${s.tags.has('noSide')?'active':''} ${disClass}">不邊</button>
-                    </td>
+                    </div></td>
                 `;
                 tableRows.appendChild(tr);
             });
@@ -2222,6 +2266,7 @@
                 btnFinal.classList.toggle('is-disabled', isDis);
             }
 
+            fitSeatNameText();
             initIcons();
         }
 
