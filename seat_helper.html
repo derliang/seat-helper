@@ -598,7 +598,7 @@
         }
         .height-data-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 0.75rem;
         }
         .height-data-card {
@@ -613,8 +613,26 @@
             text-overflow: ellipsis;
         }
         .height-card-seat { font-size: clamp(0.82rem, 8cqw, 1rem); }
-        .height-card-name { font-size: clamp(0.92rem, 9cqw, 1.12rem); }
+        .height-card-name {
+            font-size: clamp(0.88rem, 8cqw, 1.12rem);
+            text-overflow: clip;
+        }
         .height-card-value { font-size: clamp(0.82rem, 8cqw, 1rem); }
+        .word-template-preview-note {
+            position: absolute;
+            left: 1rem;
+            right: 1rem;
+            bottom: 1rem;
+            z-index: 8;
+            border: 1px solid #fbbf24;
+            background: rgba(255, 251, 235, 0.96);
+            color: #92400e;
+            border-radius: 1rem;
+            padding: 0.75rem 1rem;
+            font-size: 0.9rem;
+            font-weight: 900;
+            box-shadow: 0 10px 24px rgba(146, 64, 14, 0.12);
+        }
         .history-item { cursor: pointer; transition: background-color 0.2s; }
         .history-item:hover { background-color: #f8fafc; }
 
@@ -687,6 +705,7 @@
             .tag-toggle { min-height: 36px; }
             .student-table-wrap th { padding: 0.55rem 0.35rem; font-size: 0.72rem; }
             .student-table-wrap .tag-toggle { min-height: 0; }
+            .height-data-grid { grid-template-columns: minmax(0, 1fr); }
             #adminHeader { padding: 1rem; border-radius: 1.5rem; margin-bottom: 1rem; }
             #adminHeader > .order-2 { order: 1; margin-left: 0; width: 100%; }
             #adminHeader > button { order: 2; width: 100%; }
@@ -1292,7 +1311,7 @@
     </div>
 
     <script>
-        const APP_VERSION = "v3.1.5";
+        const APP_VERSION = "v3.1.6";
 
         function initTheme() {
             const saved = localStorage.getItem('seatHelperTheme');
@@ -1383,6 +1402,7 @@
         const BUILT_IN_WORD_TEMPLATE_URL = './templates/seat-helper-word-template.docx';
         const REQUIRED_WORD_TEMPLATE_PLACEHOLDERS = ['seatTable'];
         const ADMIN_LOCK_STORAGE_KEY = 'seatHelperAdminLockV1';
+        let wordTemplatePreviewInfo = { source: 'built-in', name: '內建模板', updatedAt: '' };
         let adminAuthMode = 'unlock';
         let adminPinSubmitting = false;
 
@@ -1827,6 +1847,8 @@
             const host = document.getElementById('displaySettingsPreview');
             const source = document.getElementById('captureArea');
             if (!host || !source) return;
+            const frame = document.createElement('div');
+            frame.className = 'relative w-full h-full bg-white';
             const clone = source.cloneNode(true);
             clone.removeAttribute('id');
             clone.className = source.className;
@@ -1840,7 +1862,16 @@
             clone.classList.toggle('show-export-date', displayPreviewMode === 'export' && displaySettings.export.exportDate);
             const cloneDate = clone.querySelector('#seatMapExportDate');
             if (cloneDate) cloneDate.textContent = `匯出日期：${new Date().toLocaleDateString('zh-TW')}`;
-            host.replaceChildren(clone);
+            frame.appendChild(clone);
+            if (displayPreviewMode === 'export') {
+                const note = document.createElement('div');
+                note.className = 'word-template-preview-note';
+                const dateText = wordTemplatePreviewInfo.updatedAt ? `｜${new Date(wordTemplatePreviewInfo.updatedAt).toLocaleString('zh-TW')}` : '';
+                const sourceText = wordTemplatePreviewInfo.source === 'custom' ? '自訂 Word 模板' : '內建 Word 模板';
+                note.textContent = `匯出 Word 將套用：${sourceText}「${wordTemplatePreviewInfo.name}」${dateText}`;
+                frame.appendChild(note);
+            }
+            host.replaceChildren(frame);
             const scale = Math.min(0.72, Math.max(0.25, host.clientWidth / 900));
             clone.style.transform = `scale(${scale})`;
             const contentHeight = Math.max(clone.scrollHeight, clone.offsetHeight, 850);
@@ -2050,7 +2081,7 @@
                 const hasHeight = Number.isFinite(student.height);
                 const heightText = hasHeight ? `${student.height} cm` : '尚未設定';
                 const row = document.createElement('div');
-                row.className = `height-data-card grid grid-cols-[36px_minmax(0,1fr)_76px_auto] items-center gap-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-2 ${hasHeight ? '' : 'opacity-70'}`;
+                row.className = `height-data-card grid grid-cols-[40px_minmax(0,1fr)_82px_auto] items-center gap-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-2 ${hasHeight ? '' : 'opacity-70'}`;
                 row.innerHTML = `
                     <div class="height-card-seat text-center font-black text-slate-400">${student.seatNo}</div>
                     <div class="height-card-name min-w-0 font-black text-slate-800 dark:text-white">${student.name}</div>
@@ -2062,7 +2093,19 @@
                 `;
                 list.appendChild(row);
             });
+            requestAnimationFrame(fitHeightDataNames);
             if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function fitHeightDataNames() {
+            document.querySelectorAll('#heightDataList .height-card-name').forEach(el => {
+                el.style.fontSize = '';
+                let fontSize = parseFloat(getComputedStyle(el).fontSize);
+                while (el.scrollWidth > el.clientWidth + 1 && fontSize > 8) {
+                    fontSize -= 0.5;
+                    el.style.fontSize = `${fontSize}px`;
+                }
+            });
         }
 
         function syncHeightDataState(message = '') {
@@ -3427,14 +3470,20 @@
             try {
                 const custom = await readCustomWordTemplate();
                 if (!custom) {
+                    wordTemplatePreviewInfo = { source: 'built-in', name: '內建模板', updatedAt: '' };
                     status.textContent = message || '目前使用：內建模板';
+                    renderDisplaySettingsPreview();
                     return;
                 }
                 const date = custom.updatedAt ? new Date(custom.updatedAt).toLocaleString('zh-TW') : '';
+                wordTemplatePreviewInfo = { source: 'custom', name: custom.name || '自訂模板', updatedAt: custom.updatedAt || '' };
                 status.textContent = message || `目前使用：${custom.name || '自訂模板'}${date ? `｜${date}` : ''}`;
+                renderDisplaySettingsPreview();
             } catch (error) {
                 console.error('Word template status failed:', error);
+                wordTemplatePreviewInfo = { source: 'built-in', name: '內建模板', updatedAt: '' };
                 status.textContent = '模板狀態讀取失敗，匯出時將嘗試使用內建模板';
+                renderDisplaySettingsPreview();
             }
         }
 
@@ -3472,6 +3521,7 @@
                     updatedAt: new Date().toISOString(),
                     data
                 });
+                displayPreviewMode = 'export';
                 await updateWordTemplateUI(`已套用自訂模板：${file.name}`);
             } catch (error) {
                 console.error('Custom Word template upload failed:', error);
@@ -3486,6 +3536,7 @@
             if (!confirm('確定要移除目前的自訂 Word 模板，恢復使用內建模板嗎？')) return;
             try {
                 await deleteCustomWordTemplate();
+                displayPreviewMode = 'export';
                 await updateWordTemplateUI('已恢復使用內建模板');
             } catch (error) {
                 console.error('Restore built-in Word template failed:', error);
