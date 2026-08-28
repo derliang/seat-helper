@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>座位小幫手 v3.1.2</title>
+    <title>座位小幫手 v3.1.7</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>tailwind.config = { darkMode: 'class' };</script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -346,6 +346,15 @@
         .seat-map-display-surface.hide-empty-seats.hide-disabled-seats .seat-card.seat-disabled { visibility: hidden; }
         .seat-map-display-surface .export-date { display: none; }
         .seat-map-display-surface.export-layout.show-export-date .export-date { display: block; }
+        .seat-map-display-surface.export-layout .seat-name {
+            line-height: 1.45;
+            padding-top: 0;
+            padding-bottom: 0;
+            overflow: visible;
+        }
+        .seat-map-display-surface.export-layout .seat-card.occupied {
+            overflow: visible;
+        }
 
         .config-input-group {
             display: flex;
@@ -1311,7 +1320,7 @@
     </div>
 
     <script>
-        const APP_VERSION = "v3.1.6";
+        const APP_VERSION = "v3.1.7";
 
         function initTheme() {
             const saved = localStorage.getItem('seatHelperTheme');
