@@ -411,7 +411,34 @@
 
         #drawCurrentStudent {
             min-width: 15rem;
+        }
+
+        #drawStatusBanner.draw-animation-classic #drawCurrentStudent {
             animation: drawResultPulse 0.45s ease-in-out infinite alternate;
+        }
+
+        #drawStatusBanner.draw-animation-spotlight {
+            background: radial-gradient(circle at 50% 0%, #facc15 0%, #7c3aed 42%, #312e81 100%);
+        }
+
+        #drawStatusBanner.draw-animation-spotlight #drawCurrentStudent {
+            animation: drawSpotlight 0.7s ease-in-out infinite alternate;
+        }
+
+        #drawStatusBanner.draw-animation-scan {
+            background: linear-gradient(120deg, #0f172a 0%, #2563eb 45%, #14b8a6 100%);
+        }
+
+        #drawStatusBanner.draw-animation-scan #drawCurrentStudent {
+            animation: drawScan 0.52s linear infinite;
+        }
+
+        #drawStatusBanner.draw-animation-roulette {
+            background: linear-gradient(120deg, #831843 0%, #db2777 45%, #f97316 100%);
+        }
+
+        #drawStatusBanner.draw-animation-roulette #drawCurrentStudent {
+            animation: drawRoulette 0.28s ease-in-out infinite alternate;
         }
 
         .seat-card.draw-reveal {
@@ -428,6 +455,22 @@
         @keyframes drawResultPulse {
             from { transform: scale(0.98); background: rgba(255,255,255,0.16); }
             to { transform: scale(1.02); background: rgba(255,255,255,0.28); }
+        }
+
+        @keyframes drawSpotlight {
+            from { transform: scale(1); box-shadow: 0 0 0 rgba(250,204,21,0.15); }
+            to { transform: scale(1.06); box-shadow: 0 0 34px rgba(250,204,21,0.55); }
+        }
+
+        @keyframes drawScan {
+            0% { transform: translateX(-4px); filter: brightness(0.9); }
+            50% { transform: translateX(4px); filter: brightness(1.35); }
+            100% { transform: translateX(-4px); filter: brightness(0.9); }
+        }
+
+        @keyframes drawRoulette {
+            from { transform: rotate(-1deg) scale(0.98); }
+            to { transform: rotate(1deg) scale(1.05); }
         }
 
         @keyframes drawSeatReveal {
@@ -545,8 +588,9 @@
         .student-table-wrap .tag-toggle {
             width: 100%;
             min-width: 0;
-            padding-inline: clamp(2px, 1vw, 8px);
-            font-size: clamp(11px, 2.7vw, 13px);
+            height: clamp(32px, 7vw, 38px);
+            padding-inline: clamp(1px, 0.8vw, 6px);
+            font-size: clamp(10px, 2.35vw, 13px);
         }
         .student-table-wrap th,
         .student-table-wrap td {
@@ -623,7 +667,7 @@
             button, select, input[type="checkbox"] { min-height: 44px; }
             .tag-toggle { min-height: 36px; }
             .student-table-wrap th { padding: 0.55rem 0.35rem; font-size: 0.72rem; }
-            .student-table-wrap .tag-toggle { height: 36px; }
+            .student-table-wrap .tag-toggle { min-height: 0; }
             #adminHeader { padding: 1rem; border-radius: 1.5rem; margin-bottom: 1rem; }
             #adminHeader > .order-2 { order: 1; margin-left: 0; width: 100%; }
             #adminHeader > button { order: 2; width: 100%; }
@@ -811,12 +855,18 @@
                     </div>
                     <div class="student-table-wrap max-h-[350px] overflow-y-auto overflow-x-hidden mb-6 border rounded-2xl bg-slate-50/50">
                         <table class="w-full table-fixed border-separate border-spacing-0">
+                            <colgroup>
+                                <col class="w-[11%]">
+                                <col class="w-[22%]">
+                                <col class="w-[19%]">
+                                <col class="w-[48%]">
+                            </colgroup>
                             <thead class="sticky top-0 bg-white z-10 shadow-sm text-slate-500 text-xs sm:text-sm font-black uppercase">
                                 <tr>
-                                    <th class="p-3 text-center whitespace-nowrap">座號</th>
-                                    <th class="p-3 text-left whitespace-nowrap">學生姓名</th>
-                                    <th class="p-3 text-center whitespace-nowrap">目前座位</th>
-                                    <th class="p-3 text-center whitespace-nowrap">個別需求</th>
+                                    <th class="p-2 sm:p-3 text-center whitespace-nowrap">座號</th>
+                                    <th class="p-2 sm:p-3 text-left whitespace-nowrap">學生姓名</th>
+                                    <th class="p-2 sm:p-3 text-center whitespace-nowrap">目前座位</th>
+                                    <th class="p-2 sm:p-3 text-center whitespace-nowrap">個別需求</th>
                                 </tr>
                             </thead>
                             <tbody id="studentTableBody"></tbody>
@@ -1112,14 +1162,34 @@
                         <div class="flex items-center gap-3">
                             <div class="bg-violet-50 dark:bg-violet-950/50 p-2.5 rounded-xl"><i data-lucide="audio-lines" class="w-6 h-6 text-violet-500"></i></div>
                             <div>
-                                <h2 class="text-lg font-black text-slate-800 dark:text-white">五階段抽籤音效</h2>
-                                <p class="text-xs font-bold text-slate-500 dark:text-slate-400">每個階段可獨立選擇與試聽</p>
+                                <h2 class="text-lg font-black text-slate-800 dark:text-white">抽籤儀式設定</h2>
+                                <p class="text-xs font-bold text-slate-500 dark:text-slate-400">可調整動畫、其他人抽籤時長與每階段音效</p>
                             </div>
                         </div>
                         <label class="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-2.5 cursor-pointer">
                             <input id="soundEnabledToggle" type="checkbox" onchange="saveSoundSetting()" class="w-5 h-5 accent-violet-600">
                             <span id="soundSettingLabel" class="font-black text-slate-800 dark:text-white">開啟音效</span>
                         </label>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-3 mb-5">
+                        <label class="flex flex-col gap-1.5 text-xs font-black text-slate-500 dark:text-slate-400">抽籤動畫
+                            <select id="drawAnimationStyleInput" onchange="saveDrawAnimationSetting()" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 font-bold text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-violet-400">
+                                <option value="classic">經典翻牌</option>
+                                <option value="spotlight">聚光揭曉</option>
+                                <option value="scan">脈衝掃描</option>
+                                <option value="roulette">快速輪轉</option>
+                            </select>
+                        </label>
+                        <label class="flex flex-col gap-1.5 text-xs font-black text-slate-500 dark:text-slate-400">其他人總抽籤時長
+                            <select id="finalDrawDurationInput" onchange="saveFinalDrawDurationSetting()" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 font-bold text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-violet-400">
+                                <option value="short">短：8 秒</option>
+                                <option value="medium">中：16 秒</option>
+                                <option value="long">長：24 秒</option>
+                            </select>
+                        </label>
+                        <button type="button" onclick="previewDrawAnimationSetting()" class="btn-main self-end bg-slate-800 hover:bg-slate-700 text-white px-4 py-2.5 text-sm flex items-center justify-center gap-1.5">
+                            <i data-lucide="sparkles" class="w-4 h-4"></i> 預覽
+                        </button>
                     </div>
                     <div id="phaseSoundSettings" class="flex flex-col gap-3"></div>
                 </section>
@@ -1184,7 +1254,7 @@
     </div>
 
     <script>
-        const APP_VERSION = "v3.1.2";
+        const APP_VERSION = "v3.1.3";
 
         function initTheme() {
             const saved = localStorage.getItem('seatHelperTheme');
@@ -1231,6 +1301,8 @@
         let seatMapNote = '';
         let soundEnabled = true;
         let phaseSoundMap = { priority: 'priority', rear: 'rear', noBack: 'noBack', noSide: 'noSide', final: 'final' };
+        let drawAnimationStyle = 'spotlight';
+        let finalDrawDuration = 'medium';
         const defaultDrawPreferences = {
             avoidSameSeat: true, avoidSameSeatPriority: 'high',
             avoidRepeatEdge: true, avoidRepeatEdgePriority: 'medium',
@@ -1264,6 +1336,8 @@
         let displayPreviewMode = 'preview';
 
         const validPhaseSoundIds = ['priority', 'rear', 'noBack', 'noSide', 'final', 'gentleBell', 'crystalRise', 'digitalPop', 'warmChord', 'celebration'];
+        const validDrawAnimationStyles = ['classic', 'spotlight', 'scan', 'roulette'];
+        const finalDrawDurationMs = { short: 8000, medium: 16000, long: 24000 };
         const WORD_TEMPLATE_DB_NAME = 'seatHelperWordTemplates';
         const WORD_TEMPLATE_DB_VERSION = 1;
         const WORD_TEMPLATE_STORE = 'templates';
@@ -1295,6 +1369,8 @@
                 seatMapTitle: classroomName,
                 soundEnabled,
                 phaseSoundMap,
+                drawAnimationStyle,
+                finalDrawDuration,
                 drawPreferences,
                 displaySettings
             };
@@ -1328,6 +1404,8 @@
                     seatMapNote = data.seatMapNote || '';
                     soundEnabled = data.soundEnabled !== false;
                     phaseSoundMap = { ...phaseSoundMap, ...(data.phaseSoundMap || {}) };
+                    drawAnimationStyle = validDrawAnimationStyles.includes(data.drawAnimationStyle) ? data.drawAnimationStyle : 'spotlight';
+                    finalDrawDuration = finalDrawDurationMs[data.finalDrawDuration] ? data.finalDrawDuration : 'medium';
                     drawPreferences = normalizeDrawPreferences(data.drawPreferences);
                     displaySettings = {
                         preview: { ...defaultDisplaySettings.preview, ...(data.displaySettings?.preview || {}) },
@@ -1787,6 +1865,8 @@
             if (typeof data.classroomName !== 'string' || typeof data.soundEnabled !== 'boolean') throw new Error('班級或音效設定不正確。');
             if (['schoolName', 'schoolYear', 'semester', 'advisorName', 'className', 'frontLabel', 'frontDoor', 'rearDoor', 'seatMapNote', 'seatMapTitle'].some(key => data[key] !== undefined && typeof data[key] !== 'string')) throw new Error('基本資料格式不正確。');
             if (!data.phaseSoundMap || ['priority', 'rear', 'noBack', 'noSide', 'final'].some(phase => !validPhaseSoundIds.includes(data.phaseSoundMap[phase]))) throw new Error('五階段音效設定不正確。');
+            if (data.drawAnimationStyle !== undefined && !validDrawAnimationStyles.includes(data.drawAnimationStyle)) throw new Error('抽籤動畫設定不正確。');
+            if (data.finalDrawDuration !== undefined && !finalDrawDurationMs[data.finalDrawDuration]) throw new Error('其他人抽籤時長設定不正確。');
             if (data.drawPreferences && typeof data.drawPreferences !== 'object') throw new Error('抽籤偏好設定不正確。');
             if (data.lastDrawSnapshot && (!Array.isArray(data.lastDrawSnapshot.seating) || !data.lastDrawSnapshot.gridConfig)) throw new Error('上次抽籤資料不正確。');
             if (data.displaySettings && (!data.displaySettings.preview || !data.displaySettings.export)) throw new Error('座位表顯示設定不正確。');
@@ -1824,6 +1904,8 @@
                 seatMapNote = data.seatMapNote || '';
                 soundEnabled = data.soundEnabled;
                 phaseSoundMap = { ...data.phaseSoundMap };
+                drawAnimationStyle = validDrawAnimationStyles.includes(data.drawAnimationStyle) ? data.drawAnimationStyle : 'spotlight';
+                finalDrawDuration = finalDrawDurationMs[data.finalDrawDuration] ? data.finalDrawDuration : 'medium';
                 drawPreferences = normalizeDrawPreferences(data.drawPreferences);
                 displaySettings = {
                     preview: { ...defaultDisplaySettings.preview, ...(data.displaySettings?.preview || {}) },
@@ -2012,6 +2094,10 @@
         function updateSoundSettingUI() {
             document.getElementById('soundEnabledToggle').checked = soundEnabled;
             document.getElementById('soundSettingLabel').textContent = soundEnabled ? '開啟音效' : '靜音';
+            const animationInput = document.getElementById('drawAnimationStyleInput');
+            const durationInput = document.getElementById('finalDrawDurationInput');
+            if (animationInput) animationInput.value = drawAnimationStyle;
+            if (durationInput) durationInput.value = finalDrawDuration;
             renderPhaseSoundSettings();
         }
 
@@ -2057,6 +2143,28 @@
 
         function previewPhaseSound(phaseId) {
             playPhaseSound(phaseId, true);
+        }
+
+        function saveDrawAnimationSetting() {
+            const value = document.getElementById('drawAnimationStyleInput').value;
+            drawAnimationStyle = validDrawAnimationStyles.includes(value) ? value : 'spotlight';
+            saveData();
+        }
+
+        function saveFinalDrawDurationSetting() {
+            const value = document.getElementById('finalDrawDurationInput').value;
+            finalDrawDuration = finalDrawDurationMs[value] ? value : 'medium';
+            saveData();
+        }
+
+        async function previewDrawAnimationSetting() {
+            saveDrawAnimationSetting();
+            const previewStudent = { seatNo: 1, name: '預覽', displayName: '1預覽' };
+            const banner = document.getElementById('drawStatusBanner');
+            startDrawCeremony('final', 1);
+            await revealDrawResult(previewStudent, 0, [0], 1, 1, 900, false);
+            await finishDrawCeremony('final', 1);
+            banner.style.display = 'none';
         }
 
         function closeAdminView() {
@@ -2133,10 +2241,10 @@
                 const disAttr = isAssigned ? 'disabled' : '';
 
                 tr.innerHTML = `
-                    <td class="p-2 sm:p-3 text-center font-black text-slate-400 text-sm sm:text-base whitespace-nowrap">${seatNo}</td>
-                    <td class="p-2 sm:p-3 font-black text-slate-800 text-sm sm:text-base whitespace-nowrap overflow-hidden text-ellipsis">${s.name}</td>
-                    <td class="p-2 sm:p-3 text-center whitespace-nowrap">${ps}</td>
-                    <td class="p-2 sm:p-3"><div class="grid grid-cols-2 gap-1.5">
+                    <td class="p-1.5 sm:p-2 text-center font-black text-slate-400 text-sm sm:text-base whitespace-nowrap">${seatNo}</td>
+                    <td class="p-1.5 sm:p-2 font-black text-slate-800 text-sm sm:text-base whitespace-nowrap overflow-hidden text-ellipsis">${s.name}</td>
+                    <td class="p-1.5 sm:p-2 text-center whitespace-nowrap">${ps}</td>
+                    <td class="p-1.5 sm:p-2"><div class="grid grid-cols-4 gap-1">
                         <button onclick="toggleTag(${i}, 'priority')" ${disAttr} class="tag-toggle priority ${s.tags.has('priority')?'active':''} ${disClass}">靠前</button>
                         <button onclick="toggleTag(${i}, 'rear')" ${disAttr} class="tag-toggle rear ${s.tags.has('rear')?'active':''} ${disClass}">靠後</button>
                         <button onclick="toggleTag(${i}, 'noBack')" ${disAttr} class="tag-toggle noBack ${s.tags.has('noBack')?'active':''} ${disClass}">不後</button>
@@ -2559,32 +2667,40 @@
         };
 
         function startDrawCeremony(phaseId, total) {
+            const banner = document.getElementById('drawStatusBanner');
+            validDrawAnimationStyles.forEach(style => banner.classList.remove(`draw-animation-${style}`));
+            banner.classList.add(`draw-animation-${drawAnimationStyle}`);
             document.getElementById('drawStatusText').textContent = drawPhaseLabels[phaseId];
             document.getElementById('drawProgressText').textContent = `準備抽出 ${total} 位學生的座位`;
             document.getElementById('drawCurrentStudent').textContent = '準備揭曉…';
             document.getElementById('drawProgressBar').style.width = '0%';
-            document.getElementById('drawStatusBanner').style.display = 'block';
+            banner.style.display = 'block';
         }
 
-        async function revealDrawResult(student, targetIndex, pool, current, total) {
+        async function revealDrawResult(student, targetIndex, pool, current, total, stepMs = 450, commitResult = true) {
             const displayName = student.displayName || `${student.seatNo || ''}${student.name}`;
             const resultBox = document.getElementById('drawCurrentStudent');
             document.getElementById('drawProgressText').textContent = `正在揭曉 ${current} / ${total}`;
 
-            for (let roll = 0; roll < 3; roll++) {
+            const rollCount = Math.max(2, Math.min(8, Math.floor(stepMs / 120)));
+            const rollDelay = Math.max(32, Math.min(90, Math.floor(stepMs * 0.48 / rollCount)));
+            for (let roll = 0; roll < rollCount; roll++) {
                 const previewIndex = pool[(current + roll - 1) % pool.length];
                 resultBox.textContent = `${displayName} · ${getCoord(previewIndex).str}？`;
-                await new Promise(resolve => setTimeout(resolve, 75));
+                await new Promise(resolve => setTimeout(resolve, rollDelay));
             }
 
-            seating[targetIndex] = { name: student.displayName || student.name, locked: false };
-            student.currentPos = getCoord(targetIndex).str;
-            resultBox.textContent = `${displayName} ➜ ${student.currentPos}`;
+            const targetCoord = getCoord(targetIndex).str;
+            if (commitResult) {
+                seating[targetIndex] = { name: student.displayName || student.name, locked: false };
+                student.currentPos = targetCoord;
+            }
+            resultBox.textContent = `${displayName} ➜ ${targetCoord}`;
             document.getElementById('drawProgressBar').style.width = `${Math.round(current / total * 100)}%`;
-            updateUI();
+            if (commitResult) updateUI();
             const revealedSeat = document.getElementById(`seat-${targetIndex}`);
             if (revealedSeat) revealedSeat.classList.add('draw-reveal');
-            await new Promise(resolve => setTimeout(resolve, 225));
+            await new Promise(resolve => setTimeout(resolve, Math.max(80, stepMs - rollCount * rollDelay)));
         }
 
         async function finishDrawCeremony(phaseId, total) {
@@ -2647,12 +2763,13 @@
             updateUI();
             startDrawCeremony('final', targets.length);
             try {
+                const finalStepMs = Math.max(120, Math.floor(finalDrawDurationMs[finalDrawDuration] / targets.length));
                 for (let i = 0; i < targets.length; i++) {
                     const s = targets[i];
                     const pool = getCandidatePool(s);
                     if(pool.length > 0) {
                         const t = pool[Math.floor(Math.random()*pool.length)];
-                        await revealDrawResult(s, t, pool, i + 1, targets.length);
+                        await revealDrawResult(s, t, pool, i + 1, targets.length, finalStepMs);
                     }
                 }
                 playPhaseSound('final');
@@ -2919,6 +3036,8 @@
             seatMapNote = '';
             soundEnabled = true;
             phaseSoundMap = { priority: 'priority', rear: 'rear', noBack: 'noBack', noSide: 'noSide', final: 'final' };
+            drawAnimationStyle = 'spotlight';
+            finalDrawDuration = 'medium';
             drawPreferences = normalizeDrawPreferences();
             displaySettings = JSON.parse(JSON.stringify(defaultDisplaySettings));
 
