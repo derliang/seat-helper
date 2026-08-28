@@ -1140,14 +1140,33 @@
                 <section class="xl:col-span-7 bg-white dark:bg-slate-900 p-7 sm:p-8 rounded-[2rem] shadow-sm border border-slate-200 dark:border-slate-700 border-t-4 border-t-cyan-500">
                     <div class="flex items-center gap-3 mb-5">
                         <div class="bg-cyan-50 dark:bg-cyan-950/50 p-2.5 rounded-xl"><i data-lucide="ruler" class="w-6 h-6 text-cyan-500"></i></div>
-                        <div><h2 class="text-lg font-black text-slate-800 dark:text-white">身高資料（僅後台）</h2><p class="text-xs font-bold text-slate-500 dark:text-slate-400">貼上「座號、身高」兩欄；身高不會顯示在抽籤頁、座位表或匯出檔。</p></div>
+                        <div><h2 class="text-lg font-black text-slate-800 dark:text-white">身高資料（僅後台）</h2><p class="text-xs font-bold text-slate-500 dark:text-slate-400">貼上「座號、身高」兩欄；系統會自動用座號配對姓名。</p></div>
                     </div>
-                    <textarea id="heightImportInput" class="w-full h-28 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 text-sm font-bold text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-cyan-400 resize-none" placeholder="座號　身高&#10;1　145&#10;2　168"></textarea>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-                        <button type="button" onclick="importHeightData()" class="btn-main bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-3">匯入身高</button>
-                        <button type="button" onclick="clearHeightData()" class="clear-icon-btn justify-self-start sm:justify-self-end" title="清除身高資料" aria-label="清除身高資料"><i data-lucide="trash-2" class="w-6 h-6" aria-hidden="true"></i></button>
+                    <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] gap-4 items-start">
+                        <div class="flex flex-col gap-3">
+                            <textarea id="heightImportInput" class="w-full h-28 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 text-sm font-bold text-slate-700 dark:text-white outline-none focus:ring-2 focus:ring-cyan-400 resize-none" placeholder="座號　身高&#10;1　145&#10;2　168"></textarea>
+                            <div class="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3">
+                                <button type="button" onclick="importHeightData()" class="btn-main bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-3">匯入身高</button>
+                                <button type="button" onclick="clearHeightData()" class="clear-icon-btn justify-self-start sm:justify-self-end" title="清除身高資料" aria-label="清除身高資料"><i data-lucide="trash-2" class="w-6 h-6" aria-hidden="true"></i></button>
+                            </div>
+                            <div class="rounded-2xl border border-cyan-100 dark:border-cyan-900/70 bg-cyan-50/60 dark:bg-cyan-950/20 p-3">
+                                <div class="text-xs font-black text-cyan-700 dark:text-cyan-300 mb-2">手動新增／更新</div>
+                                <div class="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_92px_auto] gap-2">
+                                    <select id="manualHeightSeatInput" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 font-bold text-slate-700 dark:text-white"></select>
+                                    <input id="manualHeightValueInput" type="number" min="80" max="250" step="0.1" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 font-bold text-slate-700 dark:text-white" placeholder="身高">
+                                    <button type="button" onclick="addManualHeightData()" class="btn-main bg-cyan-700 hover:bg-cyan-600 text-white px-3 py-2 text-sm">新增</button>
+                                </div>
+                            </div>
+                            <p id="heightImportStatus" class="text-xs font-bold text-slate-500 dark:text-slate-400"></p>
+                        </div>
+                        <div class="rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden bg-slate-50 dark:bg-slate-800/60">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-3 py-2 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+                                <span class="text-sm font-black text-slate-700 dark:text-white">已匯入身高</span>
+                                <button type="button" onclick="sortHeightData()" class="btn-main bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 text-xs">依座號排序</button>
+                            </div>
+                            <div id="heightDataList" class="max-h-72 overflow-y-auto p-2 flex flex-col gap-2"></div>
+                        </div>
                     </div>
-                    <p id="heightImportStatus" class="mt-3 text-xs font-bold text-slate-500 dark:text-slate-400"></p>
                 </section>
 
                 <section class="xl:col-span-7 bg-white dark:bg-slate-900 p-7 sm:p-8 rounded-[2rem] shadow-sm border border-slate-200 dark:border-slate-700 border-t-4 border-t-indigo-500">
@@ -1254,7 +1273,7 @@
     </div>
 
     <script>
-        const APP_VERSION = "v3.1.3";
+        const APP_VERSION = "v3.1.4";
 
         function initTheme() {
             const saved = localStorage.getItem('seatHelperTheme');
@@ -1964,6 +1983,7 @@
             document.getElementById('separateStudentsToggle').checked = drawPreferences.separateStudents;
             document.getElementById('separateStudentsPriority').value = drawPreferences.separateStudentsPriority;
             renderSeparationPairUI();
+            renderHeightDataList();
         }
 
         function saveDrawPreferences() {
@@ -1991,6 +2011,63 @@
             status.textContent = `${message ? `${message}　` : ''}目前已設定 ${configuredCount} / ${students.length} 位。${safeguardText}`;
         }
 
+        function getStudentsBySeatNo() {
+            return [...students].sort((a, b) => Number(a.seatNo) - Number(b.seatNo));
+        }
+
+        function renderManualHeightOptions() {
+            const select = document.getElementById('manualHeightSeatInput');
+            if (!select) return;
+            select.replaceChildren();
+            const placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = students.length ? '選擇學生' : '請先匯入名單';
+            select.appendChild(placeholder);
+            getStudentsBySeatNo().forEach(student => {
+                const option = document.createElement('option');
+                option.value = student.seatNo;
+                const heightText = Number.isFinite(student.height) ? `（${student.height} cm）` : '';
+                option.textContent = `${student.seatNo} ${student.name}${heightText}`;
+                select.appendChild(option);
+            });
+        }
+
+        function renderHeightDataList() {
+            renderManualHeightOptions();
+            const list = document.getElementById('heightDataList');
+            if (!list) return;
+            list.replaceChildren();
+            const measuredStudents = getStudentsBySeatNo().filter(student => Number.isFinite(student.height));
+            if (!measuredStudents.length) {
+                const empty = document.createElement('div');
+                empty.className = 'rounded-xl border border-dashed border-slate-300 dark:border-slate-600 p-4 text-center text-xs font-bold text-slate-400';
+                empty.textContent = students.length ? '尚未匯入身高資料。' : '匯入學生名單後即可管理身高。';
+                list.appendChild(empty);
+                return;
+            }
+            measuredStudents.forEach(student => {
+                const row = document.createElement('div');
+                row.className = 'grid grid-cols-[52px_minmax(0,1fr)_72px_auto] items-center gap-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-2';
+                row.innerHTML = `
+                    <div class="text-center font-black text-slate-400">${student.seatNo}</div>
+                    <div class="min-w-0 font-black text-slate-800 dark:text-white truncate">${student.name}</div>
+                    <div class="text-center font-black text-cyan-700 dark:text-cyan-300">${student.height} cm</div>
+                    <div class="flex gap-1 justify-end">
+                        <button type="button" onclick="editHeightData(${student.seatNo})" class="w-9 h-9 rounded-lg bg-cyan-100 dark:bg-cyan-950/60 text-cyan-700 dark:text-cyan-300 flex items-center justify-center" title="編輯身高" aria-label="編輯 ${student.name} 身高"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                        <button type="button" onclick="deleteHeightData(${student.seatNo})" class="w-9 h-9 rounded-lg bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 flex items-center justify-center" title="刪除身高" aria-label="刪除 ${student.name} 身高"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </div>
+                `;
+                list.appendChild(row);
+            });
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+
+        function syncHeightDataState(message = '') {
+            saveData();
+            updateHeightDataStatus(message);
+            updateDrawPreferencesUI();
+        }
+
         function importHeightData() {
             const input = document.getElementById('heightImportInput');
             const lines = input.value.replace(/\r/g, '').split('\n').map(line => line.trim()).filter(Boolean);
@@ -2015,25 +2092,64 @@
             });
             if (!updatedCount) {
                 updateHeightDataStatus(lines.length ? '沒有可匯入的資料，請確認座號與身高格式。' : '請貼上座號與身高。');
+                renderHeightDataList();
                 return;
             }
             input.value = '';
-            saveData();
-            updateHeightDataStatus(`已匯入 ${updatedCount} 位學生的身高${skippedCount ? `，略過 ${skippedCount} 筆無效資料` : ''}。`);
-            updateDrawPreferencesUI();
+            syncHeightDataState(`已匯入 ${updatedCount} 位學生的身高${skippedCount ? `，略過 ${skippedCount} 筆無效資料` : ''}。`);
+        }
+
+        function addManualHeightData() {
+            const seatNo = Number(document.getElementById('manualHeightSeatInput').value);
+            const height = Number(document.getElementById('manualHeightValueInput').value);
+            const student = students.find(item => item.seatNo === seatNo);
+            if (!student || !Number.isFinite(height) || height < 80 || height > 250) {
+                updateHeightDataStatus('請選擇學生，並輸入 80 到 250 公分的身高。');
+                return;
+            }
+            student.height = Math.round(height * 10) / 10;
+            document.getElementById('manualHeightValueInput').value = '';
+            syncHeightDataState(`已更新 ${student.seatNo} ${student.name} 的身高。`);
+        }
+
+        function editHeightData(seatNo) {
+            const student = students.find(item => item.seatNo === seatNo);
+            if (!student) return;
+            const value = prompt(`請輸入 ${student.seatNo} ${student.name} 的身高（公分）`, Number.isFinite(student.height) ? student.height : '');
+            if (value === null) return;
+            const height = Number(value);
+            if (!Number.isFinite(height) || height < 80 || height > 250) {
+                updateHeightDataStatus('身高需介於 80 到 250 公分。');
+                return;
+            }
+            student.height = Math.round(height * 10) / 10;
+            syncHeightDataState(`已更新 ${student.seatNo} ${student.name} 的身高。`);
+        }
+
+        function deleteHeightData(seatNo) {
+            const student = students.find(item => item.seatNo === seatNo);
+            if (!student || !Number.isFinite(student.height)) return;
+            if (!confirm(`確定要刪除 ${student.seatNo} ${student.name} 的身高資料嗎？`)) return;
+            delete student.height;
+            drawPreferences.considerHeight = false;
+            syncHeightDataState(`已刪除 ${student.seatNo} ${student.name} 的身高資料。`);
+        }
+
+        function sortHeightData() {
+            students.sort((a, b) => Number(a.seatNo) - Number(b.seatNo));
+            syncHeightDataState('已依座號重新排序身高資料。');
         }
 
         function clearHeightData() {
             if (!students.some(student => Number.isFinite(student.height))) {
                 updateHeightDataStatus();
+                renderHeightDataList();
                 return;
             }
             if (!confirm('確定要清除所有學生身高資料嗎？')) return;
             students.forEach(student => delete student.height);
             drawPreferences.considerHeight = false;
-            saveData();
-            updateHeightDataStatus('身高資料已全部清除。');
-            updateDrawPreferencesUI();
+            syncHeightDataState('身高資料已全部清除。');
         }
 
         function renderSeparationPairUI() {
