@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>座位小幫手 v3.2.0</title>
+    <title>座位小幫手 v3.2.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>tailwind.config = { darkMode: 'class' };</script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -169,8 +169,8 @@
         html.dark .draw-base-cell.is-occupied { background: #064e3b; border-color: #047857; }
         html.dark .draw-base-cell.is-unknown { background: #431407; border-color: #9a3412; color: #fed7aa; }
         html.dark .draw-base-cell.is-disabled { background: #4c0519; border-color: #9f1239; color: #fda4af; }
-        html.dark #driveModal { background: #0f172a; }
-        html.dark #driveModalStatus { border-color: #334155; color: #cbd5e1; }
+        html.dark #shareModal { background: #0f172a; }
+        html.dark #shareModalStatus { border-color: #334155; color: #cbd5e1; }
         .reset-all-btn {
             background: #0f172a !important;
             color: #ffffff !important;
@@ -733,7 +733,7 @@
             #labelWrapper { margin-bottom: 0.5rem; }
             .row-label-text { font-size: 10px; }
             .screen-bar { font-size: 1rem; letter-spacing: 0.4rem; text-indent: 0.4rem; padding: 0.7rem 0; }
-            #studentPicker, #historyModal, #driveModal { width: calc(100% - 1rem); border-radius: 1.5rem; }
+            #studentPicker, #historyModal, #shareModal { width: calc(100% - 1rem); border-radius: 1.5rem; }
             #drawStatusBanner { padding: 0.75rem; }
             #drawStatusBanner > div { padding-inline: 0.25rem; gap: 0.5rem; }
             #drawStatusText, #drawCurrentStudent { font-size: 1rem; }
@@ -1049,8 +1049,8 @@
                     <button onclick="exportToWord()" class="btn-main px-3 py-3.5 bg-blue-600 hover:bg-blue-500 text-white shadow-lg text-sm sm:text-base font-black flex items-center justify-center gap-2">
                         <i data-lucide="file-text" class="w-5 h-5"></i> 匯出 Word
                     </button>
-                    <button onclick="openDriveSaveModal()" class="btn-main px-3 py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-lg text-sm sm:text-base font-black flex items-center justify-center gap-2">
-                        <i data-lucide="cloud-upload" class="w-5 h-5"></i> 存到雲端硬碟
+                    <button onclick="openShareSaveModal()" class="btn-main px-3 py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-lg text-sm sm:text-base font-black flex items-center justify-center gap-2">
+                        <i data-lucide="cloud-upload" class="w-5 h-5"></i> 存到雲端
                     </button>
                 </div>
             </div>
@@ -1066,7 +1066,7 @@
                     </div>
                     <div>
                         <h1 class="text-2xl sm:text-3xl font-black">本機管理後台</h1>
-                        <p class="text-sm font-bold text-white/70 mt-1">設定儲存在目前瀏覽器，可另外備份到 Google 雲端硬碟</p>
+                        <p class="text-sm font-bold text-white/70 mt-1">所有設定只儲存在目前瀏覽器，可另外備份到雲端硬碟</p>
                     </div>
                 </div>
                 <button type="button" onclick="closeAdminView()" class="order-1 btn-main bg-white hover:bg-indigo-50 text-indigo-700 px-5 py-3 flex items-center justify-center gap-2 shadow-lg">
@@ -1140,33 +1140,19 @@
                     <input id="jsonBackupInput" type="file" accept=".json,application/json" class="hidden" onchange="importJsonBackup(this)">
                     <p id="jsonBackupStatus" class="text-sm font-bold text-slate-500 dark:text-slate-400 mt-3"></p>
                     <div class="mt-5 pt-5 border-t border-slate-100 dark:border-slate-700">
-                        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-                            <div class="flex items-center gap-2">
-                                <i data-lucide="cloud" class="w-5 h-5 text-amber-500"></i>
-                                <span class="font-black text-slate-800 dark:text-white">Google 雲端硬碟</span>
-                            </div>
-                            <span id="driveConnectionBadge" class="text-xs font-black px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-300">尚未連線</span>
+                        <div class="flex items-center gap-2 mb-3">
+                            <i data-lucide="cloud" class="w-5 h-5 text-amber-500"></i>
+                            <span class="font-black text-slate-800 dark:text-white">雲端硬碟</span>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <button type="button" onclick="backupToDrive()" class="btn-main bg-amber-500 hover:bg-amber-400 text-slate-950 px-5 py-3 flex items-center justify-center gap-2">
-                                <i data-lucide="cloud-upload" class="w-5 h-5"></i> 備份到雲端硬碟
+                            <button type="button" onclick="shareJsonBackup()" class="btn-main bg-amber-500 hover:bg-amber-400 text-slate-950 px-5 py-3 flex items-center justify-center gap-2">
+                                <i data-lucide="cloud-upload" class="w-5 h-5"></i> 備份到雲端
                             </button>
-                            <button type="button" onclick="openDriveRestoreModal()" class="btn-main bg-slate-700 hover:bg-slate-600 text-white px-5 py-3 flex items-center justify-center gap-2">
-                                <i data-lucide="cloud-download" class="w-5 h-5"></i> 從雲端硬碟還原
+                            <button type="button" onclick="document.getElementById('jsonBackupInput').click()" class="btn-main bg-slate-700 hover:bg-slate-600 text-white px-5 py-3 flex items-center justify-center gap-2">
+                                <i data-lucide="cloud-download" class="w-5 h-5"></i> 從雲端還原
                             </button>
                         </div>
-                        <p class="text-xs font-bold text-slate-400 mt-3">檔案會存放在雲端硬碟的「座位小幫手」資料夾；本程式只能讀取自己建立的檔案。</p>
-                        <details class="mt-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2">
-                            <summary class="cursor-pointer text-xs font-black text-slate-600 dark:text-slate-300">連線設定（OAuth 用戶端 ID）</summary>
-                            <div class="mt-2 flex flex-col gap-2">
-                                <input id="googleClientIdInput" type="text" spellcheck="false" autocomplete="off" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 dark:text-white" placeholder="xxxxxxxx.apps.googleusercontent.com">
-                                <div class="flex flex-wrap gap-2">
-                                    <button type="button" onclick="saveGoogleClientId()" class="btn-main bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 text-xs">儲存用戶端 ID</button>
-                                    <button type="button" onclick="disconnectGoogleDrive()" class="btn-main bg-rose-100 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 px-3 py-2 text-xs">中斷雲端連線</button>
-                                </div>
-                                <p class="text-xs font-bold text-slate-400 leading-5">需要在 Google Cloud Console 建立「網頁應用程式」類型的 OAuth 用戶端，並把本網站網址加入「已授權的 JavaScript 來源」。</p>
-                            </div>
-                        </details>
+                        <p class="text-xs font-bold text-slate-400 mt-3 leading-5">不需要登入 Google，也不使用任何 Google API。備份：手機或平板會開啟分享選單，請選擇「雲端硬碟」；電腦則下載備份檔，可存到 Google 雲端硬碟電腦版的同步資料夾。還原：在選檔畫面中選擇雲端硬碟裡的備份檔。</p>
                     </div>
                 </section>
 
@@ -1398,17 +1384,17 @@
         <div id="historyList" class="p-4 overflow-y-auto bg-slate-50 flex-1 flex flex-col gap-2"></div>
     </div>
 
-    <div id="driveModal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white rounded-[2rem] shadow-2xl z-[100] hidden flex flex-col max-h-[85vh] overflow-hidden">
+    <div id="shareModal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white rounded-[2rem] shadow-2xl z-[100] hidden flex flex-col max-h-[85vh] overflow-hidden">
         <div class="p-6 bg-amber-500 text-slate-950 flex justify-between items-center">
-            <h3 id="driveModalTitle" class="text-xl font-black italic flex items-center gap-2"><i data-lucide="cloud"></i> Google 雲端硬碟</h3>
-            <button onclick="closeDriveModal()" class="text-slate-950/60 hover:text-slate-950" aria-label="關閉"><i data-lucide="x"></i></button>
+            <h3 id="shareModalTitle" class="text-xl font-black italic flex items-center gap-2"><i data-lucide="cloud"></i> 存到雲端</h3>
+            <button onclick="closeShareModal()" class="text-slate-950/60 hover:text-slate-950" aria-label="關閉"><i data-lucide="x"></i></button>
         </div>
-        <div id="driveModalBody" class="p-5 overflow-y-auto bg-slate-50 dark:bg-slate-900 flex-1 flex flex-col gap-3"></div>
-        <p id="driveModalStatus" class="px-5 py-3 min-h-[2.75rem] text-sm font-bold text-slate-500 border-t border-slate-100"></p>
+        <div id="shareModalBody" class="p-5 overflow-y-auto bg-slate-50 dark:bg-slate-900 flex-1 flex flex-col gap-3"></div>
+        <p id="shareModalStatus" class="px-5 py-3 min-h-[2.75rem] text-sm font-bold text-slate-500 border-t border-slate-100"></p>
     </div>
 
     <script>
-        const APP_VERSION = "v3.2.0";
+        const APP_VERSION = "v3.2.1";
 
         function initTheme() {
             const saved = localStorage.getItem('seatHelperTheme');
@@ -1867,7 +1853,6 @@
             updateSoundSettingUI();
             renderDisplaySettingRows();
             updateWordTemplateUI();
-            updateDriveConnectionBadge();
             document.getElementById('mainView').classList.add('hidden');
             document.getElementById('adminView').classList.remove('hidden');
             window.scrollTo(0, 0);
@@ -3773,8 +3758,7 @@
             document.getElementById('rawInput').value = '';
             document.getElementById('cfgCols').value = gridConfig.cols;
             document.getElementById('cfgRows').value = gridConfig.rows;
-            ['seatHelperDataV2', 'seatHelperTheme', 'seatHelperData_v2', 'seatHelperHistory_v2', ADMIN_LOCK_STORAGE_KEY, GOOGLE_CLIENT_ID_STORAGE_KEY, GOOGLE_DRIVE_FOLDER_STORAGE_KEY].forEach(key => localStorage.removeItem(key));
-            disconnectGoogleDrive(true);
+            ['seatHelperDataV2', 'seatHelperTheme', 'seatHelperData_v2', 'seatHelperHistory_v2', ADMIN_LOCK_STORAGE_KEY].forEach(key => localStorage.removeItem(key));
 
             initGrid();
             updateClassroomNameUI();
@@ -4329,349 +4313,153 @@
             return blob;
         }
 
-        // ===== Google 雲端硬碟（drive.file 權限：只能存取本程式建立的檔案） =====
-        const DEFAULT_GOOGLE_CLIENT_ID = '';
-        const GOOGLE_CLIENT_ID_STORAGE_KEY = 'seatHelperGoogleClientIdV1';
-        const GOOGLE_DRIVE_FOLDER_STORAGE_KEY = 'seatHelperDriveFolderIdV1';
-        const GOOGLE_DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
-        const DRIVE_API = 'https://www.googleapis.com/drive/v3';
-        const DRIVE_UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3';
-        const DRIVE_FOLDER_NAME = '座位小幫手';
-        const DRIVE_EXPORT_FORMATS = [
+        // ===== 存到雲端：使用系統分享選單或下載，不使用任何 Google API =====
+        const CLOUD_EXPORT_FORMATS = [
             { id: 'png', label: 'PNG 圖片', extension: 'png', mimeType: 'image/png', build: buildPngBlob },
             { id: 'pdf', label: 'PDF', extension: 'pdf', mimeType: 'application/pdf', build: buildPdfBlob },
             { id: 'excel', label: 'Excel', extension: 'xlsx', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', build: buildExcelBlob },
             { id: 'word', label: 'Word', extension: 'docx', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', build: buildWordBlob }
         ];
-        let googleAccessToken = '';
-        let googleTokenExpiresAt = 0;
-        let googleIdentityLoadPromise = null;
-        let driveBusy = false;
+        let shareBusy = false;
 
-        function getGoogleClientId() {
-            return (localStorage.getItem(GOOGLE_CLIENT_ID_STORAGE_KEY) || DEFAULT_GOOGLE_CLIENT_ID).trim();
-        }
-
-        function saveGoogleClientId() {
-            const value = document.getElementById('googleClientIdInput').value.trim();
-            if (value && !/^[\w.-]+\.apps\.googleusercontent\.com$/.test(value)) {
-                setJsonBackupStatus('用戶端 ID 格式不正確，應以 .apps.googleusercontent.com 結尾。', true);
-                return;
+        function canShareFiles(files) {
+            try {
+                return !!navigator.share && !!navigator.canShare && navigator.canShare({ files });
+            } catch (error) {
+                return false;
             }
-            if (value) localStorage.setItem(GOOGLE_CLIENT_ID_STORAGE_KEY, value);
-            else localStorage.removeItem(GOOGLE_CLIENT_ID_STORAGE_KEY);
-            disconnectGoogleDrive(true);
-            if (getGoogleClientId()) loadGoogleIdentityScript().catch(() => {});
-            setJsonBackupStatus(value ? 'Google 用戶端 ID 已儲存。' : '已清除自訂的 Google 用戶端 ID。');
         }
 
-        function updateDriveConnectionBadge() {
-            const badge = document.getElementById('driveConnectionBadge');
-            const input = document.getElementById('googleClientIdInput');
-            if (input && document.activeElement !== input) input.value = localStorage.getItem(GOOGLE_CLIENT_ID_STORAGE_KEY) || DEFAULT_GOOGLE_CLIENT_ID;
-            if (!badge) return;
-            const connected = googleAccessToken && Date.now() < googleTokenExpiresAt;
-            badge.textContent = !getGoogleClientId() ? '尚未設定' : (connected ? '已連線' : '尚未連線');
-            badge.className = `text-xs font-black px-3 py-1 rounded-full ${connected ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-300'}`;
-        }
-
-        function disconnectGoogleDrive(silent = false) {
-            if (googleAccessToken && window.google?.accounts?.oauth2) {
-                try { google.accounts.oauth2.revoke(googleAccessToken, () => {}); } catch (error) { console.warn(error); }
-            }
-            googleAccessToken = '';
-            googleTokenExpiresAt = 0;
-            updateDriveConnectionBadge();
-            if (!silent) setJsonBackupStatus('已中斷 Google 雲端硬碟連線。');
-        }
-
-        function loadGoogleIdentityScript() {
-            if (window.google?.accounts?.oauth2) return Promise.resolve();
-            if (!googleIdentityLoadPromise) {
-                googleIdentityLoadPromise = new Promise((resolve, reject) => {
-                    const script = document.createElement('script');
-                    script.src = 'https://accounts.google.com/gsi/client';
-                    script.async = true;
-                    script.onload = () => resolve();
-                    script.onerror = () => {
-                        googleIdentityLoadPromise = null;
-                        script.remove();
-                        reject(new Error('無法載入 Google 登入元件，請確認網路連線。'));
-                    };
-                    document.head.appendChild(script);
-                });
-            }
-            return googleIdentityLoadPromise;
-        }
-
-        async function getDriveAccessToken() {
-            if (googleAccessToken && Date.now() < googleTokenExpiresAt - 60000) return googleAccessToken;
-            const clientId = getGoogleClientId();
-            if (!clientId) throw new Error('尚未設定 Google OAuth 用戶端 ID，請到後台「備份」區的連線設定填寫。');
-            await loadGoogleIdentityScript();
-            return new Promise((resolve, reject) => {
-                const tokenClient = google.accounts.oauth2.initTokenClient({
-                    client_id: clientId,
-                    scope: GOOGLE_DRIVE_SCOPE,
-                    callback: response => {
-                        if (response.error) {
-                            reject(new Error(`Google 授權失敗：${response.error_description || response.error}`));
-                            return;
-                        }
-                        googleAccessToken = response.access_token;
-                        googleTokenExpiresAt = Date.now() + (Number(response.expires_in) || 3600) * 1000;
-                        updateDriveConnectionBadge();
-                        resolve(googleAccessToken);
-                    },
-                    error_callback: error => reject(new Error(error?.type === 'popup_closed'
-                        ? '已關閉 Google 授權視窗，未進行任何變更。'
-                        : 'Google 授權視窗無法開啟，請允許此網站開啟彈出式視窗後再試。'))
-                });
-                tokenClient.requestAccessToken();
-            });
-        }
-
-        async function driveFetch(url, options = {}) {
-            const token = await getDriveAccessToken();
-            const response = await fetch(url, { ...options, headers: { ...(options.headers || {}), Authorization: `Bearer ${token}` } });
-            if (response.status === 401) {
-                googleAccessToken = '';
-                googleTokenExpiresAt = 0;
-                updateDriveConnectionBadge();
-            }
-            if (!response.ok) {
-                let detail = '';
-                try { detail = (await response.json())?.error?.message || ''; } catch (error) { /* 非 JSON 錯誤內容 */ }
-                const error = new Error(`雲端硬碟操作失敗（${response.status}）${detail ? `：${detail}` : ''}`);
-                error.status = response.status;
-                throw error;
-            }
-            return response;
-        }
-
-        async function ensureDriveFolder() {
-            const cachedId = localStorage.getItem(GOOGLE_DRIVE_FOLDER_STORAGE_KEY);
-            if (cachedId) {
+        // 必須直接在使用者點擊中呼叫，否則瀏覽器會拒絕開啟分享選單。
+        async function shareOrDownloadFiles(files, title) {
+            if (canShareFiles(files)) {
                 try {
-                    const info = await (await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(cachedId)}?fields=id,trashed`)).json();
-                    if (!info.trashed) return info.id;
+                    await navigator.share({ files, title });
+                    return 'shared';
                 } catch (error) {
-                    if (error.status !== 404) throw error;
+                    if (error.name === 'AbortError') return 'cancelled';
+                    console.warn('Share failed, falling back to download:', error);
                 }
-                localStorage.removeItem(GOOGLE_DRIVE_FOLDER_STORAGE_KEY);
             }
-            const query = `mimeType='application/vnd.google-apps.folder' and trashed=false and appProperties has { key='seatHelper' and value='folder' }`;
-            const found = await (await driveFetch(`${DRIVE_API}/files?q=${encodeURIComponent(query)}&orderBy=createdTime&pageSize=1&fields=files(id)`)).json();
-            let folderId = found.files?.[0]?.id;
-            if (!folderId) {
-                const created = await (await driveFetch(`${DRIVE_API}/files?fields=id`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name: DRIVE_FOLDER_NAME, mimeType: 'application/vnd.google-apps.folder', appProperties: { seatHelper: 'folder' } })
-                })).json();
-                folderId = created.id;
-            }
-            localStorage.setItem(GOOGLE_DRIVE_FOLDER_STORAGE_KEY, folderId);
-            return folderId;
+            files.forEach(file => downloadBlob(file, file.name));
+            return 'downloaded';
         }
 
-        async function uploadFileToDrive(blob, fileName, mimeType, kind) {
-            const folderId = await ensureDriveFolder();
-            const metadata = { name: fileName, mimeType, parents: [folderId], appProperties: { seatHelper: kind } };
-            const form = new FormData();
-            form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-            form.append('file', blob, fileName);
-            return (await driveFetch(`${DRIVE_UPLOAD_API}/files?uploadType=multipart&fields=id,name,webViewLink`, { method: 'POST', body: form })).json();
-        }
+        const SHARE_RESULT_MESSAGES = {
+            shared: '已開啟分享選單；選擇「雲端硬碟」即可存到雲端。',
+            cancelled: '已取消分享，檔案未儲存。',
+            downloaded: '此裝置不支援分享選單，已改為下載；可將檔案存到 Google 雲端硬碟電腦版的同步資料夾，或上傳到雲端硬碟。',
+            manualDownload: '已下載；可將檔案存到 Google 雲端硬碟電腦版的同步資料夾，或上傳到雲端硬碟。'
+        };
 
-        function getDriveTimestamp() {
-            const now = new Date();
-            const pad = value => String(value).padStart(2, '0');
-            return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
-        }
-
-        function getDriveFileName(extension, suffix = '') {
-            const safeName = classroomName.replace(/[\\/:*?"<>|]/g, '_').trim() || '座位表';
-            return `${safeName}${suffix}_${getDriveTimestamp()}.${extension}`;
-        }
-
-        function setDriveModalStatus(message, tone = 'info') {
-            const status = document.getElementById('driveModalStatus');
+        function setShareModalStatus(message, tone = 'info') {
+            const status = document.getElementById('shareModalStatus');
             status.textContent = message;
             status.className = `px-5 py-3 min-h-[2.75rem] text-sm font-bold border-t border-slate-100 ${tone === 'error' ? 'text-rose-600' : tone === 'success' ? 'text-emerald-600' : 'text-slate-500'}`;
         }
 
-        function openDriveModal(title, icon) {
-            document.getElementById('driveModalTitle').innerHTML = `<i data-lucide="${icon}"></i> ${title}`;
-            document.getElementById('driveModalBody').replaceChildren();
-            setDriveModalStatus('');
-            document.getElementById('modalOverlay').classList.remove('hidden');
-            document.getElementById('driveModal').classList.remove('hidden');
-            initIcons();
-            return document.getElementById('driveModalBody');
-        }
-
-        function closeDriveModal() {
-            if (driveBusy) return;
-            document.getElementById('driveModal').classList.add('hidden');
+        function closeShareModal() {
+            if (shareBusy) return;
+            document.getElementById('shareModal').classList.add('hidden');
             document.getElementById('modalOverlay').classList.add('hidden');
         }
 
         function closeAllModals() {
-            if (driveBusy) return;
+            if (shareBusy) return;
             closePicker();
             closeHistory();
-            closeDriveModal();
+            closeShareModal();
         }
 
-        function openDriveSaveModal() {
+        function openShareSaveModal() {
             if (!seating.some(seat => seat?.name)) {
-                alert('目前沒有排座位，無法存到雲端硬碟。');
+                alert('目前沒有排座位，無法存到雲端。');
                 return;
             }
-            const body = openDriveModal('座位表存到雲端硬碟', 'cloud-upload');
+            const body = document.getElementById('shareModalBody');
+            body.replaceChildren();
+            setShareModalStatus('');
             const intro = document.createElement('p');
             intro.className = 'text-sm font-bold text-slate-600 dark:text-slate-300';
-            intro.textContent = `選擇要存到雲端硬碟「${DRIVE_FOLDER_NAME}」資料夾的格式（套用匯出顯示設定）：`;
+            intro.textContent = '選擇要存到雲端的格式（套用匯出顯示設定）。手機或平板會開啟分享選單，請選擇「雲端硬碟」；不支援分享的裝置會改為下載。';
             const options = document.createElement('div');
             options.className = 'grid grid-cols-2 gap-2';
-            DRIVE_EXPORT_FORMATS.forEach(format => {
+            CLOUD_EXPORT_FORMATS.forEach(format => {
                 const label = document.createElement('label');
                 label.className = 'flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 font-black text-sm text-slate-700 dark:text-white cursor-pointer';
-                label.innerHTML = `<input type="checkbox" value="${format.id}" class="drive-format-option w-5 h-5 accent-amber-500" ${format.id === 'png' ? 'checked' : ''}> ${format.label}`;
+                label.innerHTML = `<input type="checkbox" value="${format.id}" class="share-format-option w-5 h-5 accent-amber-500" ${format.id === 'png' ? 'checked' : ''}> ${format.label}`;
                 options.appendChild(label);
             });
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.className = 'btn-main bg-amber-500 hover:bg-amber-400 text-slate-950 py-3 flex items-center justify-center gap-2';
-            button.innerHTML = '<i data-lucide="cloud-upload" class="w-5 h-5"></i> 上傳到雲端硬碟';
-            button.onclick = () => saveSeatMapToDrive(button);
-            const results = document.createElement('div');
-            results.id = 'driveUploadResults';
-            results.className = 'flex flex-col gap-2';
-            body.append(intro, options, button, results);
+            const prepareButton = document.createElement('button');
+            prepareButton.type = 'button';
+            prepareButton.className = 'btn-main bg-slate-800 hover:bg-slate-700 text-white py-3 flex items-center justify-center gap-2';
+            prepareButton.innerHTML = '<i data-lucide="file-check-2" class="w-5 h-5"></i> 1. 準備檔案';
+            const shareButton = document.createElement('button');
+            shareButton.type = 'button';
+            shareButton.disabled = true;
+            shareButton.className = 'btn-main bg-amber-500 hover:bg-amber-400 text-slate-950 py-3 flex items-center justify-center gap-2';
+            shareButton.innerHTML = '<i data-lucide="cloud-upload" class="w-5 h-5"></i> 2. 存到雲端';
+            const downloadButton = document.createElement('button');
+            downloadButton.type = 'button';
+            downloadButton.disabled = true;
+            downloadButton.className = 'btn-main bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-white py-2.5 text-sm flex items-center justify-center gap-2';
+            downloadButton.innerHTML = '<i data-lucide="download" class="w-4 h-4"></i> 改為下載檔案（電腦版建議）';
+            let preparedFiles = [];
+            const setPrepared = ready => {
+                shareButton.disabled = !ready;
+                downloadButton.disabled = !ready;
+            };
+            options.addEventListener('change', () => {
+                preparedFiles = [];
+                setPrepared(false);
+            });
+            prepareButton.onclick = async () => {
+                if (shareBusy) return;
+                const selected = [...document.querySelectorAll('.share-format-option:checked')].map(input => input.value);
+                const formats = CLOUD_EXPORT_FORMATS.filter(format => selected.includes(format.id));
+                if (!formats.length) {
+                    setShareModalStatus('請至少選擇一種格式。', 'error');
+                    return;
+                }
+                shareBusy = true;
+                prepareButton.disabled = true;
+                setPrepared(false);
+                try {
+                    preparedFiles = [];
+                    for (const format of formats) {
+                        setShareModalStatus(`正在產生 ${format.label}…`);
+                        const blob = await format.build();
+                        preparedFiles.push(new File([blob], getExportFileName(format.extension), { type: format.mimeType }));
+                    }
+                    setPrepared(true);
+                    setShareModalStatus(`已準備 ${preparedFiles.length} 個檔案，請按「2. 存到雲端」。`, 'success');
+                } catch (error) {
+                    console.error('Prepare files failed:', error);
+                    setShareModalStatus(error.message || '檔案產生失敗，請稍後再試。', 'error');
+                } finally {
+                    shareBusy = false;
+                    prepareButton.disabled = false;
+                }
+            };
+            shareButton.onclick = async () => {
+                if (!preparedFiles.length) return;
+                const result = await shareOrDownloadFiles(preparedFiles, classroomName || '座位表');
+                setShareModalStatus(SHARE_RESULT_MESSAGES[result], result === 'cancelled' ? 'info' : 'success');
+            };
+            downloadButton.onclick = () => {
+                preparedFiles.forEach(file => downloadBlob(file, file.name));
+                setShareModalStatus(SHARE_RESULT_MESSAGES.manualDownload, 'success');
+            };
+            body.append(intro, options, prepareButton, shareButton, downloadButton);
+            document.getElementById('modalOverlay').classList.remove('hidden');
+            document.getElementById('shareModal').classList.remove('hidden');
             initIcons();
         }
 
-        function appendDriveResultLink(container, file) {
-            const link = document.createElement('a');
-            link.href = file.webViewLink || 'https://drive.google.com/drive/my-drive';
-            link.target = '_blank';
-            link.rel = 'noopener';
-            link.className = 'flex items-center gap-2 bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-800 rounded-xl px-3 py-2 text-sm font-black text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50';
-            link.textContent = `✔ ${file.name}（在雲端硬碟開啟）`;
-            container.appendChild(link);
-        }
-
-        async function saveSeatMapToDrive(button) {
-            if (driveBusy) return;
-            const selected = [...document.querySelectorAll('.drive-format-option:checked')].map(input => input.value);
-            const formats = DRIVE_EXPORT_FORMATS.filter(format => selected.includes(format.id));
-            if (!formats.length) {
-                setDriveModalStatus('請至少選擇一種格式。', 'error');
-                return;
-            }
-            const results = document.getElementById('driveUploadResults');
-            results.replaceChildren();
-            driveBusy = true;
-            button.disabled = true;
-            try {
-                setDriveModalStatus('正在連線 Google 雲端硬碟…');
-                await getDriveAccessToken();
-                for (const format of formats) {
-                    setDriveModalStatus(`正在產生並上傳 ${format.label}…`);
-                    const blob = await format.build();
-                    const file = await uploadFileToDrive(blob, getDriveFileName(format.extension), format.mimeType, 'seatmap');
-                    appendDriveResultLink(results, file);
-                }
-                setDriveModalStatus(`已上傳 ${formats.length} 個檔案到雲端硬碟「${DRIVE_FOLDER_NAME}」資料夾。`, 'success');
-            } catch (error) {
-                console.error('Drive upload failed:', error);
-                setDriveModalStatus(error.message || '上傳失敗，請稍後再試。', 'error');
-            } finally {
-                driveBusy = false;
-                button.disabled = false;
-            }
-        }
-
-        async function backupToDrive() {
-            if (driveBusy) return;
-            driveBusy = true;
-            try {
-                setJsonBackupStatus('正在備份到 Google 雲端硬碟…');
-                const file = await uploadFileToDrive(buildJsonBackupBlob(), getDriveFileName('json', '_備份'), 'application/json', 'backup');
-                setJsonBackupStatus(`已備份到雲端硬碟：${file.name}`);
-            } catch (error) {
-                console.error('Drive backup failed:', error);
-                setJsonBackupStatus(error.message || '雲端備份失敗，請稍後再試。', true);
-            } finally {
-                driveBusy = false;
-            }
-        }
-
-        async function openDriveRestoreModal() {
-            if (driveBusy) return;
-            const body = openDriveModal('從雲端硬碟還原', 'cloud-download');
-            driveBusy = true;
-            try {
-                setDriveModalStatus('正在讀取雲端備份清單…');
-                const folderId = await ensureDriveFolder();
-                const query = `'${folderId}' in parents and trashed=false and appProperties has { key='seatHelper' and value='backup' }`;
-                const list = await (await driveFetch(`${DRIVE_API}/files?q=${encodeURIComponent(query)}&orderBy=createdTime desc&pageSize=50&fields=files(id,name,createdTime,size)`)).json();
-                const files = list.files || [];
-                if (!files.length) {
-                    setDriveModalStatus('雲端硬碟中還沒有座位小幫手的備份。');
-                    return;
-                }
-                files.forEach(file => {
-                    const row = document.createElement('div');
-                    row.className = 'flex items-center justify-between gap-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5';
-                    const info = document.createElement('div');
-                    info.className = 'min-w-0';
-                    const name = document.createElement('div');
-                    name.className = 'font-black text-sm text-slate-800 dark:text-white truncate';
-                    name.textContent = file.name;
-                    const meta = document.createElement('div');
-                    meta.className = 'text-xs font-bold text-slate-400';
-                    meta.textContent = `${new Date(file.createdTime).toLocaleString('zh-TW', { hour12: false })}${file.size ? `・${Math.max(1, Math.round(Number(file.size) / 1024))} KB` : ''}`;
-                    info.append(name, meta);
-                    const button = document.createElement('button');
-                    button.type = 'button';
-                    button.className = 'btn-main shrink-0 bg-slate-800 hover:bg-slate-700 text-white px-3 py-2 text-xs';
-                    button.textContent = '還原';
-                    button.onclick = () => restoreBackupFromDrive(file);
-                    row.append(info, button);
-                    body.appendChild(row);
-                });
-                setDriveModalStatus(`找到 ${files.length} 個雲端備份，請選擇要還原的版本。`);
-            } catch (error) {
-                console.error('Drive list failed:', error);
-                setDriveModalStatus(error.message || '無法讀取雲端備份。', 'error');
-            } finally {
-                driveBusy = false;
-            }
-        }
-
-        async function restoreBackupFromDrive(file) {
-            if (driveBusy) return;
-            driveBusy = true;
-            try {
-                setDriveModalStatus(`正在下載 ${file.name}…`);
-                const backup = JSON.parse(await (await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(file.id)}?alt=media`)).text());
-                const data = validateJsonBackup(backup);
-                if (!confirm(`已驗證雲端備份「${file.name}」（${data.classroomName}）。\n\n確定要覆蓋目前所有資料嗎？`)) {
-                    setDriveModalStatus('已取消還原，目前資料未變更。');
-                    return;
-                }
-                applyJsonBackup(backup);
-                setDriveModalStatus('雲端備份已完整還原。', 'success');
-                setJsonBackupStatus(`已從雲端硬碟還原：${file.name}`);
-            } catch (error) {
-                console.error('Drive restore failed:', error);
-                setDriveModalStatus(error instanceof SyntaxError ? '備份檔格式錯誤，目前資料未變更。' : (error.message || '還原失敗。'), 'error');
-            } finally {
-                driveBusy = false;
-            }
+        async function shareJsonBackup() {
+            const file = new File([buildJsonBackupBlob()], getExportFileName('json'), { type: 'application/json' });
+            const result = await shareOrDownloadFiles([file], '座位小幫手備份');
+            setJsonBackupStatus(SHARE_RESULT_MESSAGES[result]);
         }
 
         if(!loadData()) {
@@ -4681,7 +4469,6 @@
         updateClassroomNameUI();
         applyCaptureDisplaySettings('preview');
         refreshDrawBaseUI();
-        if (getGoogleClientId()) loadGoogleIdentityScript().catch(() => {});
     </script>
 </body>
 </html>
