@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>座位小幫手 v3.1.7</title>
+    <title>座位小幫手 v3.2.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>tailwind.config = { darkMode: 'class' };</script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -142,6 +142,35 @@
         }
         .clear-icon-btn:hover { background: #be123c; transform: translateY(-2px); box-shadow: 0 10px 22px rgba(225, 29, 72, 0.3); }
         .clear-icon-btn:active { transform: scale(0.96); }
+        .draw-base-map { background: #ffffff; border: 1px solid #a7f3d0; border-radius: 0.9rem; padding: 0.6rem; }
+        .draw-base-grid { display: grid; gap: 3px; }
+        .draw-base-cell {
+            min-width: 0;
+            height: 22px;
+            line-height: 20px;
+            border-radius: 4px;
+            background: #f8fafc;
+            border: 1px dashed #e2e8f0;
+            color: #334155;
+            font-size: 10px;
+            font-weight: 800;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding: 0 2px;
+        }
+        .draw-base-cell.is-occupied { background: #ecfdf5; border: 1px solid #a7f3d0; }
+        .draw-base-cell.is-unknown { background: #fff7ed; border-color: #fed7aa; color: #9a3412; }
+        .draw-base-cell.is-disabled { background: #fff1f2; border-color: #fecdd3; color: #fb7185; }
+        .draw-base-front { margin-top: 6px; text-align: center; font-size: 10px; font-weight: 900; letter-spacing: 0.3em; color: #ffffff; background: #334155; border-radius: 6px; padding: 2px 0; }
+        html.dark .draw-base-map { background: #0f172a; border-color: #065f46; }
+        html.dark .draw-base-cell { background: #1e293b; border-color: #334155; color: #e2e8f0; }
+        html.dark .draw-base-cell.is-occupied { background: #064e3b; border-color: #047857; }
+        html.dark .draw-base-cell.is-unknown { background: #431407; border-color: #9a3412; color: #fed7aa; }
+        html.dark .draw-base-cell.is-disabled { background: #4c0519; border-color: #9f1239; color: #fda4af; }
+        html.dark #driveModal { background: #0f172a; }
+        html.dark #driveModalStatus { border-color: #334155; color: #cbd5e1; }
         .reset-all-btn {
             background: #0f172a !important;
             color: #ffffff !important;
@@ -704,8 +733,7 @@
             #labelWrapper { margin-bottom: 0.5rem; }
             .row-label-text { font-size: 10px; }
             .screen-bar { font-size: 1rem; letter-spacing: 0.4rem; text-indent: 0.4rem; padding: 0.7rem 0; }
-            #exportActions > button:last-child { grid-column: 1 / -1; }
-            #studentPicker, #historyModal { width: calc(100% - 1rem); border-radius: 1.5rem; }
+            #studentPicker, #historyModal, #driveModal { width: calc(100% - 1rem); border-radius: 1.5rem; }
             #drawStatusBanner { padding: 0.75rem; }
             #drawStatusBanner > div { padding-inline: 0.25rem; gap: 0.5rem; }
             #drawStatusText, #drawCurrentStudent { font-size: 1rem; }
@@ -945,6 +973,7 @@
                             </button>
                         </div>
                         
+                        <p id="drawBaseHint" class="-mt-3 mb-4 text-xs font-bold text-slate-500 text-center"></p>
                         <div id="drawSummaryGrid" class="grid grid-cols-4 gap-2">
                             <div id="box-priority" class="summary-box priority px-2">
                                 <div class="finish-badge">已完成</div>
@@ -978,6 +1007,12 @@
             </div>
 
             <div id="seatPreviewColumn" class="xl:col-span-7 min-w-0">
+                <div id="seatPreviewToolbar" class="flex items-center justify-between gap-3 mb-4 px-1">
+                    <span class="unified-title mb-0"><i data-lucide="armchair" class="text-indigo-500"></i> 座位表預覽</span>
+                    <button id="btnClearSeatMap" onclick="clearSeatMapAssignments()" class="clear-icon-btn" title="清空座位表（已抽籤與已指定的座位）" aria-label="清空座位表">
+                        <i data-lucide="trash-2" class="w-6 h-6" aria-hidden="true"></i>
+                    </button>
+                </div>
                 <div id="seatMapScrollWrapper">
                 <div id="captureArea" class="seat-map-display-surface bg-white rounded-[3.5rem] p-10 md:p-14 shadow-2xl min-h-[850px] flex flex-col justify-between border-[12px] border-slate-50 relative">
                     <h2 id="classroomNameSeatPreview" class="text-center text-2xl sm:text-3xl font-black mb-8" style="color: #1e293b;"></h2>
@@ -998,7 +1033,7 @@
                 </div>
                 </div>
                 
-                <div id="exportActions" class="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-8">
+                <div id="exportActions" class="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-8">
                     <button onclick="copyImageToClipboard()" class="btn-main px-3 py-3.5 bg-slate-800 hover:bg-slate-700 text-white shadow-lg text-sm sm:text-base font-black flex items-center justify-center gap-2">
                         <i data-lucide="copy-check" class="w-5 h-5"></i> 複製圖片
                     </button>
@@ -1014,6 +1049,9 @@
                     <button onclick="exportToWord()" class="btn-main px-3 py-3.5 bg-blue-600 hover:bg-blue-500 text-white shadow-lg text-sm sm:text-base font-black flex items-center justify-center gap-2">
                         <i data-lucide="file-text" class="w-5 h-5"></i> 匯出 Word
                     </button>
+                    <button onclick="openDriveSaveModal()" class="btn-main px-3 py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-lg text-sm sm:text-base font-black flex items-center justify-center gap-2">
+                        <i data-lucide="cloud-upload" class="w-5 h-5"></i> 存到雲端硬碟
+                    </button>
                 </div>
             </div>
         </div>
@@ -1028,7 +1066,7 @@
                     </div>
                     <div>
                         <h1 class="text-2xl sm:text-3xl font-black">本機管理後台</h1>
-                        <p class="text-sm font-bold text-white/70 mt-1">所有設定只儲存在目前瀏覽器</p>
+                        <p class="text-sm font-bold text-white/70 mt-1">設定儲存在目前瀏覽器，可另外備份到 Google 雲端硬碟</p>
                     </div>
                 </div>
                 <button type="button" onclick="closeAdminView()" class="order-1 btn-main bg-white hover:bg-indigo-50 text-indigo-700 px-5 py-3 flex items-center justify-center gap-2 shadow-lg">
@@ -1101,6 +1139,35 @@
                     </div>
                     <input id="jsonBackupInput" type="file" accept=".json,application/json" class="hidden" onchange="importJsonBackup(this)">
                     <p id="jsonBackupStatus" class="text-sm font-bold text-slate-500 dark:text-slate-400 mt-3"></p>
+                    <div class="mt-5 pt-5 border-t border-slate-100 dark:border-slate-700">
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="cloud" class="w-5 h-5 text-amber-500"></i>
+                                <span class="font-black text-slate-800 dark:text-white">Google 雲端硬碟</span>
+                            </div>
+                            <span id="driveConnectionBadge" class="text-xs font-black px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-300">尚未連線</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <button type="button" onclick="backupToDrive()" class="btn-main bg-amber-500 hover:bg-amber-400 text-slate-950 px-5 py-3 flex items-center justify-center gap-2">
+                                <i data-lucide="cloud-upload" class="w-5 h-5"></i> 備份到雲端硬碟
+                            </button>
+                            <button type="button" onclick="openDriveRestoreModal()" class="btn-main bg-slate-700 hover:bg-slate-600 text-white px-5 py-3 flex items-center justify-center gap-2">
+                                <i data-lucide="cloud-download" class="w-5 h-5"></i> 從雲端硬碟還原
+                            </button>
+                        </div>
+                        <p class="text-xs font-bold text-slate-400 mt-3">檔案會存放在雲端硬碟的「座位小幫手」資料夾；本程式只能讀取自己建立的檔案。</p>
+                        <details class="mt-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2">
+                            <summary class="cursor-pointer text-xs font-black text-slate-600 dark:text-slate-300">連線設定（OAuth 用戶端 ID）</summary>
+                            <div class="mt-2 flex flex-col gap-2">
+                                <input id="googleClientIdInput" type="text" spellcheck="false" autocomplete="off" class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 dark:text-white" placeholder="xxxxxxxx.apps.googleusercontent.com">
+                                <div class="flex flex-wrap gap-2">
+                                    <button type="button" onclick="saveGoogleClientId()" class="btn-main bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 text-xs">儲存用戶端 ID</button>
+                                    <button type="button" onclick="disconnectGoogleDrive()" class="btn-main bg-rose-100 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 px-3 py-2 text-xs">中斷雲端連線</button>
+                                </div>
+                                <p class="text-xs font-bold text-slate-400 leading-5">需要在 Google Cloud Console 建立「網頁應用程式」類型的 OAuth 用戶端，並把本網站網址加入「已授權的 JavaScript 來源」。</p>
+                            </div>
+                        </details>
+                    </div>
                 </section>
 
                 <section id="displaySettingsSection" class="xl:col-span-12 bg-white dark:bg-slate-900 p-7 sm:p-8 rounded-[2rem] shadow-sm border border-slate-200 dark:border-slate-700 border-t-4 border-t-sky-500">
@@ -1144,8 +1211,20 @@
                         <div class="bg-emerald-50 dark:bg-emerald-950/50 p-2.5 rounded-xl"><i data-lucide="sparkles" class="w-6 h-6 text-emerald-500"></i></div>
                         <div>
                             <h2 class="text-lg font-black text-slate-800 dark:text-white">抽籤偏好</h2>
-                            <p class="text-xs font-bold text-slate-500 dark:text-slate-400">依上一次抽籤結果自動調整；無法兼顧時仍會正常抽籤</p>
+                            <p class="text-xs font-bold text-slate-500 dark:text-slate-400">依選定的歷史座位表整體最佳化；無法兼顧時仍會正常抽籤</p>
                         </div>
+                    </div>
+                    <div id="drawBaseSection" class="mb-4 rounded-2xl border border-emerald-200 dark:border-emerald-900/70 bg-emerald-50/60 dark:bg-emerald-950/20 p-4">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div class="flex items-center gap-2 font-black text-emerald-800 dark:text-emerald-300"><i data-lucide="history" class="w-5 h-5"></i> 抽籤偏好比較基準</div>
+                            <select id="drawBaseSelect" onchange="saveDrawBaseSelection()" class="w-full sm:w-auto sm:max-w-[60%] bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800 rounded-xl px-3 py-2 text-sm font-black text-slate-700 dark:text-white"></select>
+                        </div>
+                        <p id="drawBaseSummary" class="mt-2 text-xs font-bold text-slate-600 dark:text-slate-300"></p>
+                        <div id="drawBasePreview" class="mt-3"></div>
+                        <label class="mt-3 flex items-start gap-3 cursor-pointer">
+                            <input id="autoSaveHistoryToggle" type="checkbox" onchange="saveAutoSaveHistorySetting()" class="mt-0.5 w-5 h-5 accent-emerald-600">
+                            <span><span class="block font-black text-slate-800 dark:text-white text-sm">自動儲存座位歷史紀錄</span><span class="block text-xs font-bold text-slate-500 dark:text-slate-400">全班座位都排定後自動存入歷史紀錄（抽籤完成時，或清空座位前尚未儲存時）。</span></span>
+                        </label>
                     </div>
                     <div id="drawPreferenceList" class="grid grid-cols-1 gap-3">
                         <div class="grid grid-cols-[auto_1fr_auto] items-start gap-3 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-2xl p-4">
@@ -1301,7 +1380,7 @@
         </div>
     </div>
 
-    <div id="modalOverlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[90] hidden" onclick="closePicker()"></div>
+    <div id="modalOverlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[90] hidden" onclick="closeAllModals()"></div>
     <div id="studentPicker" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white rounded-[3rem] shadow-2xl z-[100] hidden flex flex-col max-h-[85vh] overflow-hidden">
         <div class="p-8 bg-indigo-600 text-white">
             <h3 class="text-2xl font-black italic">指定座位：<span id="pickerSeatLabel"></span></h3>
@@ -1319,8 +1398,17 @@
         <div id="historyList" class="p-4 overflow-y-auto bg-slate-50 flex-1 flex flex-col gap-2"></div>
     </div>
 
+    <div id="driveModal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-white rounded-[2rem] shadow-2xl z-[100] hidden flex flex-col max-h-[85vh] overflow-hidden">
+        <div class="p-6 bg-amber-500 text-slate-950 flex justify-between items-center">
+            <h3 id="driveModalTitle" class="text-xl font-black italic flex items-center gap-2"><i data-lucide="cloud"></i> Google 雲端硬碟</h3>
+            <button onclick="closeDriveModal()" class="text-slate-950/60 hover:text-slate-950" aria-label="關閉"><i data-lucide="x"></i></button>
+        </div>
+        <div id="driveModalBody" class="p-5 overflow-y-auto bg-slate-50 dark:bg-slate-900 flex-1 flex flex-col gap-3"></div>
+        <p id="driveModalStatus" class="px-5 py-3 min-h-[2.75rem] text-sm font-bold text-slate-500 border-t border-slate-100"></p>
+    </div>
+
     <script>
-        const APP_VERSION = "v3.1.7";
+        const APP_VERSION = "v3.2.0";
 
         function initTheme() {
             const saved = localStorage.getItem('seatHelperTheme');
@@ -1369,12 +1457,15 @@
         let phaseSoundMap = { priority: 'priority', rear: 'rear', noBack: 'noBack', noSide: 'noSide', final: 'final' };
         let drawAnimationStyle = 'spotlight';
         let finalDrawDuration = 'medium';
+        let autoSaveHistory = true;
+        let lastPreferenceReport = '';
         const defaultDrawPreferences = {
             avoidSameSeat: true, avoidSameSeatPriority: 'high',
             avoidRepeatEdge: true, avoidRepeatEdgePriority: 'medium',
             avoidPreviousNeighbors: true, avoidPreviousNeighborsPriority: 'medium',
             considerHeight: true, considerHeightPriority: 'high', heightThreshold: 5,
-            separateStudents: true, separateStudentsPriority: 'high', separationPairs: []
+            separateStudents: true, separateStudentsPriority: 'high', separationPairs: [],
+            baseRecordId: 'auto'
         };
         const drawPriorityWeights = { high: 1000000, medium: 1000, low: 1 };
 
@@ -1390,7 +1481,36 @@
             normalized.separationPairs = Array.isArray(normalized.separationPairs)
                 ? normalized.separationPairs.filter(pair => Array.isArray(pair) && pair.length === 2 && pair.every(Number.isFinite))
                 : [];
+            if (typeof normalized.baseRecordId !== 'string' || !normalized.baseRecordId) normalized.baseRecordId = 'auto';
             return normalized;
+        }
+
+        const cloneSeating = (list) => list.map(seat => seat && typeof seat === 'object' ? { ...seat } : seat);
+        const createHistoryId = () => `h${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+
+        function isValidSeatRecord(record) {
+            return !!record && Array.isArray(record.seating) && !!record.gridConfig
+                && Number.isInteger(record.gridConfig.cols) && Number.isInteger(record.gridConfig.rows)
+                && record.seating.length === record.gridConfig.cols * record.gridConfig.rows;
+        }
+
+        function normalizeHistoryRecords(list) {
+            const usedIds = new Set();
+            return (Array.isArray(list) ? list : []).filter(isValidSeatRecord).map(record => {
+                let id = typeof record.id === 'string' && /^h[A-Za-z0-9_-]{1,40}$/.test(record.id) ? record.id : createHistoryId();
+                while (usedIds.has(id)) id = createHistoryId();
+                usedIds.add(id);
+                return {
+                    ...record,
+                    id,
+                    time: typeof record.time === 'string' ? record.time : '',
+                    source: record.source === 'auto' ? 'auto' : 'manual'
+                };
+            });
+        }
+
+        function getSeatingSignature(seatList, config) {
+            return JSON.stringify([config.cols, config.rows, seatList.map(seat => seat === 'disabled' ? '#' : (seat?.name || ''))]);
         }
 
         let drawPreferences = normalizeDrawPreferences();
@@ -1438,6 +1558,7 @@
                 phaseSoundMap,
                 drawAnimationStyle,
                 finalDrawDuration,
+                autoSaveHistory,
                 drawPreferences,
                 displaySettings
             };
@@ -1456,8 +1577,9 @@
                     document.getElementById('cfgCols').value = gridConfig.cols;
                     document.getElementById('cfgRows').value = gridConfig.rows;
                     mergeRight = data.mergeRight || new Array(Math.max(0, gridConfig.cols - 1)).fill(false);
-                    drawHistory = data.drawHistory || [];
-                    lastDrawSnapshot = data.lastDrawSnapshot || null;
+                    drawHistory = normalizeHistoryRecords(data.drawHistory);
+                    lastDrawSnapshot = isValidSeatRecord(data.lastDrawSnapshot) ? data.lastDrawSnapshot : null;
+                    autoSaveHistory = data.autoSaveHistory !== false;
                     classroomName = data.seatMapTitle || '座位表';
                     schoolName = data.schoolName || '';
                     schoolYear = String(data.schoolYear || '').match(/\d+/)?.[0] || '';
@@ -1745,6 +1867,7 @@
             updateSoundSettingUI();
             renderDisplaySettingRows();
             updateWordTemplateUI();
+            updateDriveConnectionBadge();
             document.getElementById('mainView').classList.add('hidden');
             document.getElementById('adminView').classList.remove('hidden');
             window.scrollTo(0, 0);
@@ -1913,7 +2036,7 @@
             status.className = `text-sm font-bold mt-3 ${isError ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`;
         }
 
-        function exportJsonBackup() {
+        function buildJsonBackupBlob() {
             const backup = {
                 app: 'seat-helper',
                 schemaVersion: 1,
@@ -1922,13 +2045,22 @@
                 theme: localStorage.getItem('seatHelperTheme') || 'light',
                 data: getSerializableData()
             };
-            const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+            return new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+        }
+
+        function downloadBlob(blob, fileName) {
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = getExportFileName('json');
+            link.download = fileName;
+            document.body.appendChild(link);
             link.click();
-            URL.revokeObjectURL(url);
+            document.body.removeChild(link);
+            setTimeout(() => URL.revokeObjectURL(url), 0);
+        }
+
+        function exportJsonBackup() {
+            downloadBlob(buildJsonBackupBlob(), getExportFileName('json'));
             setJsonBackupStatus('備份檔已匯出。');
         }
 
@@ -1947,6 +2079,7 @@
             if (data.finalDrawDuration !== undefined && !finalDrawDurationMs[data.finalDrawDuration]) throw new Error('其他人抽籤時長設定不正確。');
             if (data.drawPreferences && typeof data.drawPreferences !== 'object') throw new Error('抽籤偏好設定不正確。');
             if (data.lastDrawSnapshot && (!Array.isArray(data.lastDrawSnapshot.seating) || !data.lastDrawSnapshot.gridConfig)) throw new Error('上次抽籤資料不正確。');
+            if (data.autoSaveHistory !== undefined && typeof data.autoSaveHistory !== 'boolean') throw new Error('自動儲存歷史紀錄設定不正確。');
             if (data.displaySettings && (!data.displaySettings.preview || !data.displaySettings.export)) throw new Error('座位表顯示設定不正確。');
             if (!['light', 'dark'].includes(backup.theme)) throw new Error('主題設定不正確。');
             return data;
@@ -1963,63 +2096,70 @@
                     setJsonBackupStatus('已取消匯入，目前資料未變更。');
                     return;
                 }
-                students = data.students.map(student => ({ ...student, tags: new Set(student.tags) }));
-                seating = data.seating;
-                gridConfig = data.gridConfig;
-                mergeRight = data.mergeRight;
-                drawHistory = data.drawHistory;
-                lastDrawSnapshot = data.lastDrawSnapshot || null;
-                classroomName = data.seatMapTitle || data.classroomName || '座位表';
-                schoolName = data.schoolName || '';
-                schoolYear = String(data.schoolYear || '').match(/\d+/)?.[0] || '';
-                semester = ({ '第一學期': '上學期', '第二學期': '下學期', '暑期輔導': '暑輔' })[data.semester] || data.semester || '';
-                if (!['上學期', '下學期', '暑輔'].includes(semester)) semester = '';
-                advisorName = data.advisorName || '';
-                className = data.className || '';
-                frontLabel = data.frontLabel || '大屏';
-                frontDoor = data.frontDoor || '';
-                rearDoor = data.rearDoor || '';
-                seatMapNote = data.seatMapNote || '';
-                soundEnabled = data.soundEnabled;
-                phaseSoundMap = { ...data.phaseSoundMap };
-                drawAnimationStyle = validDrawAnimationStyles.includes(data.drawAnimationStyle) ? data.drawAnimationStyle : 'spotlight';
-                finalDrawDuration = finalDrawDurationMs[data.finalDrawDuration] ? data.finalDrawDuration : 'medium';
-                drawPreferences = normalizeDrawPreferences(data.drawPreferences);
-                displaySettings = {
-                    preview: { ...defaultDisplaySettings.preview, ...(data.displaySettings?.preview || {}) },
-                    export: { ...defaultDisplaySettings.export, ...(data.displaySettings?.export || {}) }
-                };
-                delete displaySettings.preview.seatCoordinates;
-                delete displaySettings.export.seatCoordinates;
-                localStorage.setItem('seatHelperTheme', backup.theme);
-                document.getElementById('cfgCols').value = gridConfig.cols;
-                document.getElementById('cfgRows').value = gridConfig.rows;
-                document.getElementById('classroomNameInput').value = classroomName;
-                document.getElementById('schoolNameInput').value = schoolName;
-                document.getElementById('schoolYearInput').value = schoolYear;
-                document.getElementById('semesterInput').value = semester;
-                document.getElementById('advisorNameInput').value = advisorName;
-                document.getElementById('classNameInput').value = className;
-                document.getElementById('frontLabelInput').value = frontLabel;
-                document.getElementById('frontDoorInput').value = frontDoor;
-                document.getElementById('rearDoorInput').value = rearDoor;
-                document.getElementById('seatMapNoteInput').value = seatMapNote;
-                updateMergeUI();
-                updateGridUI();
-                updateUI();
-                updateClassroomNameUI();
-                updateDrawPreferencesUI();
-                updateSoundSettingUI();
-                renderDisplaySettingRows();
-                applyCaptureDisplaySettings('preview');
-                initTheme();
-                saveData();
+                applyJsonBackup(backup);
                 setJsonBackupStatus('備份已完整還原。');
             } catch (error) {
                 setJsonBackupStatus(error instanceof SyntaxError ? '備份檔格式錯誤，目前資料未變更。' : error.message, true);
             } finally {
                 input.value = '';
             }
+        }
+
+        function applyJsonBackup(backup) {
+            const data = backup.data;
+            students = data.students.map(student => ({ ...student, tags: new Set(student.tags) }));
+            seating = data.seating;
+            gridConfig = data.gridConfig;
+            mergeRight = data.mergeRight;
+            drawHistory = normalizeHistoryRecords(data.drawHistory);
+            lastDrawSnapshot = isValidSeatRecord(data.lastDrawSnapshot) ? data.lastDrawSnapshot : null;
+            autoSaveHistory = data.autoSaveHistory !== false;
+            classroomName = data.seatMapTitle || data.classroomName || '座位表';
+            schoolName = data.schoolName || '';
+            schoolYear = String(data.schoolYear || '').match(/\d+/)?.[0] || '';
+            semester = ({ '第一學期': '上學期', '第二學期': '下學期', '暑期輔導': '暑輔' })[data.semester] || data.semester || '';
+            if (!['上學期', '下學期', '暑輔'].includes(semester)) semester = '';
+            advisorName = data.advisorName || '';
+            className = data.className || '';
+            frontLabel = data.frontLabel || '大屏';
+            frontDoor = data.frontDoor || '';
+            rearDoor = data.rearDoor || '';
+            seatMapNote = data.seatMapNote || '';
+            soundEnabled = data.soundEnabled;
+            phaseSoundMap = { ...data.phaseSoundMap };
+            drawAnimationStyle = validDrawAnimationStyles.includes(data.drawAnimationStyle) ? data.drawAnimationStyle : 'spotlight';
+            finalDrawDuration = finalDrawDurationMs[data.finalDrawDuration] ? data.finalDrawDuration : 'medium';
+            drawPreferences = normalizeDrawPreferences(data.drawPreferences);
+            displaySettings = {
+                preview: { ...defaultDisplaySettings.preview, ...(data.displaySettings?.preview || {}) },
+                export: { ...defaultDisplaySettings.export, ...(data.displaySettings?.export || {}) }
+            };
+            delete displaySettings.preview.seatCoordinates;
+            delete displaySettings.export.seatCoordinates;
+            localStorage.setItem('seatHelperTheme', backup.theme);
+            document.getElementById('cfgCols').value = gridConfig.cols;
+            document.getElementById('cfgRows').value = gridConfig.rows;
+            document.getElementById('classroomNameInput').value = classroomName;
+            document.getElementById('schoolNameInput').value = schoolName;
+            document.getElementById('schoolYearInput').value = schoolYear;
+            document.getElementById('semesterInput').value = semester;
+            document.getElementById('advisorNameInput').value = advisorName;
+            document.getElementById('classNameInput').value = className;
+            document.getElementById('frontLabelInput').value = frontLabel;
+            document.getElementById('frontDoorInput').value = frontDoor;
+            document.getElementById('rearDoorInput').value = rearDoor;
+            document.getElementById('seatMapNoteInput').value = seatMapNote;
+            updateMergeUI();
+            updateGridUI();
+            updateUI();
+            updateClassroomNameUI();
+            updateDrawPreferencesUI();
+            updateSoundSettingUI();
+            renderDisplaySettingRows();
+            applyCaptureDisplaySettings('preview');
+            initTheme();
+            saveData();
+            refreshDrawBaseUI();
         }
 
         function updateDrawPreferencesUI() {
@@ -2043,6 +2183,130 @@
             document.getElementById('separateStudentsPriority').value = drawPreferences.separateStudentsPriority;
             renderSeparationPairUI();
             renderHeightDataList();
+            document.getElementById('autoSaveHistoryToggle').checked = autoSaveHistory;
+            renderDrawBaseUI();
+        }
+
+        function getHistoryRecordLabel(record) {
+            const index = drawHistory.indexOf(record);
+            return index >= 0 ? `紀錄 #${index + 1}` : '紀錄';
+        }
+
+        function resolveDrawBase(choice = drawPreferences.baseRecordId || 'auto') {
+            if (choice === 'none') return null;
+            const snapshot = isValidSeatRecord(lastDrawSnapshot) ? lastDrawSnapshot : null;
+            const snapshotBase = snapshot ? { kind: 'lastCleared', record: snapshot, label: '上次清空前的座位表' } : null;
+            if (choice === 'lastCleared' && snapshotBase) return snapshotBase;
+            if (choice !== 'auto' && choice !== 'lastCleared') {
+                const record = drawHistory.find(item => item.id === choice);
+                if (record) return { kind: 'history', record, label: getHistoryRecordLabel(record) };
+            }
+            const latest = drawHistory[drawHistory.length - 1];
+            const latestBase = latest ? { kind: 'history', record: latest, label: getHistoryRecordLabel(latest) } : null;
+            if (latestBase && snapshotBase) {
+                const sameAsLatest = getSeatingSignature(snapshot.seating, snapshot.gridConfig) === getSeatingSignature(latest.seating, latest.gridConfig);
+                if (!sameAsLatest && (Number(snapshot.savedAt) || 0) > (Number(latest.savedAt) || 0)) return snapshotBase;
+            }
+            return latestBase || snapshotBase;
+        }
+
+        function describeDrawBase(base) {
+            if (!base) return drawPreferences.baseRecordId === 'none' ? '不使用歷史座位表' : '尚無歷史座位表';
+            return base.kind === 'history' && base.record.time ? `${base.label}（${base.record.time}）` : base.label;
+        }
+
+        function renderDrawBaseUI() {
+            const select = document.getElementById('drawBaseSelect');
+            if (!select) return;
+            const choice = drawPreferences.baseRecordId || 'auto';
+            const base = resolveDrawBase();
+            select.replaceChildren();
+            const addOption = (value, text) => {
+                const option = document.createElement('option');
+                option.value = value;
+                option.textContent = text;
+                select.appendChild(option);
+            };
+            const autoBase = resolveDrawBase('auto');
+            addOption('auto', `自動：最新座位表${autoBase ? `（${autoBase.label}）` : ''}`);
+            drawHistory.map((record, index) => ({ record, index })).reverse().forEach(({ record, index }) => {
+                addOption(record.id, `紀錄 #${index + 1}${record.time ? `・${record.time}` : ''}${record.source === 'auto' ? '・自動' : ''}`);
+            });
+            if (isValidSeatRecord(lastDrawSnapshot)) addOption('lastCleared', '上次清空前的座位表');
+            addOption('none', '不使用（只套用身高與指定分開）');
+            select.value = [...select.options].some(option => option.value === choice) ? choice : 'auto';
+
+            const summary = document.getElementById('drawBaseSummary');
+            const preview = document.getElementById('drawBasePreview');
+            preview.replaceChildren();
+            if (!base) {
+                summary.textContent = choice === 'none'
+                    ? '目前不參考歷史座位表；「避免重複座位」、「避免連續坐邊邊」與「打散鄰座」不會作用。'
+                    : '尚無歷史座位表。完成第一次抽籤並存入歷史紀錄後，偏好才會開始作用。';
+                return;
+            }
+            const lookup = getStudentNameLookup();
+            const seatedNames = base.record.seating.filter(seat => seat?.name).map(seat => seat.name);
+            const matchedCount = seatedNames.filter(name => lookup.has(name)).length;
+            summary.textContent = `目前以「${describeDrawBase(base)}」為基準：共 ${seatedNames.length} 位學生，其中 ${matchedCount} 位與目前名單相符。`;
+            preview.appendChild(buildMiniSeatMap(base.record, lookup));
+        }
+
+        function buildMiniSeatMap(record, lookup) {
+            const { cols, rows } = record.gridConfig;
+            const wrap = document.createElement('div');
+            wrap.className = 'draw-base-map';
+            const grid = document.createElement('div');
+            grid.className = 'draw-base-grid';
+            grid.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
+            for (let w = rows; w >= 1; w--) {
+                for (let p = 1; p <= cols; p++) {
+                    const seat = record.seating[(w - 1) * cols + (p - 1)];
+                    const cell = document.createElement('div');
+                    cell.className = 'draw-base-cell';
+                    if (seat === 'disabled') {
+                        cell.classList.add('is-disabled');
+                        cell.textContent = '×';
+                    } else if (seat?.name) {
+                        cell.classList.add('is-occupied');
+                        if (!lookup.has(seat.name)) cell.classList.add('is-unknown');
+                        cell.textContent = seat.name;
+                        cell.title = `${p}-${w} ${seat.name}`;
+                    }
+                    grid.appendChild(cell);
+                }
+            }
+            const front = document.createElement('div');
+            front.className = 'draw-base-front';
+            front.textContent = frontLabel || '大屏';
+            wrap.append(grid, front);
+            return wrap;
+        }
+
+        function refreshDrawBaseUI() {
+            renderDrawBaseUI();
+            const hint = document.getElementById('drawBaseHint');
+            if (!hint) return;
+            const baseText = `抽籤偏好基準：${describeDrawBase(resolveDrawBase())}`;
+            hint.textContent = lastPreferenceReport ? `${baseText}｜${lastPreferenceReport}` : baseText;
+        }
+
+        function saveDrawBaseSelection() {
+            drawPreferences.baseRecordId = document.getElementById('drawBaseSelect').value || 'auto';
+            saveData();
+            refreshDrawBaseUI();
+        }
+
+        function setDrawBaseRecord(recordId) {
+            drawPreferences.baseRecordId = recordId;
+            saveData();
+            refreshDrawBaseUI();
+            openHistory();
+        }
+
+        function saveAutoSaveHistorySetting() {
+            autoSaveHistory = document.getElementById('autoSaveHistoryToggle').checked;
+            saveData();
         }
 
         function saveDrawPreferences() {
@@ -2590,17 +2854,6 @@
             return indices;
         }
 
-        function getLastSeatingContext(student) {
-            if (!lastDrawSnapshot && drawHistory.length === 0) return null;
-            const record = lastDrawSnapshot || drawHistory[drawHistory.length - 1];
-            const lastSeating = record.seating;
-            const lastConfig = record.gridConfig || gridConfig;
-            if (!Array.isArray(lastSeating) || !lastConfig || lastSeating.length !== lastConfig.cols * lastConfig.rows) return null;
-            const lastPos = lastSeating.findIndex(seat => seat?.name === student.name || seat?.name === student.displayName);
-            if (lastPos === -1) return null;
-            return { lastSeating, lastConfig, lastPos };
-        }
-
         function getIdealHeightDepth(student, measuredStudents = null) {
             if (!Number.isFinite(student.height)) return null;
             const measured = measuredStudents || students.filter(candidate => Number.isFinite(candidate.height)).sort((a, b) => a.height - b.height);
@@ -2614,103 +2867,171 @@
             return students.length >= 2 && students.every(candidate => Number.isFinite(candidate.height));
         }
 
-        function applyDrawPreferences(student, candidateIndices) {
-            const context = getLastSeatingContext(student);
-            const lastSeating = context?.lastSeating || [];
-            const lastConfig = context?.lastConfig;
-            const lastPos = context?.lastPos ?? -1;
-            const lastCol = lastPos >= 0 ? lastPos % lastConfig.cols : -1;
-            const lastRow = lastPos >= 0 ? Math.floor(lastPos / lastConfig.cols) : -1;
-            const wasOnEdge = lastPos >= 0 && (lastCol === 0 || lastCol === lastConfig.cols - 1);
-            const previousNeighborNames = new Set(lastPos >= 0
-                ? getSurroundingSeatIndices(lastPos, lastConfig).map(idx => lastSeating[idx]?.name).filter(Boolean)
-                : []);
-            const separatedSeatNos = new Set(drawPreferences.separationPairs.flatMap(pair => {
-                if (pair[0] === student.seatNo) return [pair[1]];
-                if (pair[1] === student.seatNo) return [pair[0]];
-                return [];
-            }));
-            const studentBySeatName = new Map();
-            students.forEach(candidate => {
-                if (!studentBySeatName.has(candidate.name)) studentBySeatName.set(candidate.name, candidate);
-                if (candidate.displayName && !studentBySeatName.has(candidate.displayName)) studentBySeatName.set(candidate.displayName, candidate);
-            });
-            const useHeightPreference = drawPreferences.considerHeight && hasCompleteHeightData() && Number.isFinite(student.height);
-            const measuredStudents = useHeightPreference
-                ? [...students].sort((a, b) => a.height - b.height)
-                : null;
-            const idealHeightDepth = useHeightPreference ? getIdealHeightDepth(student, measuredStudents) : null;
-            const occupiedStudentSeats = useHeightPreference
-                ? seating.reduce((occupied, seat, index) => {
-                    if (!seat?.name) return occupied;
-                    const occupiedStudent = studentBySeatName.get(seat.name);
-                    if (Number.isFinite(occupiedStudent?.height)) occupied.push({ student: occupiedStudent, coord: getCoord(index) });
-                    return occupied;
-                }, [])
-                : [];
+        const PLAN_TIME_BUDGET_MS = 220;
+        const PLAN_HARD_LIMIT_MS = 1500;
+        const PLAN_MIN_ATTEMPTS = 4;
+        const PLAN_MAX_ATTEMPTS = 80;
+        const COST_EPSILON = 1e-6;
+        const HEIGHT_DEPTH_FACTOR = 0.2;
+        const SEPARATION_NEAR_FACTOR = 0.25;
+        const ROW_RULE_TAGS = ['priority', 'rear', 'noBack'];
 
-            const scoredCandidates = candidateIndices.map(idx => {
-                const { p, w } = getCoord(idx);
-                let penalty = 0;
-                if (drawPreferences.avoidSameSeat && lastPos >= 0 && p - 1 === lastCol && w - 1 === lastRow) {
-                    penalty += drawPriorityWeights[drawPreferences.avoidSameSeatPriority];
-                }
-                if (drawPreferences.avoidRepeatEdge && wasOnEdge && (p === 1 || p === gridConfig.cols)) {
-                    penalty += drawPriorityWeights[drawPreferences.avoidRepeatEdgePriority];
-                }
-                if (drawPreferences.avoidPreviousNeighbors && previousNeighborNames.size > 0) {
-                    getSurroundingSeatIndices(idx, gridConfig).forEach(neighborIdx => {
-                        const neighborName = seating[neighborIdx]?.name;
-                        if (neighborName && previousNeighborNames.has(neighborName)) {
-                            penalty += drawPriorityWeights[drawPreferences.avoidPreviousNeighborsPriority];
-                        }
-                    });
-                }
-                if (useHeightPreference) {
-                    if (idealHeightDepth !== null) {
-                        penalty += Math.abs(w - idealHeightDepth) * drawPriorityWeights[drawPreferences.considerHeightPriority];
-                    }
-                    occupiedStudentSeats.forEach(({ student: otherStudent, coord: otherCoord }) => {
-                        if (otherCoord.p !== p) return;
-                        const threshold = drawPreferences.heightThreshold;
-                        const blocksOther = w < otherCoord.w && student.height > otherStudent.height + threshold;
-                        const blockedByOther = otherCoord.w < w && otherStudent.height > student.height + threshold;
-                        if (blocksOther || blockedByOther) penalty += drawPriorityWeights[drawPreferences.considerHeightPriority];
-                    });
-                }
-                if (drawPreferences.separateStudents && separatedSeatNos.size > 0) {
-                    getSurroundingSeatIndices(idx, gridConfig).forEach(neighborIdx => {
-                        const neighborStudent = studentBySeatName.get(seating[neighborIdx]?.name);
-                        if (neighborStudent && separatedSeatNos.has(neighborStudent.seatNo)) {
-                            penalty += drawPriorityWeights[drawPreferences.separateStudentsPriority];
-                        }
-                    });
-                }
-                return { idx, penalty };
-            });
-            const minPenalty = Math.min(...scoredCandidates.map(candidate => candidate.penalty));
-            return scoredCandidates.filter(candidate => candidate.penalty === minPenalty).map(candidate => candidate.idx);
+        function shuffleInPlace(list) {
+            for (let i = list.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [list[i], list[j]] = [list[j], list[i]];
+            }
+            return list;
         }
 
-        function getCandidatePool(student) {
+        function getStudentNameLookup() {
+            const lookup = new Map();
+            students.forEach(candidate => {
+                if (!lookup.has(candidate.name)) lookup.set(candidate.name, candidate);
+                if (candidate.displayName && !lookup.has(candidate.displayName)) lookup.set(candidate.displayName, candidate);
+            });
+            return lookup;
+        }
+
+        // 將偏好設定與比較基準整理成評分所需的查表資料；所有學生以物件本身作為 key。
+        function buildPreferenceContext() {
+            const prefs = drawPreferences;
+            const lookup = getStudentNameLookup();
+            const base = resolveDrawBase();
+            const record = base && isValidSeatRecord(base.record) ? base.record : null;
+            const lastPos = new Map();
+            const prevNeighbors = new Map();
+            if (record) {
+                const config = record.gridConfig;
+                const seatStudents = record.seating.map(seat => seat?.name ? (lookup.get(seat.name) || null) : null);
+                seatStudents.forEach((student, idx) => {
+                    if (!student) return;
+                    const col = idx % config.cols;
+                    lastPos.set(student, { p: col + 1, w: Math.floor(idx / config.cols) + 1, edge: col === 0 || col === config.cols - 1 });
+                    prevNeighbors.set(student, new Set(getSurroundingSeatIndices(idx, config).map(n => seatStudents[n]).filter(Boolean)));
+                });
+            }
+            const separated = new Map();
+            if (prefs.separateStudents) {
+                prefs.separationPairs.forEach(([seatNoA, seatNoB]) => {
+                    const a = students.find(student => student.seatNo === seatNoA);
+                    const b = students.find(student => student.seatNo === seatNoB);
+                    if (!a || !b || a === b) return;
+                    if (!separated.has(a)) separated.set(a, new Set());
+                    if (!separated.has(b)) separated.set(b, new Set());
+                    separated.get(a).add(b);
+                    separated.get(b).add(a);
+                });
+            }
+            const useHeight = prefs.considerHeight && hasCompleteHeightData();
+            const idealDepth = new Map();
+            if (useHeight) {
+                const measured = [...students].sort((a, b) => a.height - b.height);
+                students.forEach(student => {
+                    const depth = getIdealHeightDepth(student, measured);
+                    if (depth !== null) idealDepth.set(student, depth);
+                });
+            }
+            const weightOf = (enabled, priority) => enabled ? drawPriorityWeights[priority] : 0;
+            return {
+                lookup,
+                lastPos,
+                prevNeighbors,
+                separated,
+                idealDepth,
+                threshold: prefs.heightThreshold,
+                weights: {
+                    same: weightOf(prefs.avoidSameSeat && !!record, prefs.avoidSameSeatPriority),
+                    edge: weightOf(prefs.avoidRepeatEdge && !!record, prefs.avoidRepeatEdgePriority),
+                    neighbor: weightOf(prefs.avoidPreviousNeighbors && !!record, prefs.avoidPreviousNeighborsPriority),
+                    height: weightOf(useHeight, prefs.considerHeightPriority),
+                    separate: weightOf(separated.size > 0, prefs.separateStudentsPriority)
+                }
+            };
+        }
+
+        function getUnaryPreferenceCost(ctx, student, idx) {
+            const col = idx % gridConfig.cols;
+            const row = Math.floor(idx / gridConfig.cols);
+            let cost = 0;
+            const last = ctx.lastPos.get(student);
+            if (last) {
+                if (ctx.weights.same && last.p === col + 1 && last.w === row + 1) cost += ctx.weights.same;
+                if (ctx.weights.edge && last.edge && (col === 0 || col === gridConfig.cols - 1)) cost += ctx.weights.edge;
+            }
+            if (ctx.weights.height && ctx.idealDepth.has(student)) {
+                cost += Math.abs(row + 1 - ctx.idealDepth.get(student)) * ctx.weights.height * HEIGHT_DEPTH_FACTOR;
+            }
+            return cost;
+        }
+
+        function getPairPreferenceCost(ctx, a, idxA, b, idxB) {
+            const cols = gridConfig.cols;
+            const colA = idxA % cols, rowA = Math.floor(idxA / cols);
+            const colB = idxB % cols, rowB = Math.floor(idxB / cols);
+            const colGap = Math.abs(colA - colB);
+            const rowGap = Math.abs(rowA - rowB);
+            const distance = Math.max(colGap, rowGap);
+            let cost = 0;
+            if (ctx.weights.neighbor && distance === 1 && (ctx.prevNeighbors.get(a)?.has(b) || ctx.prevNeighbors.get(b)?.has(a))) {
+                cost += ctx.weights.neighbor;
+                // 上次相鄰、這次又成為同一張雙人桌的同桌，再加重一次。
+                if (rowGap === 0 && mergeRight[Math.min(colA, colB)]) cost += ctx.weights.neighbor;
+            }
+            if (ctx.weights.separate && distance <= 2 && ctx.separated.get(a)?.has(b)) {
+                cost += distance === 1 ? ctx.weights.separate : ctx.weights.separate * SEPARATION_NEAR_FACTOR;
+            }
+            if (ctx.weights.height && colGap === 0 && rowGap > 0 && ctx.idealDepth.has(a) && ctx.idealDepth.has(b)) {
+                const [front, back] = rowA < rowB ? [a, b] : [b, a];
+                if (front.height > back.height + ctx.threshold) cost += ctx.weights.height;
+            }
+            return cost;
+        }
+
+        // 計算某位學生坐在 idx 時，與其他已就座學生互相影響的總成本。
+        // halfFor 內的學生互相計算時各算一半，用來加總整個階段的成本而不重複計算。
+        function getLocalPreferenceCost(ctx, state, student, idx, halfFor = null) {
+            let cost = getUnaryPreferenceCost(ctx, student, idx);
+            const seen = new Set();
+            const addPair = (otherIdx) => {
+                if (seen.has(otherIdx)) return;
+                seen.add(otherIdx);
+                const other = state.occupant[otherIdx];
+                if (!other || other === student) return;
+                const pairCost = getPairPreferenceCost(ctx, student, idx, other, otherIdx);
+                cost += halfFor && halfFor.has(other) ? pairCost / 2 : pairCost;
+            };
+            if (ctx.weights.neighbor || ctx.weights.separate) getSurroundingSeatIndices(idx, gridConfig).forEach(addPair);
+            if (ctx.weights.height) {
+                const col = idx % gridConfig.cols;
+                for (let row = 0; row < gridConfig.rows; row++) {
+                    const otherIdx = row * gridConfig.cols + col;
+                    if (otherIdx !== idx) addPair(otherIdx);
+                }
+            }
+            if (ctx.weights.separate) {
+                ctx.separated.get(student)?.forEach(partner => {
+                    const partnerIdx = state.seatOf.get(partner);
+                    if (partnerIdx !== undefined) addPair(partnerIdx);
+                });
+            }
+            return cost;
+        }
+
+        // 個別需求（硬性條件）篩選，與原本逐一抽籤的規則相同。
+        function getHardCandidates(student, isOpen) {
             let candidateIndices = [];
-            seating.forEach((v, idx) => { if (v === null) candidateIndices.push(idx); });
+            isOpen.forEach((open, idx) => { if (open) candidateIndices.push(idx); });
             if (candidateIndices.length === 0) return [];
 
             if (student.tags.has('priority')) {
-                let minW = 99;
-                candidateIndices.forEach(idx => { minW = Math.min(minW, getCoord(idx).w); });
-                const filtered = candidateIndices.filter(idx => getCoord(idx).w === minW);
-                if (filtered.length > 0) candidateIndices = filtered;
+                const minW = Math.min(...candidateIndices.map(idx => getCoord(idx).w));
+                candidateIndices = candidateIndices.filter(idx => getCoord(idx).w === minW);
             }
-
             if (student.tags.has('rear')) {
-                let maxW = 0;
-                candidateIndices.forEach(idx => { maxW = Math.max(maxW, getCoord(idx).w); });
-                const filtered = candidateIndices.filter(idx => getCoord(idx).w === maxW);
-                if (filtered.length > 0) candidateIndices = filtered;
+                const maxW = Math.max(...candidateIndices.map(idx => getCoord(idx).w));
+                candidateIndices = candidateIndices.filter(idx => getCoord(idx).w === maxW);
             }
-
             if (student.tags.has('noSide')) {
                 const filtered = candidateIndices.filter(idx => {
                     const { p } = getCoord(idx);
@@ -2718,16 +3039,170 @@
                 });
                 if (filtered.length > 0) candidateIndices = filtered;
             }
-
             if (student.tags.has('noBack')) {
-                const filtered = candidateIndices.filter(idx => {
-                    const { w } = getCoord(idx);
-                    return w < gridConfig.rows;
-                });
+                const filtered = candidateIndices.filter(idx => getCoord(idx).w < gridConfig.rows);
                 if (filtered.length > 0) candidateIndices = filtered;
             }
+            return candidateIndices;
+        }
 
-            return applyDrawPreferences(student, candidateIndices);
+        function breaksStaticNeed(student, idx) {
+            const { p, w } = getCoord(idx);
+            return (student.tags.has('noSide') && gridConfig.cols > 2 && (p === 1 || p === gridConfig.cols))
+                || (student.tags.has('noBack') && gridConfig.rows > 1 && w === gridConfig.rows);
+        }
+
+        // 交換或移動後不得讓學生違反原本已滿足的個別需求。
+        function canRelocate(student, fromIdx, toIdx) {
+            return !breaksStaticNeed(student, toIdx) || breaksStaticNeed(student, fromIdx);
+        }
+
+        function canSwapStudents(a, idxA, b, idxB) {
+            return ROW_RULE_TAGS.every(tag => a.tags.has(tag) === b.tags.has(tag))
+                && canRelocate(a, idxA, idxB) && canRelocate(b, idxB, idxA);
+        }
+
+        function canMoveStudent(student, fromIdx, toIdx) {
+            if ((student.tags.has('priority') || student.tags.has('rear')) && getCoord(fromIdx).w !== getCoord(toIdx).w) return false;
+            return canRelocate(student, fromIdx, toIdx);
+        }
+
+        function placeInState(state, student, idx) {
+            state.occupant[idx] = student;
+            state.seatOf.set(student, idx);
+        }
+
+        function improveAssignment(ctx, state, placed, hardDeadline) {
+            for (let pass = 0; pass < 40; pass++) {
+                let improved = false;
+                shuffleInPlace(placed);
+                for (let i = 0; i < placed.length; i++) {
+                    for (let j = i + 1; j < placed.length; j++) {
+                        const a = placed[i], b = placed[j];
+                        const idxA = state.seatOf.get(a), idxB = state.seatOf.get(b);
+                        if (!canSwapStudents(a, idxA, b, idxB)) continue;
+                        const before = getLocalPreferenceCost(ctx, state, a, idxA) + getLocalPreferenceCost(ctx, state, b, idxB) - getPairPreferenceCost(ctx, a, idxA, b, idxB);
+                        placeInState(state, a, idxB);
+                        placeInState(state, b, idxA);
+                        const after = getLocalPreferenceCost(ctx, state, a, idxB) + getLocalPreferenceCost(ctx, state, b, idxA) - getPairPreferenceCost(ctx, a, idxB, b, idxA);
+                        if (after < before - COST_EPSILON) {
+                            improved = true;
+                        } else {
+                            placeInState(state, a, idxA);
+                            placeInState(state, b, idxB);
+                        }
+                    }
+                }
+                const emptySeats = [];
+                state.isOpen.forEach((open, idx) => { if (open && !state.occupant[idx]) emptySeats.push(idx); });
+                if (emptySeats.length) {
+                    placed.forEach(student => {
+                        const fromIdx = state.seatOf.get(student);
+                        let bestIdx = -1;
+                        let bestCost = getLocalPreferenceCost(ctx, state, student, fromIdx) - COST_EPSILON;
+                        state.occupant[fromIdx] = null;
+                        shuffleInPlace(emptySeats).forEach(toIdx => {
+                            if (state.occupant[toIdx] || !canMoveStudent(student, fromIdx, toIdx)) return;
+                            const cost = getLocalPreferenceCost(ctx, state, student, toIdx);
+                            if (cost < bestCost) { bestCost = cost; bestIdx = toIdx; }
+                        });
+                        if (bestIdx >= 0) {
+                            placeInState(state, student, bestIdx);
+                            emptySeats[emptySeats.indexOf(bestIdx)] = fromIdx;
+                            improved = true;
+                        } else {
+                            state.occupant[fromIdx] = student;
+                        }
+                    });
+                }
+                if (!improved || performance.now() > hardDeadline) break;
+            }
+        }
+
+        // 為整個抽籤階段一次規劃座位：多次隨機貪婪建構 + 交換／移動局部搜尋，
+        // 取總成本最低者；成本相同的方案隨機挑選，保留抽籤的隨機性。
+        function planPhaseAssignment(targets) {
+            const ctx = buildPreferenceContext();
+            const baseOccupant = seating.map(seat => seat?.name ? (ctx.lookup.get(seat.name) || null) : null);
+            const baseSeatOf = new Map();
+            baseOccupant.forEach((student, idx) => { if (student) baseSeatOf.set(student, idx); });
+            const baseOpen = seating.map(seat => seat === null);
+            const targetSet = new Set(targets);
+            const startedAt = performance.now();
+            const softDeadline = startedAt + PLAN_TIME_BUDGET_MS;
+            const hardDeadline = startedAt + PLAN_HARD_LIMIT_MS;
+            let best = null;
+            let bestCost = Infinity;
+            let ties = 0;
+            for (let attempt = 0; attempt < PLAN_MAX_ATTEMPTS; attempt++) {
+                if (attempt >= PLAN_MIN_ATTEMPTS && performance.now() > softDeadline) break;
+                if (performance.now() > hardDeadline) break;
+                const state = { occupant: baseOccupant.slice(), seatOf: new Map(baseSeatOf), isOpen: baseOpen.slice() };
+                const placed = [];
+                shuffleInPlace(targets.slice()).forEach(student => {
+                    const candidates = getHardCandidates(student, state.isOpen.map((open, idx) => open && !state.occupant[idx]));
+                    if (!candidates.length) return;
+                    let minCost = Infinity;
+                    let picks = [];
+                    candidates.forEach(idx => {
+                        const cost = getLocalPreferenceCost(ctx, state, student, idx);
+                        if (cost < minCost - COST_EPSILON) { minCost = cost; picks = [idx]; }
+                        else if (cost <= minCost + COST_EPSILON) picks.push(idx);
+                    });
+                    placeInState(state, student, picks[Math.floor(Math.random() * picks.length)]);
+                    placed.push(student);
+                });
+                improveAssignment(ctx, state, placed, hardDeadline);
+                const totalCost = placed.reduce((sum, student) => sum + getLocalPreferenceCost(ctx, state, student, state.seatOf.get(student), targetSet), 0);
+                if (totalCost < bestCost - COST_EPSILON) {
+                    best = state;
+                    bestCost = totalCost;
+                    ties = 1;
+                } else if (totalCost <= bestCost + COST_EPSILON) {
+                    ties++;
+                    if (Math.random() < 1 / ties) best = state;
+                }
+                if (bestCost <= COST_EPSILON && attempt + 1 >= PLAN_MIN_ATTEMPTS) break;
+            }
+            const plan = new Map();
+            targets.forEach(student => {
+                if (best?.seatOf.has(student)) plan.set(student, best.seatOf.get(student));
+            });
+            return plan;
+        }
+
+        // 抽籤完成後，統計各項偏好在目前座位表上的達成情況。
+        function buildPreferenceReport() {
+            const ctx = buildPreferenceContext();
+            const occupant = seating.map(seat => seat?.name ? (ctx.lookup.get(seat.name) || null) : null);
+            const counts = { same: 0, edge: 0, neighbor: 0, height: 0, separate: 0 };
+            occupant.forEach((student, idx) => {
+                if (!student) return;
+                const col = idx % gridConfig.cols;
+                const last = ctx.lastPos.get(student);
+                if (last && last.p === col + 1 && last.w === Math.floor(idx / gridConfig.cols) + 1) counts.same++;
+                if (last?.edge && (col === 0 || col === gridConfig.cols - 1)) counts.edge++;
+                occupant.forEach((other, otherIdx) => {
+                    if (!other || otherIdx <= idx) return;
+                    const colGap = Math.abs(col - otherIdx % gridConfig.cols);
+                    const rowGap = Math.abs(Math.floor(idx / gridConfig.cols) - Math.floor(otherIdx / gridConfig.cols));
+                    const distance = Math.max(colGap, rowGap);
+                    if (distance === 1 && (ctx.prevNeighbors.get(student)?.has(other) || ctx.prevNeighbors.get(other)?.has(student))) counts.neighbor++;
+                    if (distance === 1 && ctx.separated.get(student)?.has(other)) counts.separate++;
+                    if (ctx.weights.height && colGap === 0 && rowGap > 0) {
+                        const [front, back] = idx < otherIdx ? [student, other] : [other, student];
+                        if (front.height > back.height + ctx.threshold) counts.height++;
+                    }
+                });
+            });
+            const parts = [];
+            if (ctx.weights.same) parts.push(`同座位 ${counts.same}`);
+            if (ctx.weights.edge) parts.push(`連續邊排 ${counts.edge}`);
+            if (ctx.weights.neighbor) parts.push(`舊鄰座 ${counts.neighbor} 對`);
+            if (ctx.weights.height) parts.push(`身高遮擋 ${counts.height} 對`);
+            if (ctx.weights.separate) parts.push(`指定分開相鄰 ${counts.separate} 對`);
+            const base = resolveDrawBase();
+            return parts.length ? `本次${base ? `相較${base.label}` : '偏好結果'}：${parts.join('、')}` : '';
         }
 
         function checkCapacityGuard() {
@@ -2875,9 +3350,21 @@
             await new Promise(resolve => setTimeout(resolve, Math.max(80, stepMs - rollCount * rollDelay)));
         }
 
+        async function revealPlannedPhase(targets, stepMs) {
+            await new Promise(resolve => requestAnimationFrame(resolve));
+            const plan = planPhaseAssignment(targets);
+            const rollPool = seating.map((seat, idx) => seat === null ? idx : -1).filter(idx => idx >= 0);
+            const order = shuffleInPlace(targets.filter(student => plan.has(student)));
+            for (let i = 0; i < order.length; i++) {
+                await revealDrawResult(order[i], plan.get(order[i]), rollPool, i + 1, targets.length, stepMs);
+            }
+        }
+
         async function finishDrawCeremony(phaseId, total) {
+            lastPreferenceReport = students.length && students.every(student => student.currentPos) ? buildPreferenceReport() : '';
+            refreshDrawBaseUI();
             document.getElementById('drawStatusText').textContent = `${drawPhaseLabels[phaseId]}・完成！`;
-            document.getElementById('drawProgressText').textContent = `${total} 位學生座位已揭曉`;
+            document.getElementById('drawProgressText').textContent = lastPreferenceReport || `${total} 位學生座位已揭曉`;
             document.getElementById('drawCurrentStudent').textContent = '🎉 抽籤完成';
             document.getElementById('drawProgressBar').style.width = '100%';
             await new Promise(resolve => setTimeout(resolve, 650));
@@ -2901,18 +3388,11 @@
             updateUI();
             startDrawCeremony(phaseId, targets.length);
             try {
-                targets.sort(() => Math.random() - 0.5);
-                for (let i = 0; i < targets.length; i++) {
-                    const s = targets[i];
-                    const pool = getCandidatePool(s);
-                    if(pool.length > 0) {
-                        const t = pool[Math.floor(Math.random()*pool.length)];
-                        await revealDrawResult(s, t, pool, i + 1, targets.length);
-                    }
-                }
+                await revealPlannedPhase(targets);
                 playPhaseSound(phaseId);
                 await finishDrawCeremony(phaseId, targets.length);
                 saveData();
+                autoSaveHistoryIfComplete();
             } finally {
                 document.getElementById('drawStatusBanner').style.display = 'none';
                 isDrawing = false;
@@ -2936,17 +3416,11 @@
             startDrawCeremony('final', targets.length);
             try {
                 const finalStepMs = Math.max(120, Math.floor(finalDrawDurationMs[finalDrawDuration] / targets.length));
-                for (let i = 0; i < targets.length; i++) {
-                    const s = targets[i];
-                    const pool = getCandidatePool(s);
-                    if(pool.length > 0) {
-                        const t = pool[Math.floor(Math.random()*pool.length)];
-                        await revealDrawResult(s, t, pool, i + 1, targets.length, finalStepMs);
-                    }
-                }
+                await revealPlannedPhase(targets, finalStepMs);
                 playPhaseSound('final');
                 await finishDrawCeremony('final', targets.length);
                 saveData();
+                autoSaveHistoryIfComplete();
             } finally {
                 document.getElementById('drawStatusBanner').style.display = 'none';
                 isDrawing = false;
@@ -3000,24 +3474,101 @@
             document.getElementById('studentPicker').classList.add('hidden');
         }
 
-        function saveHistory() {
-            if (seating.every(s => s === null)) return alert("目前沒有排座位");
-            const snapshot = seating.map(s => s ? (typeof s === 'object' ? {...s} : s) : s);
-            const timeStr = new Date().toLocaleString('zh-TW', {hour12: false});
-            drawHistory.push({ time: timeStr, seating: snapshot, gridConfig: { ...gridConfig } });
-            lastDrawSnapshot = { seating: snapshot.map(seat => seat ? (typeof seat === 'object' ? { ...seat } : seat) : seat), gridConfig: { ...gridConfig } };
-            saveData();
-            
+        function showToast(message, isError = false) {
             const msg = document.getElementById('copySuccess');
-            msg.textContent = "已儲存至歷史紀錄！";
+            clearTimeout(showToast.timer);
+            msg.textContent = message;
+            msg.style.background = isError ? '#f43f5e' : '#1e293b';
+            msg.style.display = 'none';
+            void msg.offsetWidth;
             msg.style.display = 'block';
-            setTimeout(() => { msg.style.display = 'none'; msg.textContent = "已成功複製圖片至剪貼簿！"; }, 2000);
+            showToast.timer = setTimeout(() => {
+                msg.style.display = 'none';
+                msg.textContent = '已成功複製圖片至剪貼簿！';
+                msg.style.background = '#1e293b';
+            }, 2000);
+        }
+
+        function isCurrentSeatingInLatestHistory() {
+            const latest = drawHistory[drawHistory.length - 1];
+            return !!latest && getSeatingSignature(latest.seating, latest.gridConfig) === getSeatingSignature(seating, gridConfig);
+        }
+
+        function pushHistoryRecord(source) {
+            if (!seating.some(seat => seat?.name) || isCurrentSeatingInLatestHistory()) return null;
+            const record = {
+                id: createHistoryId(),
+                time: new Date().toLocaleString('zh-TW', { hour12: false }),
+                savedAt: Date.now(),
+                source,
+                studentCount: seating.filter(seat => seat?.name).length,
+                seating: cloneSeating(seating),
+                gridConfig: { ...gridConfig }
+            };
+            drawHistory.push(record);
+            saveData();
+            refreshDrawBaseUI();
+            return record;
+        }
+
+        function isEveryStudentSeated() {
+            return students.length > 0 && students.every(student => student.currentPos);
+        }
+
+        function autoSaveHistoryIfComplete() {
+            if (!autoSaveHistory || !isEveryStudentSeated()) return;
+            const record = pushHistoryRecord('auto');
+            if (record) showToast(`全班座位已自動存入歷史紀錄 #${drawHistory.length}`);
+        }
+
+        function saveHistory() {
+            if (!seating.some(seat => seat?.name)) return alert("目前沒有排座位");
+            if (isCurrentSeatingInLatestHistory()) return showToast('這張座位表已在歷史紀錄中');
+            pushHistoryRecord('manual');
+            showToast('已儲存至歷史紀錄！');
+        }
+
+        // 清空座位前的共同處理：必要時自動存檔，並記住清空前的座位表供抽籤偏好參考。
+        function rememberSeatingBeforeClear() {
+            if (!seating.some(seat => seat?.name)) return;
+            if (autoSaveHistory && isEveryStudentSeated()) pushHistoryRecord('auto');
+            lastDrawSnapshot = { seating: cloneSeating(seating), gridConfig: { ...gridConfig }, savedAt: Date.now() };
+            lastPreferenceReport = '';
+        }
+
+        function clearSeatMapAssignments() {
+            if (isDrawing) return;
+            const assigned = seating.filter(seat => seat?.name);
+            if (!assigned.length) {
+                alert('座位表目前沒有已安排的學生。');
+                return;
+            }
+            const lockedCount = assigned.filter(seat => seat.locked).length;
+            const drawnCount = assigned.length - lockedCount;
+            const willAutoSave = autoSaveHistory && isEveryStudentSeated() && !isCurrentSeatingInLatestHistory();
+            const message = [
+                '確定要清空座位表嗎？',
+                '',
+                `將移除 ${drawnCount} 位抽籤安排、${lockedCount} 位指定座位的學生。`,
+                '禁排座位、學生名單與個別需求都會保留。',
+                willAutoSave ? '目前的座位表會先自動存入歷史紀錄。' : ''
+            ].filter((line, index) => line || index === 1).join('\n');
+            if (!confirm(message)) return;
+            rememberSeatingBeforeClear();
+            seating = seating.map(seat => seat === 'disabled' ? 'disabled' : null);
+            students.forEach(student => { student.currentPos = null; });
+            updateUI();
+            saveData();
+            refreshDrawBaseUI();
+            showToast('座位表已清空');
         }
 
         function deleteHistory(originalIdx) {
             if(confirm("確定要刪除此筆歷史紀錄嗎？")) {
-                drawHistory.splice(originalIdx, 1);
+                const [removed] = drawHistory.splice(originalIdx, 1);
+                if (removed && drawPreferences.baseRecordId === removed.id) drawPreferences.baseRecordId = 'auto';
                 saveData();
+                refreshDrawBaseUI();
                 openHistory();
             }
         }
@@ -3064,14 +3615,22 @@
                 list.innerHTML = '<div class="text-center text-slate-400 py-8 font-bold">尚無歷史紀錄</div>';
             } else {
                 const reversedHistory = drawHistory.map((item, originalIdx) => ({ item, originalIdx })).reverse();
+                const baseRecord = resolveDrawBase()?.record;
                 reversedHistory.forEach(({ item, originalIdx }, displayIdx) => {
+                    const isBase = item === baseRecord;
+                    const sourceBadge = item.source === 'auto'
+                        ? '<span class="ml-2 px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 text-[10px] font-black align-middle">自動</span>'
+                        : '';
+                    const baseBadge = isBase
+                        ? '<span class="ml-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black align-middle">偏好基準</span>'
+                        : `<button onclick="setDrawBaseRecord('${item.id}')" class="ml-1 px-2 py-0.5 rounded-full bg-white border border-emerald-200 text-emerald-700 text-[10px] font-black align-middle hover:bg-emerald-50">設為偏好基準</button>`;
                     const div = document.createElement('div');
                     div.className = "history-item bg-white p-4 rounded-2xl border border-slate-200 flex flex-col gap-3 shadow-sm mb-2";
                     div.innerHTML = `
                         <div class="flex justify-between items-center border-b border-slate-100 pb-2">
                             <div>
-                                <span class="font-black text-slate-800 text-lg">紀錄 #${drawHistory.length - displayIdx}</span>
-                                <span class="text-xs text-slate-400 font-bold ml-2"><i data-lucide="clock" class="inline w-3 h-3"></i> ${item.time}</span>
+                                <span class="font-black text-slate-800 text-lg">紀錄 #${drawHistory.length - displayIdx}</span>${sourceBadge}${baseBadge}
+                                <div class="text-xs text-slate-400 font-bold mt-1"><i data-lucide="clock" class="inline w-3 h-3"></i> ${item.time}</div>
                             </div>
                             <div class="flex gap-2">
                                 <button onclick="restoreHistoryRecord(${originalIdx})" class="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-lg font-black text-xs hover:bg-indigo-600 hover:text-white transition-colors">還原</button>
@@ -3171,17 +3730,13 @@
         };
 
         document.getElementById('btnResetDraw').onclick = () => {
-            if (confirm("確定要清除所有已安排的座位與抽籤結果嗎？")) {
-                if (seating.some(seat => seat?.name)) {
-                    lastDrawSnapshot = {
-                        seating: seating.map(seat => seat ? (typeof seat === 'object' ? { ...seat } : seat) : seat),
-                        gridConfig: { ...gridConfig }
-                    };
-                }
+            if (confirm("確定要清除所有抽籤結果嗎？（指定座位會保留）")) {
+                rememberSeatingBeforeClear();
                 seating = seating.map(s => (s === "disabled" || s?.locked) ? s : null);
                 students.forEach(s => { if(s.currentPos) { const [p,w] = s.currentPos.split('-').map(Number); if(!seating[getIdx(p,w)]) s.currentPos = null; }});
                 updateUI();
                 saveData();
+                refreshDrawBaseUI();
             }
         };
 
@@ -3210,19 +3765,23 @@
             phaseSoundMap = { priority: 'priority', rear: 'rear', noBack: 'noBack', noSide: 'noSide', final: 'final' };
             drawAnimationStyle = 'spotlight';
             finalDrawDuration = 'medium';
+            autoSaveHistory = true;
+            lastPreferenceReport = '';
             drawPreferences = normalizeDrawPreferences();
             displaySettings = JSON.parse(JSON.stringify(defaultDisplaySettings));
 
             document.getElementById('rawInput').value = '';
             document.getElementById('cfgCols').value = gridConfig.cols;
             document.getElementById('cfgRows').value = gridConfig.rows;
-            ['seatHelperDataV2', 'seatHelperTheme', 'seatHelperData_v2', 'seatHelperHistory_v2', ADMIN_LOCK_STORAGE_KEY].forEach(key => localStorage.removeItem(key));
+            ['seatHelperDataV2', 'seatHelperTheme', 'seatHelperData_v2', 'seatHelperHistory_v2', ADMIN_LOCK_STORAGE_KEY, GOOGLE_CLIENT_ID_STORAGE_KEY, GOOGLE_DRIVE_FOLDER_STORAGE_KEY].forEach(key => localStorage.removeItem(key));
+            disconnectGoogleDrive(true);
 
             initGrid();
             updateClassroomNameUI();
             updateSoundSettingUI();
             renderDisplaySettingRows();
             initTheme();
+            refreshDrawBaseUI();
             localStorage.removeItem('seatHelperDataV2');
         };
 
@@ -3244,12 +3803,13 @@
             }
         }
 
-        async function exportToImage() {
+        async function buildPngBlob() {
             const canvas = await captureSeatMapForExport();
-            const link = document.createElement('a');
-            link.download = getExportFileName('png');
-            link.href = canvas.toDataURL(); 
-            link.click();
+            return new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('PNG 產生失敗')), 'image/png'));
+        }
+
+        async function exportToImage() {
+            downloadBlob(await buildPngBlob(), getExportFileName('png'));
         }
 
         async function copyImageToClipboard() {
@@ -3273,12 +3833,16 @@
             } catch (err) { exportToImage(); }
         }
 
-        async function exportToPDF() {
+        async function buildPdfBlob() {
             const canvas = await captureSeatMapForExport();
             const { jsPDF } = window.jspdf;
             const pdf = new jsPDF('p', 'mm', 'a4');
             pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, 190, (canvas.height*190)/canvas.width);
-            pdf.save(getExportFileName('pdf'));
+            return pdf.output('blob');
+        }
+
+        async function exportToPDF() {
+            downloadBlob(await buildPdfBlob(), getExportFileName('pdf'));
         }
 
         function getExportStudentText(student, fallbackName) {
@@ -3288,92 +3852,81 @@
             return `${name}（${Array.from(student.tags).map(tag => labels[tag]).filter(Boolean).join('、')}）`;
         }
 
+        function buildExcelBlob() {
+            let layoutData = [];
+
+            if (displaySettings.export.classroomName) layoutData.push([classroomName]);
+            if (displaySettings.export.schoolName && schoolName) layoutData.push([schoolName]);
+            if (displaySettings.export.schoolYear && schoolYear) layoutData.push([`${schoolYear}學年度`]);
+            if (displaySettings.export.semester && semester) layoutData.push([semester]);
+            if (displaySettings.export.className && className) layoutData.push([className]);
+            if (displaySettings.export.advisorName && advisorName) layoutData.push([`導師：${advisorName}`]);
+            if (displaySettings.export.rearDoor && rearDoor) layoutData.push([rearDoor]);
+            if (displaySettings.export.exportDate) layoutData.push([`匯出日期：${new Date().toLocaleDateString('zh-TW')}`]);
+
+            // 1. 深位從大到小 (gridConfig.rows 倒數到 1)
+            for (let w = gridConfig.rows; w >= 1; w--) {
+                let row = [displaySettings.export.rowLabels ? `深位 ${w}` : ''];
+                for (let p = 1; p <= gridConfig.cols; p++) {
+                    const idx = getIdx(p, w);
+                    const s = seating[idx];
+                    if (s === "disabled") {
+                        row.push(displaySettings.export.disabledSeats ? "[禁排]" : "");
+                    } else if (s?.name) {
+                        const student = students.find(st => st.name === s.name || st.displayName === s.name);
+                        row.push(getExportStudentText(student, s.name));
+                    } else {
+                        row.push("");
+                    }
+                }
+                layoutData.push(row);
+            }
+
+            // 2. 橫排標題列在深位 1 下方
+            if (displaySettings.export.rowLabels) {
+                let header = ["深位 \\ 橫排"];
+                for (let p = 1; p <= gridConfig.cols; p++) header.push(`第 ${p} 排`);
+                layoutData.push(header);
+            }
+
+            // 3. 大屏列在最下方
+            if (displaySettings.export.frontLabel) {
+                let screenRow = [frontLabel || "大屏"];
+                for (let p = 1; p <= gridConfig.cols; p++) screenRow.push("");
+                layoutData.push(screenRow);
+            }
+            if (displaySettings.export.frontDoor && frontDoor) layoutData.push([frontDoor]);
+            if (displaySettings.export.seatMapNote && seatMapNote) layoutData.push([seatMapNote]);
+
+            let listData = [["學生姓名", "狀態"]];
+            seating.forEach((s, i) => {
+                if(s?.name) {
+                    const student = students.find(st => st.name === s.name || st.displayName === s.name);
+                    const row = [getExportStudentText(student, s.name), "已定位"];
+                    listData.push(row);
+                } else if(s === "disabled" && displaySettings.export.disabledSeats) {
+                    listData.push(["---", "禁排區"]);
+                }
+            });
+
+            const wb = XLSX.utils.book_new();
+            const wsLayout = XLSX.utils.aoa_to_sheet(layoutData);
+            wsLayout['!cols'] = Array(gridConfig.cols + 1).fill({ wch: 14 });
+            XLSX.utils.book_append_sheet(wb, wsLayout, "教室佈局圖");
+
+            const wsList = XLSX.utils.aoa_to_sheet(listData);
+            XLSX.utils.book_append_sheet(wb, wsList, "學生清單");
+
+            const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+            return new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        }
+
         function exportToExcel() {
             try {
-                let layoutData = [];
-
-                if (displaySettings.export.classroomName) layoutData.push([classroomName]);
-                if (displaySettings.export.schoolName && schoolName) layoutData.push([schoolName]);
-                if (displaySettings.export.schoolYear && schoolYear) layoutData.push([`${schoolYear}學年度`]);
-                if (displaySettings.export.semester && semester) layoutData.push([semester]);
-                if (displaySettings.export.className && className) layoutData.push([className]);
-                if (displaySettings.export.advisorName && advisorName) layoutData.push([`導師：${advisorName}`]);
-                if (displaySettings.export.rearDoor && rearDoor) layoutData.push([rearDoor]);
-                if (displaySettings.export.exportDate) layoutData.push([`匯出日期：${new Date().toLocaleDateString('zh-TW')}`]);
-
-                // 1. 深位從大到小 (gridConfig.rows 倒數到 1)
-                for (let w = gridConfig.rows; w >= 1; w--) {
-                    let row = [displaySettings.export.rowLabels ? `深位 ${w}` : ''];
-                    for (let p = 1; p <= gridConfig.cols; p++) {
-                        const idx = getIdx(p, w);
-                        const s = seating[idx];
-                        if (s === "disabled") {
-                            row.push(displaySettings.export.disabledSeats ? "[禁排]" : "");
-                        } else if (s?.name) {
-                            const student = students.find(st => st.name === s.name || st.displayName === s.name);
-                            row.push(getExportStudentText(student, s.name));
-                        } else {
-                            row.push("");
-                        }
-                    }
-                    layoutData.push(row);
-                }
-
-                // 2. 橫排標題列在深位 1 下方
-                if (displaySettings.export.rowLabels) {
-                    let header = ["深位 \\ 橫排"];
-                    for (let p = 1; p <= gridConfig.cols; p++) header.push(`第 ${p} 排`);
-                    layoutData.push(header);
-                }
-
-                // 3. 大屏列在最下方
-                if (displaySettings.export.frontLabel) {
-                    let screenRow = [frontLabel || "大屏"];
-                    for (let p = 1; p <= gridConfig.cols; p++) screenRow.push("");
-                    layoutData.push(screenRow);
-                }
-                if (displaySettings.export.frontDoor && frontDoor) layoutData.push([frontDoor]);
-                if (displaySettings.export.seatMapNote && seatMapNote) layoutData.push([seatMapNote]);
-
-                let listData = [["學生姓名", "狀態"]];
-                seating.forEach((s, i) => {
-                    if(s?.name) {
-                        const student = students.find(st => st.name === s.name || st.displayName === s.name);
-                        const row = [getExportStudentText(student, s.name), "已定位"];
-                        listData.push(row);
-                    } else if(s === "disabled" && displaySettings.export.disabledSeats) {
-                        listData.push(["---", "禁排區"]);
-                    }
-                });
-
-                const wb = XLSX.utils.book_new();
-                const wsLayout = XLSX.utils.aoa_to_sheet(layoutData);
-                wsLayout['!cols'] = Array(gridConfig.cols + 1).fill({ wch: 14 });
-                XLSX.utils.book_append_sheet(wb, wsLayout, "教室佈局圖");
-
-                const wsList = XLSX.utils.aoa_to_sheet(listData);
-                XLSX.utils.book_append_sheet(wb, wsList, "學生清單");
-
-                const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-                const blob = new Blob([wbout], { type: 'application/octet-stream' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = getExportFileName('xlsx');
-                document.body.appendChild(a);
-                a.click();
-                setTimeout(() => {
-                    document.body.removeChild(a);
-                    window.URL.revokeObjectURL(url);
-                }, 0);
-
+                downloadBlob(buildExcelBlob(), getExportFileName('xlsx'));
             } catch (err) {
                 console.error("Excel Export Error:", err);
-                const msg = document.getElementById('copySuccess');
-                msg.textContent = "匯出失敗，請檢查瀏覽器設定";
-                msg.style.background = "#f43f5e";
-                msg.style.display = 'block';
-                setTimeout(() => { msg.style.display = 'none'; msg.textContent = "已成功複製圖片至剪貼簿！"; msg.style.background = "#1e293b"; }, 3000);
+                showToast('匯出失敗，請檢查瀏覽器設定', true);
             }
         }
 
@@ -3554,9 +4107,17 @@
         }
 
         async function exportToWord() {
+            try {
+                downloadBlob(await buildWordBlob(), getExportFileName('docx'));
+            } catch (error) {
+                console.error('Word export failed:', error);
+                alert(error.message || 'Word 匯出失敗，請重新整理後再試一次。');
+            }
+        }
+
+        async function buildWordBlob() {
             if (!window.docx) {
-                alert('Word 匯出元件尚未載入完成，請確認網路連線後重新整理頁面。');
-                return;
+                throw new Error('Word 匯出元件尚未載入完成，請確認網路連線後重新整理頁面。');
             }
 
             const {
@@ -3728,55 +4289,388 @@
                 }]
             });
 
+            let blob;
             try {
-                let blob;
-                try {
-                    const activeTemplate = await getActiveWordTemplate();
-                    const detected = await window.docx.patchDetector({ data: activeTemplate.data });
-                    const detectedNames = (detected || []).map(item => typeof item === 'string' ? item : (item.name || item.key || '')).filter(Boolean);
-                    const textValues = {
-                        schoolName: displaySettings.export.schoolName ? schoolName : '',
-                        title: displaySettings.export.classroomName ? (classroomName || '座位表') : '',
-                        metadata,
-                        exportDate: exportDateText,
-                        rearDoor: displaySettings.export.rearDoor ? rearDoor : '',
-                        frontDoor: displaySettings.export.frontDoor ? frontDoor : '',
-                        seatMapNote: displaySettings.export.seatMapNote ? seatMapNote : ''
+                const activeTemplate = await getActiveWordTemplate();
+                const detected = await window.docx.patchDetector({ data: activeTemplate.data });
+                const detectedNames = (detected || []).map(item => typeof item === 'string' ? item : (item.name || item.key || '')).filter(Boolean);
+                const textValues = {
+                    schoolName: displaySettings.export.schoolName ? schoolName : '',
+                    title: displaySettings.export.classroomName ? (classroomName || '座位表') : '',
+                    metadata,
+                    exportDate: exportDateText,
+                    rearDoor: displaySettings.export.rearDoor ? rearDoor : '',
+                    frontDoor: displaySettings.export.frontDoor ? frontDoor : '',
+                    seatMapNote: displaySettings.export.seatMapNote ? seatMapNote : ''
+                };
+                const patches = {
+                    seatTable: {
+                        type: window.docx.PatchType.DOCUMENT,
+                        children: [seatTable]
+                    }
+                };
+                Object.entries(textValues).forEach(([name, value]) => {
+                    if (!detectedNames.includes(name)) return;
+                    patches[name] = {
+                        type: window.docx.PatchType.PARAGRAPH,
+                        children: [new TextRun(String(value || ''))]
                     };
-                    const patches = {
-                        seatTable: {
-                            type: window.docx.PatchType.DOCUMENT,
-                            children: [seatTable]
+                });
+                blob = await window.docx.patchDocument({
+                    outputType: 'blob',
+                    data: activeTemplate.data,
+                    keepOriginalStyles: true,
+                    patches
+                });
+            } catch (templateError) {
+                console.warn('Word template export failed, using generated fallback:', templateError);
+                blob = await Packer.toBlob(wordDocument);
+            }
+            return blob;
+        }
+
+        // ===== Google 雲端硬碟（drive.file 權限：只能存取本程式建立的檔案） =====
+        const DEFAULT_GOOGLE_CLIENT_ID = '';
+        const GOOGLE_CLIENT_ID_STORAGE_KEY = 'seatHelperGoogleClientIdV1';
+        const GOOGLE_DRIVE_FOLDER_STORAGE_KEY = 'seatHelperDriveFolderIdV1';
+        const GOOGLE_DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+        const DRIVE_API = 'https://www.googleapis.com/drive/v3';
+        const DRIVE_UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3';
+        const DRIVE_FOLDER_NAME = '座位小幫手';
+        const DRIVE_EXPORT_FORMATS = [
+            { id: 'png', label: 'PNG 圖片', extension: 'png', mimeType: 'image/png', build: buildPngBlob },
+            { id: 'pdf', label: 'PDF', extension: 'pdf', mimeType: 'application/pdf', build: buildPdfBlob },
+            { id: 'excel', label: 'Excel', extension: 'xlsx', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', build: buildExcelBlob },
+            { id: 'word', label: 'Word', extension: 'docx', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', build: buildWordBlob }
+        ];
+        let googleAccessToken = '';
+        let googleTokenExpiresAt = 0;
+        let googleIdentityLoadPromise = null;
+        let driveBusy = false;
+
+        function getGoogleClientId() {
+            return (localStorage.getItem(GOOGLE_CLIENT_ID_STORAGE_KEY) || DEFAULT_GOOGLE_CLIENT_ID).trim();
+        }
+
+        function saveGoogleClientId() {
+            const value = document.getElementById('googleClientIdInput').value.trim();
+            if (value && !/^[\w.-]+\.apps\.googleusercontent\.com$/.test(value)) {
+                setJsonBackupStatus('用戶端 ID 格式不正確，應以 .apps.googleusercontent.com 結尾。', true);
+                return;
+            }
+            if (value) localStorage.setItem(GOOGLE_CLIENT_ID_STORAGE_KEY, value);
+            else localStorage.removeItem(GOOGLE_CLIENT_ID_STORAGE_KEY);
+            disconnectGoogleDrive(true);
+            if (getGoogleClientId()) loadGoogleIdentityScript().catch(() => {});
+            setJsonBackupStatus(value ? 'Google 用戶端 ID 已儲存。' : '已清除自訂的 Google 用戶端 ID。');
+        }
+
+        function updateDriveConnectionBadge() {
+            const badge = document.getElementById('driveConnectionBadge');
+            const input = document.getElementById('googleClientIdInput');
+            if (input && document.activeElement !== input) input.value = localStorage.getItem(GOOGLE_CLIENT_ID_STORAGE_KEY) || DEFAULT_GOOGLE_CLIENT_ID;
+            if (!badge) return;
+            const connected = googleAccessToken && Date.now() < googleTokenExpiresAt;
+            badge.textContent = !getGoogleClientId() ? '尚未設定' : (connected ? '已連線' : '尚未連線');
+            badge.className = `text-xs font-black px-3 py-1 rounded-full ${connected ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-300'}`;
+        }
+
+        function disconnectGoogleDrive(silent = false) {
+            if (googleAccessToken && window.google?.accounts?.oauth2) {
+                try { google.accounts.oauth2.revoke(googleAccessToken, () => {}); } catch (error) { console.warn(error); }
+            }
+            googleAccessToken = '';
+            googleTokenExpiresAt = 0;
+            updateDriveConnectionBadge();
+            if (!silent) setJsonBackupStatus('已中斷 Google 雲端硬碟連線。');
+        }
+
+        function loadGoogleIdentityScript() {
+            if (window.google?.accounts?.oauth2) return Promise.resolve();
+            if (!googleIdentityLoadPromise) {
+                googleIdentityLoadPromise = new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = 'https://accounts.google.com/gsi/client';
+                    script.async = true;
+                    script.onload = () => resolve();
+                    script.onerror = () => {
+                        googleIdentityLoadPromise = null;
+                        script.remove();
+                        reject(new Error('無法載入 Google 登入元件，請確認網路連線。'));
+                    };
+                    document.head.appendChild(script);
+                });
+            }
+            return googleIdentityLoadPromise;
+        }
+
+        async function getDriveAccessToken() {
+            if (googleAccessToken && Date.now() < googleTokenExpiresAt - 60000) return googleAccessToken;
+            const clientId = getGoogleClientId();
+            if (!clientId) throw new Error('尚未設定 Google OAuth 用戶端 ID，請到後台「備份」區的連線設定填寫。');
+            await loadGoogleIdentityScript();
+            return new Promise((resolve, reject) => {
+                const tokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: clientId,
+                    scope: GOOGLE_DRIVE_SCOPE,
+                    callback: response => {
+                        if (response.error) {
+                            reject(new Error(`Google 授權失敗：${response.error_description || response.error}`));
+                            return;
                         }
-                    };
-                    Object.entries(textValues).forEach(([name, value]) => {
-                        if (!detectedNames.includes(name)) return;
-                        patches[name] = {
-                            type: window.docx.PatchType.PARAGRAPH,
-                            children: [new TextRun(String(value || ''))]
-                        };
-                    });
-                    blob = await window.docx.patchDocument({
-                        outputType: 'blob',
-                        data: activeTemplate.data,
-                        keepOriginalStyles: true,
-                        patches
-                    });
-                } catch (templateError) {
-                    console.warn('Word template export failed, using generated fallback:', templateError);
-                    blob = await Packer.toBlob(wordDocument);
+                        googleAccessToken = response.access_token;
+                        googleTokenExpiresAt = Date.now() + (Number(response.expires_in) || 3600) * 1000;
+                        updateDriveConnectionBadge();
+                        resolve(googleAccessToken);
+                    },
+                    error_callback: error => reject(new Error(error?.type === 'popup_closed'
+                        ? '已關閉 Google 授權視窗，未進行任何變更。'
+                        : 'Google 授權視窗無法開啟，請允許此網站開啟彈出式視窗後再試。'))
+                });
+                tokenClient.requestAccessToken();
+            });
+        }
+
+        async function driveFetch(url, options = {}) {
+            const token = await getDriveAccessToken();
+            const response = await fetch(url, { ...options, headers: { ...(options.headers || {}), Authorization: `Bearer ${token}` } });
+            if (response.status === 401) {
+                googleAccessToken = '';
+                googleTokenExpiresAt = 0;
+                updateDriveConnectionBadge();
+            }
+            if (!response.ok) {
+                let detail = '';
+                try { detail = (await response.json())?.error?.message || ''; } catch (error) { /* 非 JSON 錯誤內容 */ }
+                const error = new Error(`雲端硬碟操作失敗（${response.status}）${detail ? `：${detail}` : ''}`);
+                error.status = response.status;
+                throw error;
+            }
+            return response;
+        }
+
+        async function ensureDriveFolder() {
+            const cachedId = localStorage.getItem(GOOGLE_DRIVE_FOLDER_STORAGE_KEY);
+            if (cachedId) {
+                try {
+                    const info = await (await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(cachedId)}?fields=id,trashed`)).json();
+                    if (!info.trashed) return info.id;
+                } catch (error) {
+                    if (error.status !== 404) throw error;
                 }
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = getExportFileName('docx');
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url);
+                localStorage.removeItem(GOOGLE_DRIVE_FOLDER_STORAGE_KEY);
+            }
+            const query = `mimeType='application/vnd.google-apps.folder' and trashed=false and appProperties has { key='seatHelper' and value='folder' }`;
+            const found = await (await driveFetch(`${DRIVE_API}/files?q=${encodeURIComponent(query)}&orderBy=createdTime&pageSize=1&fields=files(id)`)).json();
+            let folderId = found.files?.[0]?.id;
+            if (!folderId) {
+                const created = await (await driveFetch(`${DRIVE_API}/files?fields=id`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: DRIVE_FOLDER_NAME, mimeType: 'application/vnd.google-apps.folder', appProperties: { seatHelper: 'folder' } })
+                })).json();
+                folderId = created.id;
+            }
+            localStorage.setItem(GOOGLE_DRIVE_FOLDER_STORAGE_KEY, folderId);
+            return folderId;
+        }
+
+        async function uploadFileToDrive(blob, fileName, mimeType, kind) {
+            const folderId = await ensureDriveFolder();
+            const metadata = { name: fileName, mimeType, parents: [folderId], appProperties: { seatHelper: kind } };
+            const form = new FormData();
+            form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+            form.append('file', blob, fileName);
+            return (await driveFetch(`${DRIVE_UPLOAD_API}/files?uploadType=multipart&fields=id,name,webViewLink`, { method: 'POST', body: form })).json();
+        }
+
+        function getDriveTimestamp() {
+            const now = new Date();
+            const pad = value => String(value).padStart(2, '0');
+            return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}`;
+        }
+
+        function getDriveFileName(extension, suffix = '') {
+            const safeName = classroomName.replace(/[\\/:*?"<>|]/g, '_').trim() || '座位表';
+            return `${safeName}${suffix}_${getDriveTimestamp()}.${extension}`;
+        }
+
+        function setDriveModalStatus(message, tone = 'info') {
+            const status = document.getElementById('driveModalStatus');
+            status.textContent = message;
+            status.className = `px-5 py-3 min-h-[2.75rem] text-sm font-bold border-t border-slate-100 ${tone === 'error' ? 'text-rose-600' : tone === 'success' ? 'text-emerald-600' : 'text-slate-500'}`;
+        }
+
+        function openDriveModal(title, icon) {
+            document.getElementById('driveModalTitle').innerHTML = `<i data-lucide="${icon}"></i> ${title}`;
+            document.getElementById('driveModalBody').replaceChildren();
+            setDriveModalStatus('');
+            document.getElementById('modalOverlay').classList.remove('hidden');
+            document.getElementById('driveModal').classList.remove('hidden');
+            initIcons();
+            return document.getElementById('driveModalBody');
+        }
+
+        function closeDriveModal() {
+            if (driveBusy) return;
+            document.getElementById('driveModal').classList.add('hidden');
+            document.getElementById('modalOverlay').classList.add('hidden');
+        }
+
+        function closeAllModals() {
+            if (driveBusy) return;
+            closePicker();
+            closeHistory();
+            closeDriveModal();
+        }
+
+        function openDriveSaveModal() {
+            if (!seating.some(seat => seat?.name)) {
+                alert('目前沒有排座位，無法存到雲端硬碟。');
+                return;
+            }
+            const body = openDriveModal('座位表存到雲端硬碟', 'cloud-upload');
+            const intro = document.createElement('p');
+            intro.className = 'text-sm font-bold text-slate-600 dark:text-slate-300';
+            intro.textContent = `選擇要存到雲端硬碟「${DRIVE_FOLDER_NAME}」資料夾的格式（套用匯出顯示設定）：`;
+            const options = document.createElement('div');
+            options.className = 'grid grid-cols-2 gap-2';
+            DRIVE_EXPORT_FORMATS.forEach(format => {
+                const label = document.createElement('label');
+                label.className = 'flex items-center gap-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 font-black text-sm text-slate-700 dark:text-white cursor-pointer';
+                label.innerHTML = `<input type="checkbox" value="${format.id}" class="drive-format-option w-5 h-5 accent-amber-500" ${format.id === 'png' ? 'checked' : ''}> ${format.label}`;
+                options.appendChild(label);
+            });
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'btn-main bg-amber-500 hover:bg-amber-400 text-slate-950 py-3 flex items-center justify-center gap-2';
+            button.innerHTML = '<i data-lucide="cloud-upload" class="w-5 h-5"></i> 上傳到雲端硬碟';
+            button.onclick = () => saveSeatMapToDrive(button);
+            const results = document.createElement('div');
+            results.id = 'driveUploadResults';
+            results.className = 'flex flex-col gap-2';
+            body.append(intro, options, button, results);
+            initIcons();
+        }
+
+        function appendDriveResultLink(container, file) {
+            const link = document.createElement('a');
+            link.href = file.webViewLink || 'https://drive.google.com/drive/my-drive';
+            link.target = '_blank';
+            link.rel = 'noopener';
+            link.className = 'flex items-center gap-2 bg-white dark:bg-slate-800 border border-emerald-200 dark:border-emerald-800 rounded-xl px-3 py-2 text-sm font-black text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50';
+            link.textContent = `✔ ${file.name}（在雲端硬碟開啟）`;
+            container.appendChild(link);
+        }
+
+        async function saveSeatMapToDrive(button) {
+            if (driveBusy) return;
+            const selected = [...document.querySelectorAll('.drive-format-option:checked')].map(input => input.value);
+            const formats = DRIVE_EXPORT_FORMATS.filter(format => selected.includes(format.id));
+            if (!formats.length) {
+                setDriveModalStatus('請至少選擇一種格式。', 'error');
+                return;
+            }
+            const results = document.getElementById('driveUploadResults');
+            results.replaceChildren();
+            driveBusy = true;
+            button.disabled = true;
+            try {
+                setDriveModalStatus('正在連線 Google 雲端硬碟…');
+                await getDriveAccessToken();
+                for (const format of formats) {
+                    setDriveModalStatus(`正在產生並上傳 ${format.label}…`);
+                    const blob = await format.build();
+                    const file = await uploadFileToDrive(blob, getDriveFileName(format.extension), format.mimeType, 'seatmap');
+                    appendDriveResultLink(results, file);
+                }
+                setDriveModalStatus(`已上傳 ${formats.length} 個檔案到雲端硬碟「${DRIVE_FOLDER_NAME}」資料夾。`, 'success');
             } catch (error) {
-                console.error('Word export failed:', error);
-                alert('Word 匯出失敗，請重新整理後再試一次。');
+                console.error('Drive upload failed:', error);
+                setDriveModalStatus(error.message || '上傳失敗，請稍後再試。', 'error');
+            } finally {
+                driveBusy = false;
+                button.disabled = false;
+            }
+        }
+
+        async function backupToDrive() {
+            if (driveBusy) return;
+            driveBusy = true;
+            try {
+                setJsonBackupStatus('正在備份到 Google 雲端硬碟…');
+                const file = await uploadFileToDrive(buildJsonBackupBlob(), getDriveFileName('json', '_備份'), 'application/json', 'backup');
+                setJsonBackupStatus(`已備份到雲端硬碟：${file.name}`);
+            } catch (error) {
+                console.error('Drive backup failed:', error);
+                setJsonBackupStatus(error.message || '雲端備份失敗，請稍後再試。', true);
+            } finally {
+                driveBusy = false;
+            }
+        }
+
+        async function openDriveRestoreModal() {
+            if (driveBusy) return;
+            const body = openDriveModal('從雲端硬碟還原', 'cloud-download');
+            driveBusy = true;
+            try {
+                setDriveModalStatus('正在讀取雲端備份清單…');
+                const folderId = await ensureDriveFolder();
+                const query = `'${folderId}' in parents and trashed=false and appProperties has { key='seatHelper' and value='backup' }`;
+                const list = await (await driveFetch(`${DRIVE_API}/files?q=${encodeURIComponent(query)}&orderBy=createdTime desc&pageSize=50&fields=files(id,name,createdTime,size)`)).json();
+                const files = list.files || [];
+                if (!files.length) {
+                    setDriveModalStatus('雲端硬碟中還沒有座位小幫手的備份。');
+                    return;
+                }
+                files.forEach(file => {
+                    const row = document.createElement('div');
+                    row.className = 'flex items-center justify-between gap-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5';
+                    const info = document.createElement('div');
+                    info.className = 'min-w-0';
+                    const name = document.createElement('div');
+                    name.className = 'font-black text-sm text-slate-800 dark:text-white truncate';
+                    name.textContent = file.name;
+                    const meta = document.createElement('div');
+                    meta.className = 'text-xs font-bold text-slate-400';
+                    meta.textContent = `${new Date(file.createdTime).toLocaleString('zh-TW', { hour12: false })}${file.size ? `・${Math.max(1, Math.round(Number(file.size) / 1024))} KB` : ''}`;
+                    info.append(name, meta);
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'btn-main shrink-0 bg-slate-800 hover:bg-slate-700 text-white px-3 py-2 text-xs';
+                    button.textContent = '還原';
+                    button.onclick = () => restoreBackupFromDrive(file);
+                    row.append(info, button);
+                    body.appendChild(row);
+                });
+                setDriveModalStatus(`找到 ${files.length} 個雲端備份，請選擇要還原的版本。`);
+            } catch (error) {
+                console.error('Drive list failed:', error);
+                setDriveModalStatus(error.message || '無法讀取雲端備份。', 'error');
+            } finally {
+                driveBusy = false;
+            }
+        }
+
+        async function restoreBackupFromDrive(file) {
+            if (driveBusy) return;
+            driveBusy = true;
+            try {
+                setDriveModalStatus(`正在下載 ${file.name}…`);
+                const backup = JSON.parse(await (await driveFetch(`${DRIVE_API}/files/${encodeURIComponent(file.id)}?alt=media`)).text());
+                const data = validateJsonBackup(backup);
+                if (!confirm(`已驗證雲端備份「${file.name}」（${data.classroomName}）。\n\n確定要覆蓋目前所有資料嗎？`)) {
+                    setDriveModalStatus('已取消還原，目前資料未變更。');
+                    return;
+                }
+                applyJsonBackup(backup);
+                setDriveModalStatus('雲端備份已完整還原。', 'success');
+                setJsonBackupStatus(`已從雲端硬碟還原：${file.name}`);
+            } catch (error) {
+                console.error('Drive restore failed:', error);
+                setDriveModalStatus(error instanceof SyntaxError ? '備份檔格式錯誤，目前資料未變更。' : (error.message || '還原失敗。'), 'error');
+            } finally {
+                driveBusy = false;
             }
         }
 
@@ -3786,6 +4680,8 @@
         initTheme();
         updateClassroomNameUI();
         applyCaptureDisplaySettings('preview');
+        refreshDrawBaseUI();
+        if (getGoogleClientId()) loadGoogleIdentityScript().catch(() => {});
     </script>
 </body>
 </html>
