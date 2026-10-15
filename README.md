@@ -115,3 +115,9 @@
 ## 📄 授權條款 (License)
 
 MIT License © 2026 座位小幫手團隊
+
+## 版號規則
+
+- 版號唯一來源是 `index.html` 與 `seat_helper.html`（離線交付檔）內的 `APP_VERSION`；`<title>` 與頁首徽章在執行時由它產生，HTML 靜態文字不寫版號。
+- 發版時兩份 HTML 的 `APP_VERSION` 必須一致，並在本檔「完整版本演進歷程」新增 `### v版號 (YYYY-MM-DD)` 一行（teacher-hub 會讀取它取得版本與日期）。
+- 原因：曾因 `<title>`、徽章、`APP_VERSION` 分開寫而漏改，造成版號不同步。
