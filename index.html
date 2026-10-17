@@ -1373,7 +1373,7 @@
     </div>
 
     <script>
-        const APP_VERSION = "v3.2.2";
+        const APP_VERSION = "v3.2.3";
         /* 版號只寫在 APP_VERSION；<title> 與頁首徽章由程式產生，不要在 HTML 靜態文字寫版號 */
         document.title = `座位小幫手 ${APP_VERSION}`;
 
@@ -3916,7 +3916,8 @@
             const scale = Math.min(maxWidth / canvas.width, maxHeight / canvas.height);
             const width = canvas.width * scale;
             const height = canvas.height * scale;
-            pdf.addImage(canvas.toDataURL('image/png'), 'PNG', margin + (maxWidth - width) / 2, margin, width, height);
+            // jsPDF 嵌入 PNG 預設不壓縮（7×7 一頁就 17 MB）；'FAST' 走 FlateDecode 無損壓縮，約 100 KB
+            pdf.addImage(canvas.toDataURL('image/png'), 'PNG', margin + (maxWidth - width) / 2, margin, width, height, undefined, 'FAST');
             return pdf.output('blob');
         }
 
