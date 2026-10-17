@@ -10,7 +10,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="./vendor/docx.umd.cjs"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@1.59.0/dist/umd/lucide.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -184,28 +184,6 @@
             box-shadow: inset 0 0 0 2px #ffffff, 0 12px 26px rgba(15, 23, 42, 0.28) !important;
         }
 
-        .tag-toggle {
-            font-size: 14px;
-            padding: 0 10px;
-            height: 44px;
-            min-width: 75px;
-            border-radius: 12px;
-            font-weight: 800;
-            border: 1.5px solid #e2e8f0;
-            background: #ffffff;
-            color: #64748b;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-        .tag-toggle.active { color: white; border-color: transparent; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .tag-toggle.priority.active { background: var(--color-priority); }
-        .tag-toggle.noSide.active { background: var(--color-noSide); }
-        .tag-toggle.noBack.active { background: var(--color-noBack); }
-        .tag-toggle.rear.active { background: var(--color-rear); } /* 靠後激活樣式 */
-
         .seat-card {
             transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
             min-height: var(--seat-card-min-height);
@@ -313,14 +291,14 @@
             color: white;
             font-weight: 900;
             font-style: italic;
-            font-size: 2.2rem;
-            letter-spacing: 2rem;
+            font-size: 1.5rem;
+            letter-spacing: 1rem;
             padding: 1.2rem 0;
             border-radius: 1.25rem;
             text-align: center;
             width: 100%;
             margin-top: 1rem;
-            text-indent: 2rem;
+            text-indent: 1rem;
         }
 
         .coord-badge {
@@ -343,9 +321,12 @@
             text-align: center;
             font-weight: 900;
             color: #94a3b8;
-            font-size: 16px;
+            font-size: 12px;
             font-style: italic;
         }
+
+        /* 匯出擷取期間關閉過場動畫，避免切換淺色主題時 html2canvas 擷到中間色 */
+        html.export-capturing * { transition: none !important; }
 
         .seat-map-display-surface.hide-classroom-name #classroomNameSeatPreview,
         .seat-map-display-surface.hide-school-name .meta-school-name,
@@ -590,8 +571,6 @@
             padding: clamp(12px, 18cqw, 18px) clamp(2px, 7cqw, 10px) 0;
             text-align: center;
         }
-        .screen-bar { font-size: 1.5rem; letter-spacing: 1rem; text-indent: 1rem; }
-        .row-label-text { font-size: 12px; }
         .tag-toggle {
             font-size: 13px;
             padding: 0 8px;
@@ -832,7 +811,7 @@
                             <span class="text-xs sm:text-sm font-black text-slate-600 mb-1">橫排 (Cols)</span>
                             <div class="flex items-center bg-white rounded-xl border border-slate-200 p-1">
                                 <button onclick="changeDimension('cols', -1)" class="w-8 h-8 flex items-center justify-center text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg font-black text-lg transition-colors">-</button>
-                                <input type="number" id="cfgCols" value="7" min="1" max="15" class="w-10 text-center font-black text-slate-800 text-lg outline-none bg-transparent" onchange="initGrid()">
+                                <input type="number" id="cfgCols" value="7" min="1" max="30" class="w-10 text-center font-black text-slate-800 text-lg outline-none bg-transparent" onchange="initGrid()">
                                 <button onclick="changeDimension('cols', 1)" class="w-8 h-8 flex items-center justify-center text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg font-black text-lg transition-colors">+</button>
                             </div>
                         </div>
@@ -843,7 +822,7 @@
                             <span class="text-xs sm:text-sm font-black text-slate-600 mb-1">深位 (Rows)</span>
                             <div class="flex items-center bg-white rounded-xl border border-slate-200 p-1">
                                 <button onclick="changeDimension('rows', -1)" class="w-8 h-8 flex items-center justify-center text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg font-black text-lg transition-colors">-</button>
-                                <input type="number" id="cfgRows" value="7" min="1" max="15" class="w-10 text-center font-black text-slate-800 text-lg outline-none bg-transparent" onchange="initGrid()">
+                                <input type="number" id="cfgRows" value="7" min="1" max="30" class="w-10 text-center font-black text-slate-800 text-lg outline-none bg-transparent" onchange="initGrid()">
                                 <button onclick="changeDimension('rows', 1)" class="w-8 h-8 flex items-center justify-center text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg font-black text-lg transition-colors">+</button>
                             </div>
                         </div>
@@ -1394,7 +1373,7 @@
     </div>
 
     <script>
-        const APP_VERSION = "v3.2.1";
+        const APP_VERSION = "v3.2.2";
         /* 版號只寫在 APP_VERSION；<title> 與頁首徽章由程式產生，不要在 HTML 靜態文字寫版號 */
         document.title = `座位小幫手 ${APP_VERSION}`;
 
@@ -1519,6 +1498,9 @@
         const BUILT_IN_WORD_TEMPLATE_URL = './templates/seat-helper-word-template.docx';
         const REQUIRED_WORD_TEMPLATE_PLACEHOLDERS = ['seatTable'];
         const ADMIN_LOCK_STORAGE_KEY = 'seatHelperAdminLockV1';
+        const MAX_GRID_SIZE = 30; // 與 validateJsonBackup 的上限一致
+        let historyExportBusy = false;
+        const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
         let wordTemplatePreviewInfo = { source: 'built-in', name: '內建模板', updatedAt: '' };
         let adminAuthMode = 'unlock';
         let adminPinSubmitting = false;
@@ -1605,7 +1587,24 @@
             return false;
         }
 
-        const initIcons = () => lucide.createIcons();
+        // lucide 由 CDN 載入；被擋或載入失敗時只少圖示，不能讓整個流程中斷
+        const initIcons = () => { if (typeof lucide !== 'undefined') lucide.createIcons(); };
+        // 抽籤動畫進行中禁止改動座位或名單，避免與事先算好的座位計畫撞車
+        function guardDrawing() {
+            if (!isDrawing) return false;
+            showToast('抽籤進行中，請等抽籤完成後再操作', true);
+            return true;
+        }
+        // 以座位表為準重建每位學生的 currentPos；seating 改動後呼叫，兩邊才不會脫節
+        function syncStudentPositions() {
+            const posByName = new Map();
+            seating.forEach((seat, idx) => {
+                if (seat?.name && !posByName.has(seat.name)) posByName.set(seat.name, getCoord(idx).str);
+            });
+            students.forEach(student => {
+                student.currentPos = posByName.get(student.displayName) || posByName.get(student.name) || null;
+            });
+        }
         const getIdx = (p, w) => (w - 1) * gridConfig.cols + (p - 1);
         const getCoord = (idx) => {
             const p = (idx % gridConfig.cols) + 1;
@@ -1623,16 +1622,32 @@
             document.getElementById('customAlert').style.display = 'none';
         }
 
+        const clampGridSize = (value) => Math.min(MAX_GRID_SIZE, Math.max(1, parseInt(value) || 1));
+
         function initGrid() {
-            gridConfig.cols = Math.max(1, parseInt(document.getElementById('cfgCols').value) || 1);
-            gridConfig.rows = Math.max(1, parseInt(document.getElementById('cfgRows').value) || 1);
-            const total = gridConfig.cols * gridConfig.rows;
-            const old = seating;
-            seating = new Array(total).fill(null);
-            for(let i=0; i<Math.min(old.length, total); i++) {
-                if(old[i] === "disabled") seating[i] = "disabled";
-                else if (old[i]?.locked) seating[i] = old[i];
+            const colsInput = document.getElementById('cfgCols');
+            const rowsInput = document.getElementById('cfgRows');
+            if (isDrawing) {
+                colsInput.value = gridConfig.cols;
+                rowsInput.value = gridConfig.rows;
+                guardDrawing();
+                return;
             }
+            const oldConfig = { ...gridConfig };
+            const old = seating;
+            gridConfig.cols = clampGridSize(colsInput.value);
+            gridConfig.rows = clampGridSize(rowsInput.value);
+            colsInput.value = gridConfig.cols;
+            rowsInput.value = gridConfig.rows;
+            seating = new Array(gridConfig.cols * gridConfig.rows).fill(null);
+            // 以座標 (p, w) 對應舊座位，不用平面索引；改橫排數時禁排與指定座位才不會錯位
+            old.forEach((seat, oldIdx) => {
+                if (seat !== "disabled" && !seat?.locked) return;
+                const p = (oldIdx % oldConfig.cols) + 1;
+                const w = Math.floor(oldIdx / oldConfig.cols) + 1;
+                if (p <= gridConfig.cols && w <= gridConfig.rows) seating[getIdx(p, w)] = seat;
+            });
+            syncStudentPositions();
             if (mergeRight.length !== Math.max(0, gridConfig.cols - 1)) {
                 mergeRight = new Array(Math.max(0, gridConfig.cols - 1)).fill(false);
             }
@@ -2075,6 +2090,11 @@
         async function importJsonBackup(input) {
             const file = input.files[0];
             if (!file) return;
+            if (isDrawing) {
+                setJsonBackupStatus('抽籤進行中，請等抽籤完成後再匯入備份。', true);
+                input.value = '';
+                return;
+            }
             try {
                 if (file.size > 5 * 1024 * 1024) throw new Error('備份檔超過 5 MB，請確認檔案是否正確。');
                 const backup = JSON.parse(await file.text());
@@ -2341,14 +2361,15 @@
                 const hasHeight = Number.isFinite(student.height);
                 const heightText = hasHeight ? `${student.height} cm` : '尚未設定';
                 const row = document.createElement('div');
+                const safeName = escapeHtml(student.name);
                 row.className = `height-data-card grid grid-cols-[40px_minmax(0,1fr)_82px_auto] items-center gap-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-2 ${hasHeight ? '' : 'opacity-70'}`;
                 row.innerHTML = `
                     <div class="height-card-seat text-center font-black text-slate-400">${student.seatNo}</div>
-                    <div class="height-card-name min-w-0 font-black text-slate-800 dark:text-white">${student.name}</div>
+                    <div class="height-card-name min-w-0 font-black text-slate-800 dark:text-white">${safeName}</div>
                     <div class="height-card-value text-center font-black ${hasHeight ? 'text-cyan-700 dark:text-cyan-300' : 'text-slate-400'}">${heightText}</div>
                     <div class="flex gap-1 justify-end">
-                        <button type="button" onclick="editHeightData(${student.seatNo})" class="w-9 h-9 rounded-lg bg-cyan-100 dark:bg-cyan-950/60 text-cyan-700 dark:text-cyan-300 flex items-center justify-center" title="編輯身高" aria-label="編輯 ${student.name} 身高"><i data-lucide="pencil" class="w-4 h-4"></i></button>
-                        <button type="button" onclick="deleteHeightData(${student.seatNo})" class="w-9 h-9 rounded-lg bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 flex items-center justify-center ${hasHeight ? '' : 'is-disabled'}" ${hasHeight ? '' : 'disabled'} title="刪除身高" aria-label="刪除 ${student.name} 身高"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        <button type="button" onclick="editHeightData(${student.seatNo})" class="w-9 h-9 rounded-lg bg-cyan-100 dark:bg-cyan-950/60 text-cyan-700 dark:text-cyan-300 flex items-center justify-center" title="編輯身高" aria-label="編輯 ${safeName} 身高"><i data-lucide="pencil" class="w-4 h-4"></i></button>
+                        <button type="button" onclick="deleteHeightData(${student.seatNo})" class="w-9 h-9 rounded-lg bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 flex items-center justify-center ${hasHeight ? '' : 'is-disabled'}" ${hasHeight ? '' : 'disabled'} title="刪除身高" aria-label="刪除 ${safeName} 身高"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                     </div>
                 `;
                 list.appendChild(row);
@@ -2444,6 +2465,8 @@
 
         function sortHeightData() {
             students.sort((a, b) => Number(a.seatNo) - Number(b.seatNo));
+            // 需求表的按鈕用陣列索引，重排後要立刻重繪，否則回主頁會點錯人
+            updateUI();
             syncHeightDataState('已依座號重新排序身高資料。');
         }
 
@@ -2599,12 +2622,12 @@
 
         function changeDimension(type, delta) {
             const input = document.getElementById(type === 'cols' ? 'cfgCols' : 'cfgRows');
-            let val = Math.max(1, (parseInt(input.value) || 1) + delta);
-            input.value = val;
+            input.value = clampGridSize((parseInt(input.value) || 1) + delta);
             initGrid();
         }
 
         function clearStudentList() {
+            if (guardDrawing()) return;
             if (confirm("確定要清除所有匯入的學生名單嗎？")) {
                 document.getElementById('rawInput').value = '';
                 students = [];
@@ -2665,7 +2688,7 @@
 
                 tr.innerHTML = `
                     <td class="p-1.5 sm:p-2 text-center font-black text-slate-400 text-sm sm:text-base whitespace-nowrap">${seatNo}</td>
-                    <td class="p-1.5 sm:p-2 font-black text-slate-800 text-sm sm:text-base whitespace-nowrap overflow-hidden text-ellipsis">${s.name}</td>
+                    <td class="p-1.5 sm:p-2 font-black text-slate-800 text-sm sm:text-base whitespace-nowrap overflow-hidden text-ellipsis">${escapeHtml(s.name)}</td>
                     <td class="p-1.5 sm:p-2 text-center whitespace-nowrap">${ps}</td>
                     <td class="p-1.5 sm:p-2"><div class="grid grid-cols-4 gap-1">
                         <button onclick="toggleTag(${i}, 'priority')" ${disAttr} class="tag-toggle priority ${s.tags.has('priority')?'active':''} ${disClass}">靠前</button>
@@ -2707,7 +2730,7 @@
                     const needsClass = student?.tags?.size ? 'has-needs' : '';
                     seat.className = `seat-card occupied shadow-sm flex items-center justify-center ${statusClass} ${needsClass} ${mergeBorder}`;
                     const lockIcon = data.locked ? `<div class="lock-icon"><i data-lucide="pin" class="w-3 h-3"></i></div>` : '';
-                    seat.innerHTML = `${badge}<div class="seat-indicator"></div>${lockIcon}<div class="seat-name font-black italic z-10">${dispName}</div>`;
+                    seat.innerHTML = `${badge}<div class="seat-indicator"></div>${lockIcon}<div class="seat-name font-black italic z-10">${escapeHtml(dispName)}</div>`;
                 } else {
                     seat.className = `seat-card seat-empty bg-white border-slate-100 ${mergeBorder}`;
                     seat.innerHTML = badge;
@@ -2725,7 +2748,7 @@
                     const c = s.currentPos ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-400';
                     const dispName = s.displayName || `${s.seatNo || ''}${s.name}`;
                     const posStr = s.currentPos ? ` (${s.currentPos})` : '';
-                    return `<span class="${c} px-2 py-0.5 text-[10px] font-bold rounded border border-slate-200">${dispName}${posStr}</span>`;
+                    return `<span class="${c} px-2 py-0.5 text-[10px] font-bold rounded border border-slate-200">${escapeHtml(dispName)}${posStr}</span>`;
                 }).join('');
             });
 
@@ -2803,7 +2826,7 @@
 
         window.toggleTag = (i, tag) => {
             const s = students[i];
-            if (s.currentPos) return;
+            if (!s || s.currentPos || guardDrawing()) return;
             if (s.tags.has(tag)) {
                 s.tags.delete(tag);
             } else {
@@ -2819,6 +2842,7 @@
         };
 
         window.clearAllTags = () => {
+            if (guardDrawing()) return;
             students.forEach(s => s.tags.clear());
             updateUI();
             saveData();
@@ -3193,13 +3217,11 @@
         }
 
         function checkCapacityGuard() {
-            const totalSeats = gridConfig.cols * gridConfig.rows;
-            const disabledCount = seating.filter(s => s === "disabled").length;
-            const availableSeats = totalSeats - disabledCount;
-            const studentCount = students.length;
-
-            if (studentCount > availableSeats) {
-                alert(`⚠️ 座位容量不足！\n\n目前學生人數 (${studentCount}人) 已超過可排座位數 (${availableSeats}席)。\n請增加座位行列數擴充座位、調整禁排座位數量或更新學生名單。`);
+            // 以「待抽人數 vs 空位」判斷，名單外殘留在座位表上的人也會被算進去
+            const pendingCount = students.filter(s => !s.currentPos).length;
+            const freeSeats = seating.filter(seat => seat === null).length;
+            if (pendingCount > freeSeats) {
+                alert(`⚠️ 座位容量不足！\n\n尚有 ${pendingCount} 位學生未定位，但座位表只剩 ${freeSeats} 個空位。\n請增加座位行列數、調整禁排座位，或移除座位表上不在名單內的學生。`);
                 return false;
             }
             return true;
@@ -3416,6 +3438,7 @@
         }
 
         function handleSeatClick(idx) {
+            if (guardDrawing()) return;
             activeSeatIdx = idx;
             const current = seating[idx];
             document.getElementById('pickerSeatLabel').textContent = getCoord(idx).str;
@@ -3439,7 +3462,8 @@
                 b.textContent = isD ? '恢復座位' : '設為禁排';
                 b.onclick = () => { seating[activeSeatIdx] = isD ? null : "disabled"; closePicker(); updateUI(); saveData(); };
                 aa.appendChild(b);
-                students.filter(s => !s.currentPos).forEach(s => {
+                // 禁排座位先恢復才能指定學生，避免點了學生就悄悄解除禁排
+                (isD ? [] : students.filter(s => !s.currentPos)).forEach(s => {
                     const sb = document.createElement('button');
                     sb.className = "p-3 bg-slate-50 border rounded-xl font-bold text-sm hover:bg-indigo-600 hover:text-white";
                     sb.textContent = s.displayName || `${s.seatNo}${s.name}`;
@@ -3560,39 +3584,71 @@
             }
         }
 
+        // 把一筆座位紀錄（含它自己的行列設定）套到畫面上；紀錄的格子數可能與目前不同
+        function applySeatRecord(record) {
+            gridConfig = { ...record.gridConfig };
+            document.getElementById('cfgCols').value = gridConfig.cols;
+            document.getElementById('cfgRows').value = gridConfig.rows;
+            if (mergeRight.length !== Math.max(0, gridConfig.cols - 1)) {
+                mergeRight = new Array(Math.max(0, gridConfig.cols - 1)).fill(false);
+            }
+            seating = cloneSeating(record.seating);
+            syncStudentPositions();
+            updateMergeUI();
+            updateGridUI();
+            updateUI();
+        }
+
+        function captureSeatState() {
+            return { seating: cloneSeating(seating), gridConfig: { ...gridConfig }, mergeRight: mergeRight.slice(), positions: students.map(s => s.currentPos) };
+        }
+
+        function restoreSeatState(state) {
+            gridConfig = { ...state.gridConfig };
+            seating = state.seating;
+            mergeRight = state.mergeRight;
+            students.forEach((s, i) => { s.currentPos = state.positions[i] ?? null; });
+            document.getElementById('cfgCols').value = gridConfig.cols;
+            document.getElementById('cfgRows').value = gridConfig.rows;
+            updateMergeUI();
+            updateGridUI();
+            updateUI();
+        }
+
         function restoreHistoryRecord(originalIdx) {
-            if(confirm("確定要還原此紀錄嗎？目前的座位將被覆蓋。")) {
-                const record = drawHistory[originalIdx];
-                seating = record.seating.map(s => s ? (typeof s === 'object' ? {...s} : s) : s);
-                students.forEach(s => s.currentPos = null);
-                seating.forEach((seat, i) => {
-                    if(seat?.name) {
-                        const st = students.find(x => x.name === seat.name || x.displayName === seat.name);
-                        if(st) st.currentPos = getCoord(i).str;
-                    }
-                });
-                updateUI();
+            if (guardDrawing() || historyExportBusy) return;
+            const record = drawHistory[originalIdx];
+            if (!record) return;
+            const willAutoSave = autoSaveHistory && isEveryStudentSeated() && !isCurrentSeatingInLatestHistory();
+            const message = ['確定要還原此紀錄嗎？目前的座位將被覆蓋。', willAutoSave ? '目前的座位表會先自動存入歷史紀錄。' : ''].filter(Boolean).join('\n');
+            if(confirm(message)) {
+                rememberSeatingBeforeClear();
+                applySeatRecord(record);
                 saveData();
+                refreshDrawBaseUI();
                 closeHistory();
             }
         }
 
-        function exportHistoryRecord(originalIdx, format) {
+        // 匯出歷史紀錄：暫時把紀錄（含行列設定）套到座位表，等匯出真的完成再還原，不用計時器猜時間
+        async function exportHistoryRecord(originalIdx, format) {
             const record = drawHistory[originalIdx];
-            if (!record) return;
-            const backupSeating = seating.map(s => s ? (typeof s === 'object' ? {...s} : s) : s);
-            seating = record.seating.map(s => s ? (typeof s === 'object' ? {...s} : s) : s);
-            updateUI();
-            
-            if (format === 'png') exportToImage();
-            else if (format === 'pdf') exportToPDF();
-            else if (format === 'excel') exportToExcel();
-            else if (format === 'word') exportToWord();
-            
-            setTimeout(() => {
-                seating = backupSeating;
-                updateUI();
-            }, 600);
+            if (!record || guardDrawing() || historyExportBusy) return;
+            historyExportBusy = true;
+            const backup = captureSeatState();
+            try {
+                applySeatRecord(record);
+                if (format === 'png') await exportToImage();
+                else if (format === 'pdf') await exportToPDF();
+                else if (format === 'excel') exportToExcel();
+                else if (format === 'word') await exportToWord();
+            } catch (error) {
+                console.error('History export failed:', error);
+                showToast('匯出歷史紀錄失敗', true);
+            } finally {
+                restoreSeatState(backup);
+                historyExportBusy = false;
+            }
         }
 
         function openHistory() {
@@ -3690,6 +3746,7 @@
         }
 
         document.getElementById('btnInit').onclick = () => {
+            if (guardDrawing()) return;
             const input = document.getElementById('rawInput').value.trim();
             if(!input) return;
             let roster;
@@ -3713,14 +3770,20 @@
             });
             document.getElementById('rawInput').value = '';
             drawPreferences.separationPairs = [];
+            lastPreferenceReport = '';
+            // 指定座位只保留新名單裡找得到的人；initGrid 會重新同步 currentPos，避免同一人被抽到第二個座位
+            const rosterNames = new Set(students.flatMap(s => [s.displayName, s.name]));
+            seating = seating.map(seat => (seat?.locked && !rosterNames.has(seat.name)) ? null : seat);
             initGrid();
+            refreshDrawBaseUI();
         };
 
         document.getElementById('btnResetDraw').onclick = () => {
+            if (guardDrawing()) return;
             if (confirm("確定要清除所有抽籤結果嗎？（指定座位會保留）")) {
                 rememberSeatingBeforeClear();
                 seating = seating.map(s => (s === "disabled" || s?.locked) ? s : null);
-                students.forEach(s => { if(s.currentPos) { const [p,w] = s.currentPos.split('-').map(Number); if(!seating[getIdx(p,w)]) s.currentPos = null; }});
+                syncStudentPositions();
                 updateUI();
                 saveData();
                 refreshDrawBaseUI();
@@ -3728,7 +3791,8 @@
         };
 
         document.getElementById('btnResetAll').onclick = () => {
-            if (!confirm("⚠️ 警告！這會清除名單、座位、需求、歷史紀錄及所有本機設定。\n\n此操作無法復原，確定要繼續嗎？")) return;
+            if (guardDrawing()) return;
+            if (!confirm("⚠️ 警告！這會清除名單、座位、需求、歷史紀錄、自訂 Word 模板及所有本機設定。\n\n此操作無法復原，確定要繼續嗎？")) return;
             if (!confirm("最後確認：是否清除座位小幫手的所有本機資料？")) return;
 
             students = [];
@@ -3756,6 +3820,10 @@
             lastPreferenceReport = '';
             drawPreferences = normalizeDrawPreferences();
             displaySettings = JSON.parse(JSON.stringify(defaultDisplaySettings));
+            displayPreviewMode = 'preview';
+            wordTemplatePreviewInfo = { source: 'built-in', name: '內建模板', updatedAt: '' };
+            // 自訂 Word 模板存在 IndexedDB，也屬於本機設定，一併清除
+            deleteCustomWordTemplate().catch(error => console.warn('Reset: custom Word template removal failed:', error));
 
             document.getElementById('rawInput').value = '';
             document.getElementById('cfgCols').value = gridConfig.cols;
@@ -3776,16 +3844,23 @@
 
         async function captureSeatMapForExport() {
             const area = document.getElementById('captureArea');
+            const root = document.documentElement;
             const originalClassName = area.className;
+            const wasDark = root.classList.contains('dark');
             try {
+                // 匯出一律用淺色版面（列印用），擷取期間關閉過場動畫
+                root.classList.add('export-capturing');
+                root.classList.remove('dark');
                 area.classList.add('export-layout');
                 applyCaptureDisplaySettings('export');
                 area.classList.toggle('show-export-date', displaySettings.export.exportDate);
                 document.getElementById('seatMapExportDate').textContent = `匯出日期：${new Date().toLocaleDateString('zh-TW')}`;
-                await new Promise(resolve => requestAnimationFrame(resolve));
-                return await html2canvas(area, { scale: 2 });
+                await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+                return await html2canvas(area, { scale: 2, backgroundColor: '#ffffff' });
             } finally {
                 area.className = originalClassName;
+                if (wasDark) root.classList.add('dark');
+                root.classList.remove('export-capturing');
             }
         }
 
@@ -3799,6 +3874,17 @@
         }
 
         async function copyImageToClipboard() {
+            // 先走標準 Clipboard API（真正的 PNG，Safari 需要在點擊當下以 Promise 形式交付），
+            // 不支援或被拒時退回舊的 execCommand 複製，再不行就下載。
+            if (navigator.clipboard?.write && typeof ClipboardItem !== 'undefined') {
+                try {
+                    await navigator.clipboard.write([new ClipboardItem({ 'image/png': buildPngBlob() })]);
+                    showToast('已成功複製圖片至剪貼簿！');
+                    return;
+                } catch (err) {
+                    console.warn('Clipboard API copy failed, trying legacy copy:', err);
+                }
+            }
             try {
                 const canvas = await captureSeatMapForExport();
                 const imgData = canvas.toDataURL('image/png');
@@ -3811,19 +3897,26 @@
                 const successful = document.execCommand('copy');
                 window.getSelection().removeAllRanges();
                 tempContainer.innerHTML = '';
-                if (successful) {
-                    const msg = document.getElementById('copySuccess');
-                    msg.style.display = 'block';
-                    setTimeout(() => { msg.style.display = 'none'; }, 2000);
-                } else { throw new Error('Copy command failed'); }
-            } catch (err) { exportToImage(); }
+                if (!successful) throw new Error('Copy command failed');
+                showToast('已成功複製圖片至剪貼簿！');
+            } catch (err) {
+                console.warn('Legacy copy failed, downloading PNG instead:', err);
+                exportToImage();
+            }
         }
 
         async function buildPdfBlob() {
             const canvas = await captureSeatMapForExport();
             const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, 190, (canvas.height*190)/canvas.width);
+            // 依圖片比例塞進 A4（寬圖自動橫向），排數多時不再被裁掉
+            const pdf = new jsPDF(canvas.width > canvas.height ? 'l' : 'p', 'mm', 'a4');
+            const margin = 10;
+            const maxWidth = pdf.internal.pageSize.getWidth() - margin * 2;
+            const maxHeight = pdf.internal.pageSize.getHeight() - margin * 2;
+            const scale = Math.min(maxWidth / canvas.width, maxHeight / canvas.height);
+            const width = canvas.width * scale;
+            const height = canvas.height * scale;
+            pdf.addImage(canvas.toDataURL('image/png'), 'PNG', margin + (maxWidth - width) / 2, margin, width, height);
             return pdf.output('blob');
         }
 
@@ -4368,6 +4461,7 @@
 
         function closeAllModals() {
             if (shareBusy) return;
+            closeAlert();
             closePicker();
             closeHistory();
             closeShareModal();
