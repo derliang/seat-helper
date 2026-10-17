@@ -32,7 +32,7 @@
 
 ## 未實作建議（巡檢時發現，留待日後）
 
-- **PDF 檔案很大**（15 排約 30 MB）：`buildPdfBlob` 把 scale 2 的 PNG 整張塞進去；改用 JPEG（`toDataURL('image/jpeg', 0.92)`）可縮到幾百 KB，但會失去透明與些許銳利度。沿用舊行為，未改。
+- ~~PDF 檔案很大~~ → v3.2.3 已修：原因是 jsPDF `addImage` 的 PNG 預設 `compression: 'NONE'`（7×7 一頁 17 MB）；改 `'FAST'` 後 102 KB、無損、多 0.2 秒。實測 JPEG 0.92 為 73 KB 但有損，座位表是文字所以選無損 PNG。
 - `lucide.createIcons()` 每次 `updateUI` 都全頁重掃、`fitSeatNameText` 逐格量 `scrollWidth` 會反覆 reflow：46 人規模感受不到，暫不優化（使用者明令不量測）。
 - `cfgCols`／`cfgRows` 同時綁 `oninput` 與 `onchange`，改一次會跑兩次 `initGrid`（各存一次 localStorage）；無害，未改。
 - `drawHistory` 無上限：每筆約 2–3 KB，localStorage 5 MB 約可存上千筆，實務上不會碰到。
