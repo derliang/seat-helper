@@ -1,5 +1,16 @@
 # TODO／巡檢記錄
 
+## 版權維護規範（2026-10-24 版權任務導入）
+
+- **現況**：根目錄 `LICENSE.md`（限制性授權；v3.2.3 以前舊版本的 MIT 效力保留）、README「授權條款」、頁面底部單一版權句（兩份 HTML 都有）、`index.html`／`seat_helper.html` 檔頭版權註解。授權政策：聖功女中師生免費、**所有使用者限非營利**、其他學校須寄信 derliang@gmail.com 並取得作者 Email 明確同意。
+- **後續開發守則**：`index.html` 與 `seat_helper.html` 必須同步修改（含版權句與檔頭），不得只改一份；不得移除或改寫版權標示；不得把授權改回 MIT；`vendor/` 第三方檔案與其授權原樣保留。
+- **UI 限制**：版權句為一般文件流頁尾，不得改成 fixed／sticky，不得放進 `#captureArea`（會被匯出的圖片與 PDF 帶出）。
+- **待作者確認**：(1) `LICENSE.md` 著作權人姓名標示「待確認」，舊 README 曾寫「座位小幫手團隊」；(2) 舊 MIT 版本以 commit `218764b` 為界，是否需另外標記 git tag 由作者決定。
+
+## 2026-10-24 版權任務（已完成，不改功能、不改版號）
+
+新增 `LICENSE.md`、README 授權條款改寫、頁尾版權句、檔頭註解；舊 MIT 版本分界寫入 `LICENSE.md`。
+
 ## 2026-10-17 程式巡檢（v3.2.2）
 
 **做法**：整份 `index.html` 讀完（CSS、HTML、JS），先把發現列給使用者、經同意後才改；改完抽出內嵌 JS 跑 `node --check`，再用 `npx serve` 起本機 HTTP、在瀏覽器用腳本化情境逐項驗證；最後 `cp index.html seat_helper.html` 同步離線交付檔。
