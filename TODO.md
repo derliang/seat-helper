@@ -2,10 +2,9 @@
 
 ## 版權維護規範（2026-10-24 版權任務導入）
 
-- **現況**：根目錄 `LICENSE.md`（限制性授權；v3.2.3 以前舊版本的 MIT 效力保留）、README「授權條款」、頁面底部單一版權句（兩份 HTML 都有）、`index.html`／`seat_helper.html` 檔頭版權註解。授權政策：聖功女中師生免費、**所有使用者限非營利**、其他學校須寄信 derliang@gmail.com 並取得作者 Email 明確同意。
-- **後續開發守則**：`index.html` 與 `seat_helper.html` 必須同步修改（含版權句與檔頭），不得只改一份；不得移除或改寫版權標示；不得把授權改回 MIT；`vendor/` 第三方檔案與其授權原樣保留。
-- **授權說明頁**：頁尾「授權說明」連到站內獨立頁 `license.html`（不再連 GitHub）。`license.html` 的條文須與 `LICENSE.md` 一致，改授權文字時兩份一起改。
-- **UI 限制**：版權句為一般文件流頁尾，不得改成 fixed／sticky，不得放進 `#captureArea`（會被匯出的圖片與 PDF 帶出）。
+- **現況**：根目錄 `LICENSE.md`（限制性授權；v3.2.3 以前舊版本的 MIT 效力保留）、README「授權條款」、`index.html`／`seat_helper.html` 檔頭版權註解（頁面不顯示版權句）。授權政策：聖功女中師生免費、**所有使用者限非營利**、其他學校須寄信 derliang@gmail.com 並取得作者 Email 明確同意。
+- **後續開發守則**：`index.html` 與 `seat_helper.html` 必須同步修改（含檔頭版權註解），不得只改一份；不得移除或改寫版權標示；不得把授權改回 MIT；`vendor/` 第三方檔案與其授權原樣保留。
+- **UI 限制（2026-10-25 更新）**：頁面不顯示任何版權文字，版權標示只放在 `index.html`／`seat_helper.html` 原始碼最頂端的 HTML 註解（`<!DOCTYPE html>` 與 `<html>` 之後、`<head>` 之前，三行：Copyright、Non-commercial use only. See LICENSE.md.、Authorization inquiries），以免影響程式 UI 與匯出的圖片、PDF。授權全文只維持 `LICENSE.md`，不另做站內授權頁。
 - **已確認事項（2026-10-24）**：著作權人為「黃德亮」（公開識別 derliang，舊 README 曾寫「座位小幫手團隊」）；舊 MIT 版本以 commit `218764b` 為界，已標 git tag `v3.2.3-mit`。
 
 ## 2026-10-24 版權任務（已完成，不改功能、不改版號）
