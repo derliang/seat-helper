@@ -1,0 +1,725 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>座位小幫手改版稿</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;800&family=Noto+Serif+TC:wght@600;700&display=swap">
+<script src="https://unpkg.com/lucide@1.59.0/dist/umd/lucide.min.js"></script>
+<style>
+/* 版面概念：左側步驟、右側座位表（1a）／座位表優先、右側單步面板（1b）；手機改底部分頁。座位表永遠是主角。 */
+:root{
+  --bg:#F3F4F8; --surface:#FFFFFF; --sunken:#F6F7FB; --line:#E2E5EE; --line-2:#CBD1DF;
+  --text:#1B2236; --text-2:#475069; --text-3:#66708C;
+  --accent:#4F46E5; --accent-h:#4338CA; --on-accent:#FFFFFF; --accent-soft:#EEF0FF; --accent-ink:#3730A3; --accent-line:#C7CCFA;
+  --danger:#E11D48; --danger-h:#BE123C; --danger-soft:#FFF1F3; --danger-ink:#BE123C; --danger-line:#FECDD6;
+  --ok-ink:#047857; --warn-ink:#92400E;
+  --pri-bar:#10B981; --pri-soft:#ECFDF5; --pri-line:#A7F3D0; --pri-ink:#065F46; --pri-fill:#047857;
+  --rear-bar:#64748B; --rear-soft:#F1F5F9; --rear-line:#CBD5E1; --rear-ink:#334155; --rear-fill:#475569;
+  --nb-bar:#8B5CF6; --nb-soft:#F5F3FF; --nb-line:#DDD6FE; --nb-ink:#5B21B6; --nb-fill:#6D28D9;
+  --ns-bar:#F59E0B; --ns-soft:#FFFBEB; --ns-line:#FDE68A; --ns-ink:#92400E; --ns-fill:#B45309;
+  --nm-bar:#6366F1; --nm-soft:#F5F6FF; --nm-line:#D5D9FB; --nm-ink:#3730A3;
+  --screen:#1B2236; --on-screen:#FFFFFF;
+  --shadow-1:0 1px 2px rgba(20,28,56,.06),0 1px 1px rgba(20,28,56,.04);
+  --shadow-2:0 6px 18px rgba(20,28,56,.09);
+  --shadow-3:0 20px 50px rgba(20,28,56,.24);
+  --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:24px;
+  --font:"Noto Sans TC",system-ui,-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;
+  --font-display:"Noto Sans TC",system-ui,-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;
+  --title-weight:800;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0D1220; --surface:#151C2E; --sunken:#101728; --line:#26304A; --line-2:#36425F;
+  --text:#E9EDF7; --text-2:#B7C0D8; --text-3:#8D98B8;
+  --accent:#5B5BF0; --accent-h:#6D6DF5; --on-accent:#FFFFFF; --accent-soft:#1E2350; --accent-ink:#B7BEFF; --accent-line:#3B4290;
+  --danger:#E11D48; --danger-h:#F43F5E; --danger-soft:#3A1522; --danger-ink:#FDA4AF; --danger-line:#6B2438;
+  --ok-ink:#6EE7B7; --warn-ink:#FCD34D;
+  --pri-bar:#34D399; --pri-soft:#0B2E26; --pri-line:#0F6B52; --pri-ink:#A7F3D0; --pri-fill:#047857;
+  --rear-bar:#94A3B8; --rear-soft:#1A2338; --rear-line:#3B4763; --rear-ink:#E2E8F0; --rear-fill:#475569;
+  --nb-bar:#A78BFA; --nb-soft:#25184A; --nb-line:#5B3FB0; --nb-ink:#E3D8FF; --nb-fill:#6D28D9;
+  --ns-bar:#FBBF24; --ns-soft:#33240A; --ns-line:#8A5A12; --ns-ink:#FDE68A; --ns-fill:#B45309;
+  --nm-bar:#818CF8; --nm-soft:#1B2142; --nm-line:#3A4382; --nm-ink:#D6DAFF;
+  --screen:#2A3556; --on-screen:#E9EDF7;
+  --shadow-1:0 1px 2px rgba(0,0,0,.4); --shadow-2:0 6px 18px rgba(0,0,0,.4); --shadow-3:0 20px 50px rgba(0,0,0,.6);
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0D1220; --surface:#151C2E; --sunken:#101728; --line:#26304A; --line-2:#36425F;
+  --text:#E9EDF7; --text-2:#B7C0D8; --text-3:#8D98B8;
+  --accent:#5B5BF0; --accent-h:#6D6DF5; --on-accent:#FFFFFF; --accent-soft:#1E2350; --accent-ink:#B7BEFF; --accent-line:#3B4290;
+  --danger:#E11D48; --danger-h:#F43F5E; --danger-soft:#3A1522; --danger-ink:#FDA4AF; --danger-line:#6B2438;
+  --ok-ink:#6EE7B7; --warn-ink:#FCD34D;
+  --pri-bar:#34D399; --pri-soft:#0B2E26; --pri-line:#0F6B52; --pri-ink:#A7F3D0; --pri-fill:#047857;
+  --rear-bar:#94A3B8; --rear-soft:#1A2338; --rear-line:#3B4763; --rear-ink:#E2E8F0; --rear-fill:#475569;
+  --nb-bar:#A78BFA; --nb-soft:#25184A; --nb-line:#5B3FB0; --nb-ink:#E3D8FF; --nb-fill:#6D28D9;
+  --ns-bar:#FBBF24; --ns-soft:#33240A; --ns-line:#8A5A12; --ns-ink:#FDE68A; --ns-fill:#B45309;
+  --nm-bar:#818CF8; --nm-soft:#1B2142; --nm-line:#3A4382; --nm-ink:#D6DAFF;
+  --screen:#2A3556; --on-screen:#E9EDF7;
+  --shadow-1:0 1px 2px rgba(0,0,0,.4); --shadow-2:0 6px 18px rgba(0,0,0,.4); --shadow-3:0 20px 50px rgba(0,0,0,.6);
+  color-scheme:dark}
+
+/* 方案 1b：墨藍與紙色，標題用襯線 */
+.pal-b{
+  --bg:#F5F2EA; --surface:#FFFDF8; --sunken:#F1EDE3; --line:#E4DECF; --line-2:#CFC7B2;
+  --text:#22201B; --text-2:#4F493D; --text-3:#6F6858;
+  --accent:#274690; --accent-h:#1F3877; --accent-soft:#E8EDF8; --accent-ink:#1F3877; --accent-line:#B9C6E6;
+  --screen:#22201B;
+  --font-display:"Noto Serif TC","Noto Sans TC",serif; --title-weight:700;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .pal-b{
+  --bg:#13120E; --surface:#1C1A15; --sunken:#17150F; --line:#302D24; --line-2:#433F33;
+  --text:#F1EDE2; --text-2:#CFC8B6; --text-3:#A0987F;
+  --accent:#3F63C4; --accent-h:#4C73D8; --accent-soft:#1B2540; --accent-ink:#AFC2F5; --accent-line:#33467E;
+  --screen:#2B2820}}
+:root[data-theme="dark"] .pal-b{
+  --bg:#13120E; --surface:#1C1A15; --sunken:#17150F; --line:#302D24; --line-2:#433F33;
+  --text:#F1EDE2; --text-2:#CFC8B6; --text-3:#A0987F;
+  --accent:#3F63C4; --accent-h:#4C73D8; --accent-soft:#1B2540; --accent-ink:#AFC2F5; --accent-line:#33467E;
+  --screen:#2B2820}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.55;
+  padding-block:0 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button{font:inherit;color:inherit}
+.wrap{max-width:1280px;margin:0 auto;display:flex;flex-direction:column;gap:48px}
+
+/* ===== 稿面外框 ===== */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line);margin-inline:calc(-1 * max(16px,env(safe-area-inset-left,0px)));padding:10px max(16px,env(safe-area-inset-left,0px))}
+.top-in{max-width:1280px;margin:0 auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.top b{font-size:15px}
+.top nav{display:flex;gap:6px;flex-wrap:wrap;flex:1}
+.top nav a{font-size:13px;font-weight:700;color:var(--text-2);text-decoration:none;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface)}
+.top nav a:hover{color:var(--accent-ink);border-color:var(--accent-line)}
+.pg-theme{display:inline-flex;gap:6px;align-items:center;font-size:13px;font-weight:700;border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:999px;padding:6px 12px;cursor:pointer}
+.pg-theme:focus-visible,.top nav a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sec{display:flex;flex-direction:column;gap:20px;scroll-margin-top:72px}
+.sec>h2{margin:0;font-size:24px;font-weight:800;text-wrap:balance}
+.sec>h2 small{font-size:13px;font-weight:700;color:var(--text-3);margin-left:8px}
+.lede{margin:0;max-width:72ch;color:var(--text-2)}
+.lede b{color:var(--text)}
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:12px}
+.note{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:14px 16px}
+.note h3{margin:0 0 4px;font-size:14px}
+.note p{margin:0;color:var(--text-2);font-size:13px}
+.devrow{display:flex;flex-direction:column;gap:6px}
+.devlabel{font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--text-3);text-transform:uppercase}
+.fx{width:100%;position:relative}
+.fx-in{transform-origin:0 0}
+.phones{display:flex;flex-wrap:wrap;gap:24px}
+.phones .fx{flex:0 1 390px;min-width:0}
+.todo{display:flex;flex-direction:column;gap:8px;margin:0;padding:0;list-style:none}
+.todo li{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:12px 16px;display:grid;grid-template-columns:auto 1fr;gap:4px 12px}
+.todo li b{grid-column:2}
+.todo li span.n{grid-row:1/3;font-weight:800;color:var(--accent-ink);background:var(--accent-soft);border-radius:999px;width:26px;height:26px;display:grid;place-items:center;font-size:13px}
+.todo li span.t{color:var(--text-2);font-size:13px;grid-column:2}
+.nextline{font-size:13px;color:var(--text-2)}
+
+/* ===== 設計系統展示 ===== */
+.sw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.swatch{border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;background:var(--surface)}
+.swatch i{display:block;height:44px}
+.swatch div{padding:6px 10px;font-size:12px;line-height:1.35}
+.swatch b{display:block;font-size:12px}
+.swatch code{color:var(--text-3);font-size:11px}
+.spec{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:16px}
+.spec-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.spec-card>h3{margin:0;font-size:13px;color:var(--text-3);font-weight:700;letter-spacing:.04em}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.scale{display:flex;flex-direction:column;gap:6px}
+.scale div{display:flex;align-items:baseline;gap:12px;border-bottom:1px solid var(--line);padding-bottom:6px}
+.scale small{width:92px;flex:none;color:var(--text-3);font-size:11px}
+
+/* ===== 元件：按鈕、輸入 ===== */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 16px;border-radius:var(--r-md);border:1px solid var(--line-2);background:var(--surface);color:var(--text);font-weight:700;font-size:14px;cursor:pointer;transition:background-color .15s,border-color .15s,transform .1s;white-space:nowrap}
+.btn:hover{background:var(--sunken);border-color:var(--text-3)}
+.btn:active{transform:scale(.98)}
+.btn:focus-visible,.icon-btn:focus-visible,.tg:focus-visible,.seg button:focus-visible,.tabbar button:focus-visible,.input:focus-visible,.sw:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn svg,.btn i{width:18px;height:18px;flex:none}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn-primary:hover{background:var(--accent-h);border-color:var(--accent-h)}
+.btn-lg{min-height:48px;font-size:15px;width:100%}
+.btn-sm{min-height:34px;padding:0 12px;font-size:13px;border-radius:var(--r-sm)}
+.btn-ghost{border-color:transparent;background:transparent;color:var(--text-2)}
+.btn-ghost:hover{background:var(--sunken);border-color:transparent}
+.btn-danger{background:var(--danger-soft);border-color:var(--danger-line);color:var(--danger-ink)}
+.btn-danger:hover{background:var(--danger);border-color:var(--danger);color:#fff}
+.btn-nuke{background:var(--text);border-color:var(--text);color:var(--surface)}
+.btn-nuke:hover{background:var(--surface);color:var(--text);border-color:var(--text)}
+.btn[disabled],.btn.is-off{opacity:.45;cursor:not-allowed;pointer-events:none}
+.icon-btn{width:40px;height:40px;border-radius:var(--r-md);border:1px solid var(--line);background:var(--surface);color:var(--text-2);display:grid;place-items:center;cursor:pointer;flex:none}
+.icon-btn:hover{background:var(--sunken);color:var(--text)}
+.icon-btn i,.icon-btn svg{width:20px;height:20px}
+.input{width:100%;min-height:42px;border-radius:var(--r-md);border:1px solid var(--line-2);background:var(--surface);color:var(--text);padding:8px 12px;font:inherit;font-size:14px}
+textarea.input{resize:none;background:var(--sunken)}
+.label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:var(--text-2)}
+.sw{appearance:none;-webkit-appearance:none;width:42px;height:24px;border-radius:999px;background:var(--line-2);position:relative;cursor:pointer;flex:none;transition:background-color .15s;margin:0}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3);transition:transform .15s}
+.sw:checked{background:var(--accent)}
+.sw:checked::after{transform:translateX(18px)}
+.stepper{display:inline-flex;align-items:center;border:1px solid var(--line-2);border-radius:var(--r-md);background:var(--surface);overflow:hidden}
+.stepper button{width:40px;height:40px;border:0;background:transparent;color:var(--text-2);font-size:20px;font-weight:700;cursor:pointer}
+.stepper button:hover{background:var(--sunken);color:var(--accent-ink)}
+.stepper output{min-width:34px;text-align:center;font-weight:800;font-size:16px;font-variant-numeric:tabular-nums}
+.seg{display:inline-flex;gap:2px;padding:3px;background:var(--sunken);border:1px solid var(--line);border-radius:var(--r-md)}
+.seg button{border:0;background:transparent;color:var(--text-2);font-weight:700;font-size:13px;min-height:36px;padding:0 14px;border-radius:9px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--accent-ink);box-shadow:var(--shadow-1)}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;border:1px solid var(--line);background:var(--sunken);color:var(--text-2)}
+.chip .dot{width:8px;height:8px;border-radius:50%;flex:none}
+.chip.pri{background:var(--pri-soft);border-color:var(--pri-line);color:var(--pri-ink)}.chip.pri .dot{background:var(--pri-bar)}
+.chip.rear{background:var(--rear-soft);border-color:var(--rear-line);color:var(--rear-ink)}.chip.rear .dot{background:var(--rear-bar)}
+.chip.nb{background:var(--nb-soft);border-color:var(--nb-line);color:var(--nb-ink)}.chip.nb .dot{background:var(--nb-bar)}
+.chip.ns{background:var(--ns-soft);border-color:var(--ns-line);color:var(--ns-ink)}.chip.ns .dot{background:var(--ns-bar)}
+.chip.nm{background:var(--nm-soft);border-color:var(--nm-line);color:var(--nm-ink)}.chip.nm .dot{background:var(--nm-bar)}
+.chip.ok{background:var(--pri-soft);border-color:var(--pri-line);color:var(--pri-ink)}
+.chip.acc{background:var(--accent-soft);border-color:var(--accent-line);color:var(--accent-ink)}
+
+/* ===== App 外殼 ===== */
+.dev{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.5;position:relative;container-type:inline-size;container-name:app;overflow:hidden;border:1px solid var(--line);border-radius:var(--r-lg)}
+.dev.phone{height:844px;border-radius:28px;border-width:6px;border-color:var(--text)}
+.dev.phone .screen{height:100%;overflow:hidden;display:flex;flex-direction:column}
+.dev.phone .scroll{flex:1;overflow:hidden}
+.appbar{display:flex;align-items:center;gap:12px;min-height:60px;padding:8px 24px;background:var(--surface);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.logo{width:34px;height:34px;border-radius:10px;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;flex:none}
+.logo i,.logo svg{width:20px;height:20px}
+.brand h1{margin:0;font-size:18px;font-weight:var(--title-weight);font-family:var(--font-display);line-height:1.2;white-space:nowrap}
+.ver{font-size:11px;font-weight:700;color:var(--text-3);background:var(--sunken);border:1px solid var(--line);border-radius:999px;padding:1px 8px;font-variant-numeric:tabular-nums}
+.org{font-size:12px;color:var(--text-3);white-space:nowrap}
+.grow{flex:1}
+.main{padding:24px}
+.cols-a{display:grid;grid-template-columns:minmax(380px,420px) minmax(0,1fr);gap:24px;align-items:start}
+.cols-b{display:grid;grid-template-columns:minmax(0,1fr) minmax(360px,400px);gap:24px;align-items:start}
+.cols-b .workspace{order:1}.cols-b .steps{order:2}
+.steps{display:flex;flex-direction:column;gap:16px;min-width:0}
+.workspace{display:flex;flex-direction:column;gap:16px;min-width:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow-1)}
+.step-card{padding:20px;display:flex;flex-direction:column;gap:16px}
+.step-head{display:flex;align-items:center;gap:12px}
+.num{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:14px;flex:none;border:1.5px solid var(--line-2);color:var(--text-2);background:var(--surface);font-variant-numeric:tabular-nums}
+.num.is-active{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.num.is-done{background:var(--pri-soft);border-color:var(--pri-bar);color:var(--pri-ink)}
+.num svg,.num i{width:16px;height:16px}
+.step-title{font-size:16px;font-weight:800;line-height:1.25;font-family:var(--font-display)}
+.step-sub{font-size:12px;color:var(--text-3)}
+.step-head .grow{min-width:0}
+.hint{font-size:12px;color:var(--text-3);margin:0}
+.segnav{display:none;gap:2px;padding:3px;background:var(--sunken);border:1px solid var(--line);border-radius:var(--r-md);margin-bottom:16px}
+.segnav button{flex:1;border:0;background:transparent;color:var(--text-2);font-weight:700;font-size:14px;min-height:44px;padding:0 10px;border-radius:9px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.segnav button[aria-pressed="true"]{background:var(--surface);color:var(--accent-ink);box-shadow:var(--shadow-1)}
+.segnav .num{width:22px;height:22px;font-size:12px}
+.tabbar{display:none;position:absolute;left:0;right:0;bottom:0;z-index:30;background:var(--surface);border-top:1px solid var(--line);padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));gap:4px;box-shadow:0 -6px 20px rgba(20,28,56,.06)}
+.tabbar button{flex:1;border:0;background:transparent;color:var(--text-3);font-size:12px;font-weight:700;min-height:52px;border-radius:var(--r-md);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;position:relative}
+.tabbar button i,.tabbar button svg{width:22px;height:22px}
+.tabbar button[aria-current="true"]{color:var(--accent-ink);background:var(--accent-soft)}
+.tabbar .bd{position:absolute;top:2px;right:calc(50% - 32px);min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--accent);color:var(--on-accent);font-size:11px;display:grid;place-items:center;font-variant-numeric:tabular-nums}
+.tabbar .bd.ok{background:var(--pri-fill)}
+
+/* 名單、需求 */
+.table-wrap{border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface);max-height:360px;overflow:hidden}
+.t-head,.t-row{display:grid;grid-template-columns:30px minmax(0,1fr) 54px 160px;align-items:center;gap:8px;padding:0 12px}
+.t-head{min-height:36px;background:var(--sunken);border-bottom:1px solid var(--line);font-size:12px;font-weight:700;color:var(--text-3)}
+.t-row{min-height:50px;border-bottom:1px solid var(--line)}
+.t-row:last-child{border-bottom:0}
+.t-no{color:var(--text-3);font-weight:700;text-align:center;font-variant-numeric:tabular-nums}
+.t-name{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.t-pos{text-align:center}
+.pos{display:inline-block;font-size:12px;font-weight:800;padding:1px 8px;border-radius:var(--r-sm);background:var(--accent-soft);color:var(--accent-ink);font-variant-numeric:tabular-nums}
+.pos.none{background:transparent;color:var(--text-3);font-weight:500}
+.tags{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+.tg{min-height:34px;border-radius:var(--r-sm);border:1px solid var(--line-2);background:var(--sunken);color:var(--text-2);font-size:12px;font-weight:700;cursor:pointer;padding:0 4px}
+.tg:hover{border-color:var(--text-3)}
+.tg.on.pri{background:var(--pri-fill);border-color:var(--pri-fill);color:#fff}
+.tg.on.rear{background:var(--rear-fill);border-color:var(--rear-fill);color:#fff}
+.tg.on.nb{background:var(--nb-fill);border-color:var(--nb-fill);color:#fff}
+.tg.on.ns{background:var(--ns-fill);border-color:var(--ns-fill);color:#fff}
+.tg.off{opacity:.45;pointer-events:none}
+
+/* 抽籤階段 */
+.phases{display:flex;flex-direction:column;gap:8px}
+.phase{display:grid;grid-template-columns:36px minmax(0,1fr) auto;gap:4px 12px;align-items:center;border:1px solid var(--line);border-radius:var(--r-md);padding:10px 12px;background:var(--surface)}
+.ph-ic{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;grid-row:1/3}
+.ph-ic i,.ph-ic svg{width:18px;height:18px}
+.ph-pri .ph-ic{background:var(--pri-soft);color:var(--pri-ink)}
+.ph-rear .ph-ic{background:var(--rear-soft);color:var(--rear-ink)}
+.ph-nb .ph-ic{background:var(--nb-soft);color:var(--nb-ink)}
+.ph-ns .ph-ic{background:var(--ns-soft);color:var(--ns-ink)}
+.ph-nm .ph-ic{background:var(--accent-soft);color:var(--accent-ink)}
+.ph-t{font-weight:800;font-size:14px;line-height:1.3}
+.ph-m{font-size:12px;color:var(--text-3);grid-column:2}
+.ph-btn{grid-row:1/3;grid-column:3;min-height:40px;padding:0 14px;border-radius:var(--r-sm);border:1px solid transparent;font-weight:800;font-size:13px;color:#fff;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.ph-btn i,.ph-btn svg{width:16px;height:16px}
+.ph-pri .ph-btn{background:var(--pri-fill)}.ph-rear .ph-btn{background:var(--rear-fill)}.ph-nb .ph-btn{background:var(--nb-fill)}.ph-ns .ph-btn{background:var(--ns-fill)}.ph-nm .ph-btn{background:var(--accent)}
+.phase.is-done .ph-btn{background:transparent;color:var(--ok-ink);border-color:var(--pri-line);pointer-events:none}
+.phase.is-wait .ph-btn{background:var(--sunken);color:var(--text-3);border-color:var(--line);pointer-events:none}
+.phase.is-done{background:var(--sunken)}
+.names{grid-column:2/4;display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.nm{font-size:11px;font-weight:700;padding:1px 8px;border-radius:6px;background:var(--sunken);border:1px solid var(--line);color:var(--text-3)}
+.nm.set{background:var(--text);color:var(--surface);border-color:var(--text)}
+.base{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--text-3)}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.actions .btn-nuke{grid-column:1/-1}
+
+/* 座位表工作區 */
+.work-top{padding:16px 20px;display:flex;flex-direction:column;gap:16px}
+.work-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.stats{display:flex;gap:0;flex-wrap:wrap;border:1px solid var(--line);border-radius:var(--r-md);background:var(--sunken);overflow:hidden}
+.stat{padding:8px 16px;display:flex;flex-direction:column;border-right:1px solid var(--line);min-width:64px}
+.stat:last-child{border-right:0}
+.stat small{font-size:12px;color:var(--text-3);font-weight:700}
+.stat b{font-size:20px;line-height:1.2;font-variant-numeric:tabular-nums;font-family:var(--font-display)}
+.stat.neg b{color:var(--danger-ink)}.stat.ok b{color:var(--ok-ink)}.stat.warn b{color:var(--warn-ink)}
+.stat.gap{margin-left:0;border-left:3px double var(--line-2)}
+.bar{height:6px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--pri-bar);border-radius:99px}
+.cfg{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap}
+details.merge{border:1px solid var(--line);border-radius:var(--r-md);background:var(--sunken)}
+details.merge summary{min-height:40px;padding:0 14px;display:flex;align-items:center;gap:8px;font-weight:700;font-size:13px;cursor:pointer;color:var(--text-2);list-style:none}
+details.merge summary::-webkit-details-marker{display:none}
+.legend{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.legend .hint{margin-left:auto}
+.canvas{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-xl);box-shadow:var(--shadow-2);padding:28px 32px 24px;container-type:inline-size}
+.cv-title{margin:0;text-align:center;font-size:22px;font-weight:var(--title-weight);font-family:var(--font-display)}
+.cv-meta{margin:2px 0 20px;text-align:center;font-size:13px;color:var(--text-3)}
+.grid7{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));row-gap:clamp(6px,1.4cqw,14px)}
+.seatrow{display:contents}
+.seat{position:relative;min-height:clamp(54px,9.5cqw,92px);border-radius:clamp(8px,1.6cqw,14px);border:1px solid var(--line);background:var(--sunken);container-type:inline-size;display:flex;align-items:center;justify-content:center;margin-inline:clamp(2px,.8cqw,8px)}
+.seat .co{position:absolute;top:4px;right:6px;font-size:clamp(8px,10cqw,11px);font-weight:700;color:var(--text-3);font-variant-numeric:tabular-nums;line-height:1}
+.seat .dt{position:absolute;top:6px;left:7px;width:8px;height:8px;border-radius:50%}
+.seat .sn{display:block;text-align:center;line-height:1.2;font-weight:800;font-size:clamp(11px,17cqw,16px);white-space:nowrap;padding:10px 4px 0;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.seat .sn small{display:block;font-size:.72em;font-weight:700;font-variant-numeric:tabular-nums}
+.seat .pin{position:absolute;left:6px;bottom:4px;color:var(--text-3)}
+.seat .pin i,.seat .pin svg{width:11px;height:11px}
+.seat.empty{border-style:dashed;border-color:var(--line-2);background:transparent}
+.seat.dis{border-style:dashed;border-color:var(--danger-line);background:repeating-linear-gradient(135deg,var(--danger-soft) 0 6px,transparent 6px 12px);color:var(--danger-ink)}
+.seat.dis i,.seat.dis svg{width:20px;height:20px}
+.seat.c-pri{background:var(--pri-soft);border-color:var(--pri-line);color:var(--pri-ink)}.seat.c-pri .dt{background:var(--pri-bar)}
+.seat.c-rear{background:var(--rear-soft);border-color:var(--rear-line);color:var(--rear-ink)}.seat.c-rear .dt{background:var(--rear-bar)}
+.seat.c-nb{background:var(--nb-soft);border-color:var(--nb-line);color:var(--nb-ink)}.seat.c-nb .dt{background:var(--nb-bar)}
+.seat.c-ns{background:var(--ns-soft);border-color:var(--ns-line);color:var(--ns-ink)}.seat.c-ns .dt{background:var(--ns-bar)}
+.seat.c-nm{background:var(--nm-soft);border-color:var(--nm-line);color:var(--nm-ink)}.seat.c-nm .dt{background:var(--nm-bar)}
+.seat.mg-l{border-top-right-radius:0;border-bottom-right-radius:0;margin-right:0;border-right-style:dashed;border-color:var(--accent-line)}
+.seat.mg-r{border-top-left-radius:0;border-bottom-left-radius:0;margin-left:0;border-left:0;border-color:var(--accent-line)}
+.seat.mg-l.empty,.seat.mg-r.empty{background:var(--accent-soft)}
+.cv-labels{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));margin-top:12px}
+.cv-labels span{text-align:center;font-size:12px;font-weight:700;color:var(--text-3)}
+.cv-labels span.mg{color:var(--accent-ink)}
+.cv-screen{margin-top:14px;background:var(--screen);color:var(--on-screen);text-align:center;font-weight:800;letter-spacing:.9em;text-indent:.9em;padding:10px 0;border-radius:var(--r-md);font-size:14px}
+.exports{padding:16px 20px;display:flex;flex-direction:column;gap:12px}
+.exports h3{margin:0;font-size:14px;font-weight:800}
+.ex-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+.ex-grid .btn{padding:0 8px;min-height:44px;font-size:13px}
+
+/* 空狀態、對話框、橫幅 */
+.empty-st{border:1.5px dashed var(--line-2);border-radius:var(--r-md);padding:20px 16px;text-align:center;color:var(--text-2);display:flex;flex-direction:column;align-items:center;gap:6px}
+.empty-st i,.empty-st svg{width:28px;height:28px;color:var(--text-3)}
+.empty-st b{color:var(--text)}
+.dialog{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-xl);box-shadow:var(--shadow-3);overflow:hidden;max-width:420px;width:100%}
+.dlg-h{padding:16px 20px;background:var(--accent);color:var(--on-accent);font-weight:800;font-size:17px;display:flex;align-items:center;justify-content:space-between}
+.dlg-b{padding:16px 20px;display:flex;flex-direction:column;gap:12px}
+.pick{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.pick .btn{min-height:44px;padding:0 6px;font-size:13px}
+.banner{border-radius:var(--r-lg);padding:16px 20px;color:#fff;background:#1A2140;border:1px solid #3A4382;display:flex;flex-direction:column;gap:12px;box-shadow:var(--shadow-3);max-width:640px;width:100%}
+.banner-r{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.banner small{color:#C7CCFA}
+.banner strong{font-size:18px;display:block}
+.banner .who{font-size:24px;font-weight:800;padding:6px 20px;border-radius:var(--r-md);background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28)}
+.banner .trk{height:6px;border-radius:99px;background:rgba(255,255,255,.2);overflow:hidden}
+.banner .trk i{display:block;height:100%;width:48%;background:#fff;border-radius:99px}
+.toast{display:inline-flex;align-items:center;gap:8px;background:var(--text);color:var(--surface);padding:10px 16px;border-radius:var(--r-md);font-weight:700;box-shadow:var(--shadow-2)}
+.hist{border:1px solid var(--line);border-radius:var(--r-md);padding:12px 14px;display:flex;flex-direction:column;gap:8px;background:var(--surface)}
+.hist-h{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;flex-wrap:wrap}
+
+/* 後台 */
+.admin{display:grid;grid-template-columns:220px minmax(0,1fr);gap:24px;align-items:start}
+.anav{position:sticky;top:12px;display:flex;flex-direction:column;gap:2px}
+.anav a{display:flex;align-items:center;gap:10px;min-height:40px;padding:0 12px;border-radius:var(--r-md);color:var(--text-2);font-weight:700;font-size:14px;text-decoration:none}
+.anav a i,.anav a svg{width:18px;height:18px}
+.anav a[aria-current="true"]{background:var(--accent-soft);color:var(--accent-ink)}
+.anav a.dg{color:var(--danger-ink)}
+.chipnav{display:none;gap:6px;overflow-x:auto;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--line)}
+.chipnav a{flex:none;min-height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--sunken);color:var(--text-2);font-weight:700;font-size:13px;display:inline-flex;align-items:center;text-decoration:none}
+.chipnav a[aria-current="true"]{background:var(--accent-soft);color:var(--accent-ink);border-color:var(--accent-line)}
+.asec{padding:24px;display:flex;flex-direction:column;gap:16px}
+.asec-h{display:flex;align-items:center;gap:12px}
+.asec-ic{width:40px;height:40px;border-radius:var(--r-md);background:var(--accent-soft);color:var(--accent-ink);display:grid;place-items:center;flex:none}
+.asec-h h2{margin:0;font-size:17px;font-weight:var(--title-weight);font-family:var(--font-display);line-height:1.3}
+.asec-h p{margin:0;font-size:12px;color:var(--text-3)}
+.form2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form2 .full{grid-column:1/-1}
+.pref{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--sunken)}
+.pref b{display:block;font-size:14px}
+.pref span{font-size:12px;color:var(--text-3)}
+.pref select{min-height:38px;width:auto}
+.alist{display:flex;flex-direction:column;gap:20px;min-width:0}
+
+/* ===== 響應式：以 app 容器寬度判斷（1024 / 640） ===== */
+.mode-one .segnav{display:flex}
+.mode-one .step-card{display:none}
+.mode-one[data-view="list"] .step-card[data-s="list"],
+.mode-one[data-view="needs"] .step-card[data-s="needs"],
+.mode-one[data-view="draw"] .step-card[data-s="draw"]{display:flex}
+@container app (max-width:1023px){
+  .cols-a,.cols-b{grid-template-columns:minmax(0,1fr)}
+  .cols-a .workspace,.cols-b .workspace{order:1}
+  .cols-a .steps,.cols-b .steps{order:2}
+  .mode-all .segnav{display:flex}
+  .mode-all .step-card{display:none}
+  .mode-all[data-view="list"] .step-card[data-s="list"],
+  .mode-all[data-view="needs"] .step-card[data-s="needs"],
+  .mode-all[data-view="draw"] .step-card[data-s="draw"]{display:flex}
+  .ex-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .admin{grid-template-columns:minmax(0,1fr)}
+  .anav{display:none}
+  .chipnav{display:flex}
+}
+@container app (max-width:639px){
+  .appbar{padding:8px 16px;min-height:56px}
+  .org{display:none}
+  .main{padding:16px 16px 96px}
+  .segnav{display:none!important}
+  .tabbar{display:flex}
+  .workspace{display:none}
+  .dev[data-view="map"] .workspace{display:flex}
+  .dev[data-view="map"] .steps{display:none}
+  .dev:not([data-view="map"]) .step-card[data-s]{display:none}
+  .dev[data-view="list"] .step-card[data-s="list"],
+  .dev[data-view="needs"] .step-card[data-s="needs"],
+  .dev[data-view="draw"] .step-card[data-s="draw"]{display:flex}
+  .step-card{padding:16px}
+  .work-top,.exports{padding:14px}
+  .stat{padding:6px 10px;min-width:0;flex:1}
+  .stat b{font-size:18px}
+  .stats{width:100%}
+  .stat.gap{border-left-width:3px}
+  .canvas{padding:16px 10px 14px;border-radius:var(--r-lg)}
+  .cv-title{font-size:18px}
+  .grid7{row-gap:6px}
+  .seat{min-height:46px;margin-inline:1px;border-radius:8px}
+  .seat .co{display:none}.seat .dt{top:4px;left:4px;width:6px;height:6px}
+  .seat .sn{padding-top:0;font-size:clamp(10px,26cqw,14px)}
+  .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+  .stat{border-bottom:1px solid var(--line)}
+  .stat:nth-child(3n){border-right:0}
+  .stat:nth-last-child(-n+3){border-bottom:0}
+  .stat.gap{border-left:0}
+  .cv-labels span{font-size:10px}
+  .cv-screen{font-size:12px;letter-spacing:.5em;text-indent:.5em;padding:8px 0}
+  .ex-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .legend .hint{display:none}
+  .t-head{display:none}
+  .t-row{grid-template-columns:36px minmax(0,1fr) auto;grid-template-rows:auto auto;gap:6px 8px;padding:10px 12px}
+  .t-row .tags{grid-column:1/-1;grid-template-columns:repeat(4,minmax(0,1fr))}
+  .tg{min-height:44px;font-size:13px}
+  .table-wrap{max-height:none}
+  .phase{grid-template-columns:36px minmax(0,1fr)}
+  .ph-btn{grid-column:1/-1;grid-row:auto;justify-content:center;min-height:44px}
+  .names{grid-column:1/-1}
+  .form2{grid-template-columns:1fr}
+  .asec{padding:16px}
+  .pref{grid-template-columns:auto minmax(0,1fr)}
+  .pref select{grid-column:2}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="top"><div class="top-in">
+  <b>座位小幫手 改版稿</b>
+  <nav aria-label="稿內導覽">
+    <a href="#sys">設計系統</a><a href="#s1a">方案 1a</a><a href="#s1b">方案 1b</a><a href="#admin">後台</a><a href="#todo">請你確認</a>
+  </nav>
+  <button class="pg-theme" id="pgTheme" type="button" aria-label="切換稿面深淺色"><span id="pgThemeLabel">切換深淺色</span></button>
+</div></div>
+
+<div class="wrap" style="padding-top:32px">
+
+<section class="sec" id="intro">
+  <h2>改版稿第 1 輪 <small>2026-10-25</small></h2>
+  <p class="lede"><b>假設：</b>使用者是老師，一學期只用幾次，每次要在幾分鐘內排完。所以稿面把「座位表」當主角，步驟、狀態、匯出都圍著它排。功能與資料格式完全不動，只改外觀與排版。深淺色可用右上角按鈕切換；稿面上的深淺色就是 App 的深淺色。</p>
+  <div class="notes">
+    <div class="note"><h3>1a 沿用靛紫・全覽式</h3><p>延續現有的靛紫識別。桌機把三個步驟放在左欄、座位表在右，一眼看完全流程；iPad 直式與手機會自動變成一次一步。</p></div>
+    <div class="note"><h3>1b 墨藍紙色・導引式</h3><p>色調換成紙色加墨藍，標題用襯線字。座位表放左側佔大半，右側同一時間只顯示一個步驟，學習負擔最小，但看不到整個流程。</p></div>
+    <div class="note"><h3>兩案共通</h3><p>去掉大圓角與斜體粗字，統一間距與圓角；座位卡改用淡底色加色點；匯出按鈕改成同一種樣式；手機改底部分頁。</p></div>
+  </div>
+</section>
+
+<!-- ============ 設計系統 ============ -->
+<section class="sec" id="sys">
+  <h2>設計系統 <small>以下為 1a 的 tokens，1b 只換色與標題字</small></h2>
+  <div>
+    <div class="devlabel" style="margin-bottom:8px">色彩（隨目前深淺色顯示實際值）</div>
+    <div class="sw-grid" id="swatches"></div>
+  </div>
+  <div class="spec">
+    <div class="spec-card"><h3>文字層級（Noto Sans TC）</h3>
+      <div class="scale">
+        <div><small>頁面標題 22/800</small><span style="font-size:22px;font-weight:800">座位表預覽</span></div>
+        <div><small>卡片標題 16/800</small><span style="font-size:16px;font-weight:800">第二步：需求設定</span></div>
+        <div><small>內文 14/500</small><span style="font-size:14px">每行一位學生，可貼上座號與姓名</span></div>
+        <div><small>輔助 12/700</small><span style="font-size:12px;font-weight:700;color:var(--text-3)">已匯入 24 位</span></div>
+        <div><small>數字 20/800 等寬</small><span style="font-size:20px;font-weight:800;font-variant-numeric:tabular-nums">49　24　17</span></div>
+      </div>
+    </div>
+    <div class="spec-card"><h3>圓角、間距、陰影</h3>
+      <div class="row">
+        <div style="width:56px;height:56px;border-radius:8px;border:1.5px solid var(--line-2);display:grid;place-items:center;font-size:11px">8 小</div>
+        <div style="width:56px;height:56px;border-radius:12px;border:1.5px solid var(--line-2);display:grid;place-items:center;font-size:11px">12 中</div>
+        <div style="width:56px;height:56px;border-radius:16px;border:1.5px solid var(--line-2);display:grid;place-items:center;font-size:11px">16 卡片</div>
+        <div style="width:56px;height:56px;border-radius:24px;border:1.5px solid var(--line-2);display:grid;place-items:center;font-size:11px">24 畫布</div>
+      </div>
+      <p class="hint">間距以 4 為單位：4・8・12・16・20・24・32。原本 32～56px 的大圓角全部收斂到這四級。</p>
+      <div class="row">
+        <div style="width:88px;height:44px;border-radius:12px;background:var(--surface);box-shadow:var(--shadow-1);display:grid;place-items:center;font-size:11px;border:1px solid var(--line)">陰影 1</div>
+        <div style="width:88px;height:44px;border-radius:12px;background:var(--surface);box-shadow:var(--shadow-2);display:grid;place-items:center;font-size:11px">陰影 2</div>
+        <div style="width:88px;height:44px;border-radius:12px;background:var(--surface);box-shadow:var(--shadow-3);display:grid;place-items:center;font-size:11px">陰影 3</div>
+      </div>
+      <p class="hint">斷點：手機 &lt;640、iPad 640–1023、桌機 ≥1024。手機點擊區一律 ≥44px。</p>
+    </div>
+    <div class="spec-card"><h3>按鈕</h3>
+      <div class="row">
+        <button class="btn btn-primary"><i data-lucide="arrow-right-circle"></i>主要動作</button>
+        <button class="btn"><i data-lucide="save"></i>次要</button>
+        <button class="btn btn-ghost">文字按鈕</button>
+        <button class="btn btn-danger"><i data-lucide="trash-2"></i>清除</button>
+        <button class="btn btn-nuke"><i data-lucide="radiation"></i>全部重設</button>
+        <button class="btn" disabled>停用</button>
+        <button class="btn btn-sm">小</button>
+      </div>
+      <p class="hint">主要動作每個畫面只有一個。原本三個紅色方塊垃圾桶改成帶「清除」字樣的淡紅按鈕；全部重設維持黑白反相的高對比。</p>
+    </div>
+    <div class="spec-card"><h3>輸入與選擇</h3>
+      <div class="row" style="align-items:flex-end">
+        <label class="label" style="flex:1;min-width:140px">座位表標題<input class="input" id="sp1" value="三年一班" aria-label="座位表標題"></label>
+        <label class="label">學期<select class="input" id="sp2" aria-label="學期"><option>上學期</option></select></label>
+      </div>
+      <div class="row">
+        <div class="stepper" role="group" aria-label="橫排數"><button aria-label="減少">−</button><output>7</output><button aria-label="增加">+</button></div>
+        <label class="row" style="gap:8px"><input class="sw" type="checkbox" checked id="sp3" aria-label="開啟音效"> 開啟音效</label>
+        <div class="seg"><button aria-pressed="true">高</button><button aria-pressed="false">中</button><button aria-pressed="false">低</button></div>
+      </div>
+      <textarea class="input" id="sp4" rows="2" aria-label="名單" placeholder="貼上名單"></textarea>
+    </div>
+    <div class="spec-card"><h3>座位卡狀態（淡底色加左上色點，不再用左側色條）</h3>
+      <div class="legend">
+        <span class="chip pri"><span class="dot"></span>靠前</span><span class="chip rear"><span class="dot"></span>靠後</span><span class="chip nb"><span class="dot"></span>不最後</span><span class="chip ns"><span class="dot"></span>不靠邊</span><span class="chip nm"><span class="dot"></span>其他</span>
+      </div>
+      <div class="canvas" style="padding:12px;box-shadow:none"><div id="seatSpecimens" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px"></div></div>
+      <p class="hint">依序：靠前、靠後、不最後、不靠邊、其他、空位、禁排、已鎖定。</p>
+    </div>
+    <div class="spec-card"><h3>需求按鈕與空狀態</h3>
+      <div class="tags" style="max-width:260px"><button class="tg on pri">靠前</button><button class="tg rear">靠後</button><button class="tg on nb">不後</button><button class="tg off ns">不邊</button></div>
+      <p class="hint">啟用時填入該類別的實色；已定位的學生按鈕變淡不可按。</p>
+      <div class="empty-st"><i data-lucide="clipboard-paste"></i><b>還沒有名單</b>貼上全班名單，再按「匯入並進行下一步」</div>
+    </div>
+    <div class="spec-card"><h3>抽籤橫幅</h3>
+      <div class="banner"><div class="banner-r"><div><strong>抽籤中：不最後</strong><small>第 2 / 3 位</small></div><div class="who">鄭雅文</div></div><div class="trk"><i></i></div></div>
+      <p class="hint">橫幅一律用深色舞台底；四種動畫仍保留各自的強調色，不再各用一組大漸層。</p>
+    </div>
+    <div class="spec-card"><h3>對話框、提示、歷史紀錄</h3>
+      <div class="dialog"><div class="dlg-h">指定座位：3-4<i data-lucide="x"></i></div><div class="dlg-b">
+        <button class="btn btn-danger btn-lg" style="min-height:44px">設為禁排</button>
+        <div class="pick"><button class="btn">5陳大文</button><button class="btn">8蔡宗翰</button><button class="btn">9楊淑芬</button></div></div></div>
+      <div class="hist"><div class="hist-h"><div><b>紀錄 #3</b> <span class="chip">自動</span> <span class="chip ok">偏好基準</span><div class="hint">2026/10/24 18:20</div></div><div class="row"><button class="btn btn-sm">還原</button><button class="btn btn-sm btn-danger">刪除</button></div></div>
+        <div class="row"><span class="hint">匯出此紀錄</span><button class="btn btn-sm">PNG</button><button class="btn btn-sm">PDF</button><button class="btn btn-sm">Excel</button><button class="btn btn-sm">Word</button></div></div>
+      <span class="toast"><i data-lucide="check" style="width:18px;height:18px"></i>已複製圖片到剪貼簿</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 1a ============ -->
+<section class="sec" id="s1a">
+  <h2>方案 1a　靛紫・全覽式 <small>貼近現有，桌機一次看完</small></h2>
+  <div class="devrow"><div class="devlabel">1a 桌機 1440</div><div class="fx" data-w="1440" id="f1a-d"></div></div>
+  <div class="devrow"><div class="devlabel">1a iPad 直式 820（一次一步，座位表固定在上）</div><div class="fx" data-w="820" id="f1a-t"></div></div>
+  <div class="devrow"><div class="devlabel">1a 手機 390（底部分頁：名單、需求、抽籤、座位表）</div>
+    <div class="phones"><div class="fx" data-w="390" id="f1a-p1"></div><div class="fx" data-w="390" id="f1a-p2"></div><div class="fx" data-w="390" id="f1a-p3"></div></div></div>
+  <p class="nextline">下一步你可以說：「選 1a」「1a 的步驟卡改成…」「座位卡再大一點」。</p>
+</section>
+
+<!-- ============ 1b ============ -->
+<section class="sec" id="s1b">
+  <h2>方案 1b　墨藍紙色・導引式 <small>座位表優先，一次只做一件事</small></h2>
+  <div class="devrow"><div class="devlabel">1b 桌機 1440</div><div class="fx" data-w="1440" id="f1b-d"></div></div>
+  <div class="devrow"><div class="devlabel">1b iPad 直式 820</div><div class="fx" data-w="820" id="f1b-t"></div></div>
+  <div class="devrow"><div class="devlabel">1b 手機 390</div>
+    <div class="phones"><div class="fx" data-w="390" id="f1b-p1"></div><div class="fx" data-w="390" id="f1b-p2"></div><div class="fx" data-w="390" id="f1b-p3"></div></div></div>
+  <p class="nextline">下一步你可以說：「選 1b」「1b 的顏色換回靛紫」「把 1a 的左欄全覽放進 1b」。</p>
+</section>
+
+<!-- ============ 後台 ============ -->
+<section class="sec" id="admin">
+  <h2>本機管理後台 <small>兩案共用，示範用 1a 的色彩</small></h2>
+  <p class="lede">原本是一長串彩色頂邊的卡片。改成左側目錄加單欄內容，手機上目錄變成可橫向滑動的標籤列。每個設定的欄位、順序與功能不變。</p>
+  <div class="devrow"><div class="devlabel">後台 桌機 1440</div><div class="fx" data-w="1440" id="f-ad"></div></div>
+  <div class="devrow"><div class="devlabel">後台 手機 390</div><div class="phones"><div class="fx" data-w="390" id="f-ap"></div></div></div>
+</section>
+
+<section class="sec" id="todo">
+  <h2>請你確認 <small>這些是比較大的變動</small></h2>
+  <ol class="todo">
+    <li><span class="n">1</span><b>標題列對調</b><span class="t">原本品牌在右、主題與設定在左。改成品牌在左、主題與設定在右，符合一般 App 習慣。</span></li>
+    <li><span class="n">2</span><b>座位卡樣式</b><span class="t">原本左側色條改為左上色點加淡底色。匯出的 PNG、PDF 座位表會同步套用新樣式；Word、Excel 不受影響。</span></li>
+    <li><span class="n">3</span><b>併排設定收進摺疊</b><span class="t">設定一次就很少再動，預設收起，點開才看到各排的合併開關。功能完全保留。</span></li>
+    <li><span class="n">4</span><b>匯出按鈕統一</b><span class="t">原本六個按鈕各一種顏色，改成同一種樣式，「複製圖片」為主要按鈕。</span></li>
+    <li><span class="n">5</span><b>第一次開啟時跟隨系統深淺色</b><span class="t">原本沒存過偏好時一律淺色。已經手動選過的人不受影響。</span></li>
+    <li><span class="n">6</span><b>手機版分頁</b><span class="t">手機改為底部四個分頁，不再一路往下捲。需求表在手機上每位學生分兩行，按鈕才夠大。</span></li>
+  </ol>
+</section>
+</div>
+
+<script>
+(function(){
+  /* ---------- 稿面深淺色 ---------- */
+  var root=document.documentElement,btn=document.getElementById('pgTheme'),lab=document.getElementById('pgThemeLabel');
+  function isDark(){var t=root.getAttribute('data-theme');return t?t==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches}
+  function syncLabel(){lab.textContent=isDark()?'切換為淺色':'切換為深色';swatches()}
+  btn.addEventListener('click',function(){root.setAttribute('data-theme',isDark()?'light':'dark');syncLabel()});
+
+  /* ---------- 假資料 ---------- */
+  var NAMES=['王小明','李小華','陳大文','林美玲','張志豪','黃雅婷','吳家豪','劉怡君','蔡宗翰','楊淑芬','許建宏','鄭雅文','謝佳穎','郭俊傑','洪靜怡','曾冠廷','邱怡婷','廖志偉','賴雅琪','徐子軒','何欣怡','羅文傑','高佩珊','潘柏翰'];
+  var TAG={0:'pri',1:'pri',2:'rear',3:'nb',4:'ns',5:'pri',6:'rear',9:'nb',10:'ns',11:'nb'};
+  var POS={0:'2-1',1:'5-1',2:'3-7',5:'6-2',6:'6-7',7:'4-4',8:'1-5'};
+  var SEATS={'2-1':[0,'pri'],'5-1':[1,'pri'],'6-2':[5,'pri'],'3-7':[2,'rear'],'6-7':[6,'rear'],'4-4':[7,'nm',1],'1-5':[8,'nm',1]};
+  var TAGLBL={pri:'靠前',rear:'靠後',nb:'不後',ns:'不邊'};
+  var I=function(n,c){return '<i data-lucide="'+n+'"'+(c?' class="'+c+'"':'')+'></i>'};
+
+  function rows(compact){
+    var h='';
+    NAMES.slice(0,compact?8:9).forEach(function(n,i){
+      var t=TAG[i],pos=POS[i];
+      var tg=['pri','rear','nb','ns'].map(function(k){return '<button class="tg '+k+(t===k?' on':'')+(pos?' off':'')+'" '+(pos?'disabled ':'')+'>'+TAGLBL[k]+'</button>'}).join('');
+      h+='<div class="t-row"><span class="t-no">'+(i+1)+'</span><span class="t-name">'+n+'</span><span class="t-pos">'+(pos?'<span class="pos">'+pos+'</span>':'<span class="pos none">未安排</span>')+'</span><div class="tags">'+tg+'</div></div>';
+    });
+    return h;
+  }
+  function seatGrid(){
+    var h='';
+    for(var w=7;w>=1;w--){for(var p=1;p<=7;p++){
+      var k=p+'-'+w,s=SEATS[k],mg=(p===2?' mg-l':p===3?' mg-r':'');
+      if(k==='7-4'){h+='<div class="seat dis'+mg+'"><span class="co">'+k+'</span>'+I('ban')+'</div>';continue}
+      if(s){h+='<div class="seat c-'+s[1]+mg+'"><span class="co">'+k+'</span><span class="dt"></span>'+(s[2]?'<span class="pin">'+I('pin')+'</span>':'')+'<span class="sn"><small>'+(s[0]+1)+'</small>'+NAMES[s[0]]+'</span></div>';continue}
+      h+='<div class="seat empty'+mg+'"><span class="co">'+k+'</span></div>';
+    }}
+    return h;
+  }
+  function labels(){var h='';for(var p=1;p<=7;p++)h+='<span'+((p===2||p===3)?' class="mg"':'')+'>第'+p+'排</span>';return h}
+
+  function phase(c,ic,t,meta,state,names){
+    var btn=state==='done'?I('check')+'已完成':state==='wait'?I('lock')+'先完成前四項':I('shuffle')+'抽籤';
+    return '<div class="phase ph-'+c+(state==='done'?' is-done':'')+(state==='wait'?' is-wait':'')+'"><span class="ph-ic">'+I(ic)+'</span><span class="ph-t">'+t+'</span><span class="ph-m">'+meta+'</span><button class="ph-btn">'+btn+'</button>'+(names?'<div class="names">'+names+'</div>':'')+'</div>';
+  }
+  function nms(a){return a.map(function(x){return '<span class="nm'+(x[1]?' set':'')+'">'+x[0]+(x[1]?'（'+x[1]+'）':'')+'</span>'}).join('')}
+
+  function stepList(sdone){return '<div class="card step-card" data-s="list"><div class="step-head"><span class="num is-done">'+I('check')+'</span><div class="grow"><div class="step-title">匯入名單</div><div class="step-sub">已匯入 24 位學生</div></div><button class="btn btn-danger btn-sm">'+I('trash-2')+'清除</button></div>'
+    +'<textarea class="input" id="ta-'+(sdone||'x')+'" rows="4" aria-label="名單" style="height:112px">1　王小明\n2　李小華\n3　陳大文\n4　林美玲</textarea>'
+    +'<p class="hint">可貼上姓名、座號加姓名，或試算表的座號與姓名兩欄。</p>'
+    +'<button class="btn btn-primary btn-lg">'+I('arrow-right-circle')+'匯入並進行下一步</button></div>'}
+  function stepNeeds(compact){return '<div class="card step-card" data-s="needs"><div class="step-head"><span class="num is-done">'+I('check')+'</span><div class="grow"><div class="step-title">需求設定</div><div class="step-sub">10 位有特別需求，其餘不用設定</div></div><button class="btn btn-danger btn-sm">'+I('trash-2')+'清除</button></div>'
+    +'<div class="table-wrap"><div class="t-head"><span style="text-align:center">座號</span><span>姓名</span><span style="text-align:center">座位</span><span style="text-align:center">個別需求</span></div>'+rows(compact)+'</div></div>'}
+  function stepDraw(){return '<div class="card step-card" data-s="draw"><div class="step-head"><span class="num is-active">3</span><div class="grow"><div class="step-title">執行抽籤</div><div class="step-sub">依順序抽，已完成 2 / 4 個階段</div></div><button class="btn btn-danger btn-sm">'+I('trash-2')+'清除抽籤</button></div>'
+    +'<div class="base">'+I('history','')+'偏好基準：上次座位表（相符 20 人）</div>'
+    +'<div class="phases">'
+    +phase('pri','arrow-up-to-line','1　抽【坐靠前】','3 人已安排','done',nms([['王小明','2-1'],['李小華','5-1'],['黃雅婷','6-2']]))
+    +phase('rear','arrow-down-to-line','2　抽【坐靠後】','2 人已安排','done',nms([['陳大文','3-7'],['吳家豪','6-7']]))
+    +phase('nb','shield-alert','3　抽【不最後】','3 人待抽','go',nms([['林美玲'],['楊淑芬'],['鄭雅文']]))
+    +phase('ns','columns','4　抽【不靠邊】','2 人待抽','go',nms([['張志豪'],['許建宏']]))
+    +phase('nm','shuffle','5　抽【其他人】','其餘 12 人','wait','')
+    +'</div><div class="actions"><button class="btn">'+I('save')+'儲存結果</button><button class="btn">'+I('history')+'歷史紀錄</button><button class="btn btn-nuke">'+I('radiation')+'全部重設</button></div></div>'}
+
+  function workspace(){return '<div class="workspace">'
+    +'<div class="card work-top"><div class="work-row"><div class="stats">'
+    +'<div class="stat"><small>座位</small><b>49</b></div><div class="stat neg"><small>禁排</small><b>1</b></div><div class="stat"><small>可排</small><b>48</b></div>'
+    +'<div class="stat gap"><small>學生</small><b>24</b></div><div class="stat ok"><small>已定位</small><b>7</b></div><div class="stat warn"><small>未定位</small><b>17</b></div></div></div>'
+    +'<div class="bar" role="progressbar" aria-valuenow="7" aria-valuemax="24" aria-label="已定位進度"><i style="width:29%"></i></div>'
+    +'<div class="cfg"><label class="label">橫排<span class="stepper"><button aria-label="橫排減少">−</button><output>7</output><button aria-label="橫排增加">+</button></span></label>'
+    +'<label class="label">深位<span class="stepper"><button aria-label="深位減少">−</button><output>7</output><button aria-label="深位增加">+</button></span></label>'
+    +'<details class="merge" style="flex:1;min-width:200px"><summary>'+I('link')+'併排（雙人桌）設定　已併排 1 組</summary></details>'
+    +'<button class="btn btn-danger" aria-label="清空座位表">'+I('trash-2')+'清空座位表</button></div></div>'
+    +'<div class="legend"><span class="chip pri"><span class="dot"></span>靠前</span><span class="chip rear"><span class="dot"></span>靠後</span><span class="chip nb"><span class="dot"></span>不最後</span><span class="chip ns"><span class="dot"></span>不靠邊</span><span class="chip nm"><span class="dot"></span>其他</span><span class="hint">點選座位可指定學生或設為禁排</span></div>'
+    +'<div class="canvas"><h2 class="cv-title">三年一班座位表</h2><p class="cv-meta">聖功女中｜115 學年度｜上學期</p><div class="grid7">'+seatGrid()+'</div><div class="cv-labels">'+labels()+'</div><div class="cv-screen">大屏</div></div>'
+    +'<div class="card exports"><h3>匯出與分享</h3><div class="ex-grid"><button class="btn btn-primary">'+I('copy-check')+'複製圖片</button><button class="btn">'+I('file-image')+'PNG</button><button class="btn">'+I('file-down')+'PDF</button><button class="btn">'+I('table')+'Excel</button><button class="btn">'+I('file-text')+'Word</button><button class="btn">'+I('cloud-upload')+'存到雲端</button></div></div>'
+    +'</div>'}
+
+  function appbar(){return '<header class="appbar"><div class="brand"><span class="logo">'+I('layout-grid')+'</span><h1>座位小幫手</h1><span class="ver">v3.3.0</span></div><span class="org">聖功女中｜115 學年度</span><span class="grow"></span><button class="icon-btn" aria-label="切換深淺色">'+I('moon')+'</button><button class="icon-btn" aria-label="本機管理設定">'+I('settings')+'</button></header>'}
+  function segnav(v){var d=[['list','名單','1'],['needs','需求','2'],['draw','抽籤','3']];return '<div class="segnav" role="tablist">'+d.map(function(x){return '<button aria-pressed="'+(v===x[0])+'"><span class="num'+(v===x[0]?' is-active':'')+'">'+x[2]+'</span>'+x[1]+'</button>'}).join('')+'</div>'}
+  function tabbar(v){var d=[['list','users','名單','24',0],['needs','sliders-horizontal','需求','10',0],['draw','shuffle','抽籤','2/4',0],['map','armchair','座位表','',0]];
+    return '<nav class="tabbar" aria-label="主要分頁">'+d.map(function(x){return '<button '+(v===x[0]?'aria-current="true"':'')+'>'+I(x[1])+x[2]+(x[3]?'<span class="bd'+(x[0]==='list'?' ok':'')+'">'+x[3]+'</span>':'')+'</button>'}).join('')+'</nav>'}
+
+  function app(o){
+    var steps='<div class="steps">'+segnav(o.view)+stepList(o.id)+stepNeeds(o.compact)+stepDraw()+'</div>';
+    var body=(o.mode==='one'?'<div class="cols-b">':'<div class="cols-a">')+(o.mode==='one'?workspace()+steps:steps+workspace())+'</div>';
+    var inner=appbar()+'<main class="main">'+body+'</main>'+tabbar(o.view);
+    var cls='dev '+(o.pal?'pal-b ':'')+(o.mode==='one'?'mode-one ':'mode-all ')+(o.phone?'phone':'');
+    if(o.phone)inner='<div class="screen">'+appbar()+'<div class="scroll"><main class="main">'+body+'</main></div>'+tabbar(o.view)+'</div>';
+    return '<div class="fx-in"><div class="'+cls+'" data-view="'+o.view+'" style="width:'+o.w+'px">'+inner+'</div></div>';
+  }
+
+  /* ---------- 後台 ---------- */
+  function adminSections(){
+    var prefs=[['避免重複同一座位','優先不要坐上次完全相同的位置。',1,'高'],['避免連續坐邊邊','上次在最左或最右排，這次優先安排到非邊排。',1,'中'],['打散上次座位四周的同學','優先避開上次前後左右及斜角相鄰的同學。',0,'中'],['考慮身高','同一橫排中，盡量讓矮的在前、高的在後。',0,'低']];
+    return '<section class="card asec" id="a1"><div class="asec-h"><span class="asec-ic">'+I('school')+'</span><div><h2>自訂名稱與基本資料</h2><p>會顯示在座位表上方，匯出檔名也會使用</p></div></div>'
+      +'<div class="form2"><label class="label full">座位表標題<input class="input" id="ad1" value="三年一班座位表"></label><label class="label">校名<input class="input" id="ad2" value="聖功女中"></label><label class="label">學年度<input class="input" id="ad3" value="115"></label><label class="label">學期<select class="input" id="ad4"><option>上學期</option></select></label><label class="label">導師<input class="input" id="ad5" placeholder="例如：王老師"></label><label class="label full">備註<input class="input" id="ad6" placeholder="例如：下次 8/26 抽、8/31 換"></label></div>'
+      +'<div class="row"><button class="btn btn-primary">儲存基本資料</button><span class="chip ok">已儲存</span></div></section>'
+      +'<section class="card asec" id="a2"><div class="asec-h"><span class="asec-ic">'+I('sparkles')+'</span><div><h2>抽籤偏好</h2><p>依選定的歷史座位表整體最佳化；無法兼顧時仍會正常抽籤</p></div></div>'
+      +prefs.map(function(p,i){return '<div class="pref"><input class="sw" type="checkbox" id="pf'+i+'" '+(p[2]?'checked':'')+' aria-label="'+p[0]+'"><div><b>'+p[0]+'</b><span>'+p[1]+'</span></div><select class="input" aria-label="優先度"><option>'+p[3]+'</option></select></div>'}).join('')+'</section>'
+      +'<section class="card asec" id="a3"><div class="asec-h"><span class="asec-ic">'+I('archive')+'</span><div><h2>備份</h2><p>不需要登入 Google，也不使用任何 Google API</p></div></div><div class="form2"><button class="btn">'+I('download')+'匯出備份</button><button class="btn">'+I('upload')+'匯入備份</button><button class="btn full">'+I('cloud-upload')+'備份到雲端</button></div></section>';
+  }
+  function anav(){var d=[['school','基本資料',1],['sparkles','抽籤偏好'],['layout-template','座位表顯示'],['audio-lines','抽籤儀式'],['ruler','身高資料'],['file-type-2','Word 模板'],['archive','備份'],['lock-keyhole','後台 PIN']];
+    return '<nav class="anav" aria-label="後台目錄">'+d.map(function(x){return '<a href="#" '+(x[2]?'aria-current="true"':'')+'>'+I(x[0])+x[1]+'</a>'}).join('')+'</nav>'}
+  function chipnav(){return '<nav class="chipnav" aria-label="後台目錄">'+['基本資料','抽籤偏好','座位表顯示','抽籤儀式','身高資料','Word 模板','備份','後台 PIN'].map(function(x,i){return '<a href="#" '+(i===0?'aria-current="true"':'')+'>'+x+'</a>'}).join('')+'</nav>'}
+  function admin(o){
+    var bar='<header class="appbar"><button class="btn btn-sm">'+I('arrow-left')+'返回抽籤</button><div class="brand" style="margin-left:4px"><span class="logo">'+I('settings')+'</span><div><h1>本機管理後台</h1></div></div><span class="grow"></span><button class="icon-btn" aria-label="切換深淺色">'+I('moon')+'</button></header>';
+    var cn=chipnav();
+    var main='<main class="main"><div class="admin">'+anav()+'<div class="alist">'+adminSections()+'</div></div></main>';
+    var inner=o.phone?'<div class="screen">'+bar+cn+'<div class="scroll">'+main+'</div></div>':bar+cn+main;
+    return '<div class="fx-in"><div class="dev '+(o.phone?'phone':'')+'" data-view="admin" style="width:'+o.w+'px">'+inner+'</div></div>';
+  }
+
+  /* ---------- 組裝 ---------- */
+  function put(id,h){var e=document.getElementById(id);e.innerHTML=h}
+  put('f1a-d',app({w:1440,mode:'all',view:'list'}));
+  put('f1a-t',app({w:820,mode:'all',view:'draw'}));
+  put('f1a-p1',app({w:390,mode:'all',view:'list',phone:1,compact:1,id:'p1a'}));
+  put('f1a-p2',app({w:390,mode:'all',view:'needs',phone:1,compact:1,id:'p2a'}));
+  put('f1a-p3',app({w:390,mode:'all',view:'map',phone:1,compact:1,id:'p3a'}));
+  put('f1b-d',app({w:1440,mode:'one',view:'draw',pal:1}));
+  put('f1b-t',app({w:820,mode:'one',view:'needs',pal:1}));
+  put('f1b-p1',app({w:390,mode:'one',view:'draw',phone:1,compact:1,pal:1,id:'p1b'}));
+  put('f1b-p2',app({w:390,mode:'one',view:'list',phone:1,compact:1,pal:1,id:'p2b'}));
+  put('f1b-p3',app({w:390,mode:'one',view:'map',phone:1,compact:1,pal:1,id:'p3b'}));
+  put('f-ad',admin({w:1440}));
+  put('f-ap',admin({w:390,phone:1}));
+
+  /* 座位卡樣本 */
+  var sp=[['c-pri','1王小明'],['c-rear','3陳大文'],['c-nb','4林美玲'],['c-ns','5張志豪'],['c-nm','8蔡宗翰'],['empty',''],['dis',''],['c-nm','7劉怡君',1]];
+  document.getElementById('seatSpecimens').innerHTML=sp.map(function(s,i){
+    if(s[0]==='dis')return '<div class="seat dis"><span class="co">7-4</span>'+I('ban')+'</div>';
+    if(s[0]==='empty')return '<div class="seat empty"><span class="co">2-3</span></div>';
+    return '<div class="seat '+s[0]+'"><span class="co">'+(i+1)+'-2</span><span class="dt"></span>'+(s[2]?'<span class="pin">'+I('pin')+'</span>':'')+'<span class="sn">'+s[1].replace(/^(\d+)/,'<small>$1</small>')+'</span></div>';
+  }).join('');
+
+  /* 色票（讀目前實際值） */
+  var TOK=[['--surface','卡片底'],['--bg','頁面底'],['--sunken','凹陷底'],['--line','分隔線'],['--text','主要文字'],['--text-2','次要文字'],['--text-3','輔助文字'],['--accent','主色'],['--accent-soft','主色淡底'],['--danger','危險'],['--pri-bar','靠前'],['--rear-bar','靠後'],['--nb-bar','不最後'],['--ns-bar','不靠邊'],['--nm-bar','其他人']];
+  function swatches(){
+    var cs=getComputedStyle(document.documentElement);
+    document.getElementById('swatches').innerHTML=TOK.map(function(t){var v=cs.getPropertyValue(t[0]).trim();return '<div class="swatch"><i style="background:var('+t[0]+')"></i><div><b>'+t[1]+'</b><code>'+t[0]+'　'+v+'</code></div></div>'}).join('');
+  }
+
+  /* ---------- 縮放 ---------- */
+  function fit(){
+    document.querySelectorAll('.fx').forEach(function(fx){
+      var w=+fx.getAttribute('data-w'),inn=fx.firstElementChild;if(!inn)return;
+      var s=Math.min(1,fx.clientWidth/w);
+      inn.style.width=w+'px';inn.style.transform='scale('+s+')';
+      fx.style.height=Math.ceil(inn.offsetHeight*s)+'px';
+    });
+  }
+  function init(){
+    if(window.lucide&&lucide.createIcons)lucide.createIcons();
+    syncLabel();fit();
+    if(window.ResizeObserver){var ro=new ResizeObserver(fit);document.querySelectorAll('.fx').forEach(function(f){ro.observe(f)})}
+    window.addEventListener('resize',fit);
+    if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fit);
+  }
+  init();
+  window.addEventListener('load',function(){if(window.lucide&&lucide.createIcons)lucide.createIcons();fit()});
+})();
+</script>
+
+</body></html>
