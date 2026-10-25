@@ -356,16 +356,21 @@ Authorization inquiries: derliang@gmail.com
         details.merge summary::-webkit-details-marker { display: none; }
         details.merge summary .chev { margin-left: auto; transition: transform .15s; }
         details.merge[open] summary .chev { transform: rotate(180deg); }
-        #mergeUIContainer { display: grid; grid-template-columns: repeat(auto-fill, minmax(136px, 1fr)); gap: 8px; padding: 0 14px 14px; }
-        .merge-hint { grid-column: 1 / -1; }
-        .merge-pair {
-            min-height: 44px; padding: 0 10px; border-radius: var(--r-md); border: 1px solid var(--line-2); background: var(--surface); color: var(--text-2);
-            font-size: 13px; font-weight: 700; white-space: nowrap; display: flex; align-items: center; justify-content: center; gap: 8px;
-            transition: background-color .15s, border-color .15s, color .15s;
+        #mergeUIContainer { display: flex; flex-direction: column; gap: 10px; padding: 0 14px 14px; }
+        .merge-row { display: flex; flex-wrap: nowrap; align-items: center; overflow-x: auto; padding: 2px 0 6px; }
+        .merge-label {
+            flex: 1 0 auto; min-width: 52px; text-align: center; font-size: 12px; font-weight: 700; color: var(--text-2);
+            background: var(--surface); padding: 8px 8px; border-radius: var(--r-sm); border: 1px solid var(--line-2); white-space: nowrap;
         }
-        .merge-pair:hover { border-color: var(--accent); color: var(--accent-ink); }
-        .merge-pair.is-on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
-        .merge-pair svg, .merge-pair i { width: 14px; height: 14px; flex: none; }
+        .merge-label.is-on { background: var(--accent-soft); border-color: var(--accent-line); color: var(--accent-ink); }
+        .merge-btn {
+            flex: 0 0 auto; width: 34px; height: 34px; margin: 0 -1px; border-radius: 50%; border: 1px dashed var(--line-2); background: var(--sunken); color: var(--text-3);
+            display: grid; place-items: center; z-index: 1; transition: background-color .15s, border-color .15s, color .15s;
+        }
+        .merge-btn:hover { border-color: var(--accent); color: var(--accent-ink); background: var(--surface); }
+        .merge-btn.is-on { background: var(--accent); border: 1px solid var(--accent); color: var(--on-accent); }
+        .merge-btn svg, .merge-btn i { width: 16px; height: 16px; }
+        @media (max-width: 639px) { .merge-btn { width: 44px; height: 44px; } }
         .legend { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
         .legend .hint { margin-left: auto; }
 
@@ -2572,30 +2577,42 @@ Authorization inquiries: derliang@gmail.com
             if(!cont) return;
             cont.innerHTML = '';
             const hint = document.createElement('p');
-            hint.className = 'hint merge-hint';
-            hint.textContent = gridConfig.cols > 1 ? '點選要併成雙人桌的相鄰兩排，再點一次取消。' : '只有一排，沒有可併排的相鄰排。';
-            cont.appendChild(hint);
-            for (let p = 1; p < gridConfig.cols; p++) {
-                const isMerged = !!mergeRight[p-1];
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = `merge-pair${isMerged ? ' is-on' : ''}`;
-                btn.setAttribute('aria-pressed', String(isMerged));
-                btn.setAttribute('aria-label', `第${p}排與第${p + 1}排${isMerged ? '已併排，點選取消' : '，點選併排'}`);
-                btn.innerHTML = `<span>第${p}排</span><i data-lucide="${isMerged ? 'link' : 'plus'}"></i><span>第${p + 1}排</span>`;
-                btn.onclick = () => {
-                    mergeRight[p-1] = !mergeRight[p-1];
-                    updateMergeUI();
-                    updateGridUI();
-                    updateUI();
-                    saveData();
-                };
-                cont.appendChild(btn);
+            hint.className = 'hint';
+            hint.textContent = gridConfig.cols > 1 ? '點排與排之間的按鈕即可併排；連續點可三排、四排併在一起，再點一次取消。' : '只有一排，沒有可併排的相鄰排。';
+            const row = document.createElement('div');
+            row.className = 'merge-row';
+            for (let p = 1; p <= gridConfig.cols; p++) {
+                const mergedWithPrev = p > 1 && !!mergeRight[p-2];
+                const mergedWithNext = p < gridConfig.cols && !!mergeRight[p-1];
+                const label = document.createElement('span');
+                label.className = `merge-label${mergedWithPrev || mergedWithNext ? ' is-on' : ''}`;
+                label.textContent = `第${p}排`;
+                row.appendChild(label);
+                if (p < gridConfig.cols) {
+                    const isMerged = !!mergeRight[p-1];
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = `merge-btn${isMerged ? ' is-on' : ''}`;
+                    btn.setAttribute('aria-pressed', String(isMerged));
+                    btn.setAttribute('aria-label', `第${p}排與第${p + 1}排${isMerged ? '已併排，點選取消' : '，點選併排'}`);
+                    btn.title = isMerged ? '取消併排' : '併排';
+                    btn.innerHTML = `<i data-lucide="${isMerged ? 'link' : 'plus'}"></i>`;
+                    btn.onclick = () => {
+                        mergeRight[p-1] = !mergeRight[p-1];
+                        updateMergeUI();
+                        updateGridUI();
+                        updateUI();
+                        saveData();
+                    };
+                    row.appendChild(btn);
+                }
             }
+            cont.append(hint, row);
             const mergeCount = document.getElementById('mergeSummaryCount');
             if (mergeCount) {
-                const pairs = mergeRight.filter(Boolean).length;
-                mergeCount.textContent = pairs ? `已併排 ${pairs} 組` : '';
+                // 連續的併排算同一組（例如三排併在一起算 1 組）
+                const groups = mergeRight.filter((on, i) => on && !mergeRight[i - 1]).length;
+                mergeCount.textContent = groups ? `已併排 ${groups} 組` : '';
             }
             applyCaptureDisplaySettings('preview');
             initIcons();
