@@ -351,16 +351,21 @@ Authorization inquiries: derliang@gmail.com
         .bar i { display: block; height: 100%; width: 0; background: var(--pri-bar); border-radius: 99px; transition: width .3s ease; }
         .cfg { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
         details.merge { border: 1px solid var(--line); border-radius: var(--r-md); background: var(--sunken); flex: 1 1 220px; min-width: 0; }
+        details.merge[open] { flex-basis: 100%; order: 3; }
         details.merge summary { min-height: 40px; padding: 0 14px; display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13px; cursor: pointer; color: var(--text-2); list-style: none; }
         details.merge summary::-webkit-details-marker { display: none; }
         details.merge summary .chev { margin-left: auto; transition: transform .15s; }
         details.merge[open] summary .chev { transform: rotate(180deg); }
-        #mergeUIContainer { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 0 14px 14px; }
-        .merge-label { font-size: 12px; font-weight: 700; color: var(--text-2); background: var(--surface); padding: 4px 10px; border-radius: var(--r-sm); border: 1px solid var(--line); }
-        .merge-btn { min-height: 30px; padding: 0 10px; font-size: 12px; font-weight: 700; border-radius: var(--r-sm); border: 1px solid var(--line-2); background: var(--surface); color: var(--text-3); display: inline-flex; align-items: center; gap: 4px; }
-        .merge-btn:hover { border-color: var(--accent); color: var(--accent-ink); }
-        .merge-btn.is-on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
-        .merge-btn svg, .merge-btn i { width: 12px; height: 12px; }
+        #mergeUIContainer { display: grid; grid-template-columns: repeat(auto-fill, minmax(136px, 1fr)); gap: 8px; padding: 0 14px 14px; }
+        .merge-hint { grid-column: 1 / -1; }
+        .merge-pair {
+            min-height: 44px; padding: 0 10px; border-radius: var(--r-md); border: 1px solid var(--line-2); background: var(--surface); color: var(--text-2);
+            font-size: 13px; font-weight: 700; white-space: nowrap; display: flex; align-items: center; justify-content: center; gap: 8px;
+            transition: background-color .15s, border-color .15s, color .15s;
+        }
+        .merge-pair:hover { border-color: var(--accent); color: var(--accent-ink); }
+        .merge-pair.is-on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+        .merge-pair svg, .merge-pair i { width: 14px; height: 14px; flex: none; }
         .legend { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
         .legend .hint { margin-left: auto; }
 
@@ -2566,29 +2571,26 @@ Authorization inquiries: derliang@gmail.com
             const cont = document.getElementById('mergeUIContainer');
             if(!cont) return;
             cont.innerHTML = '';
-            for (let p = 1; p <= gridConfig.cols; p++) {
-                const label = document.createElement('span');
-                label.className = "merge-label";
-                label.textContent = `第${p}排`;
-                cont.appendChild(label);
-                if (p < gridConfig.cols) {
-                    const isMerged = mergeRight[p-1];
-                    const btn = document.createElement('button');
-                    btn.type = 'button';
-                    btn.className = `merge-btn${isMerged ? ' is-on' : ''}`;
-                    btn.setAttribute('aria-pressed', String(!!isMerged));
-                    btn.innerHTML = isMerged
-                        ? `<i data-lucide="link"></i>併排`
-                        : `<i data-lucide="split"></i>合併`;
-                    btn.onclick = () => {
-                        mergeRight[p-1] = !mergeRight[p-1];
-                        updateMergeUI();
-                        updateGridUI();
-                        updateUI();
-                        saveData();
-                    };
-                    cont.appendChild(btn);
-                }
+            const hint = document.createElement('p');
+            hint.className = 'hint merge-hint';
+            hint.textContent = gridConfig.cols > 1 ? '點選要併成雙人桌的相鄰兩排，再點一次取消。' : '只有一排，沒有可併排的相鄰排。';
+            cont.appendChild(hint);
+            for (let p = 1; p < gridConfig.cols; p++) {
+                const isMerged = !!mergeRight[p-1];
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = `merge-pair${isMerged ? ' is-on' : ''}`;
+                btn.setAttribute('aria-pressed', String(isMerged));
+                btn.setAttribute('aria-label', `第${p}排與第${p + 1}排${isMerged ? '已併排，點選取消' : '，點選併排'}`);
+                btn.innerHTML = `<span>第${p}排</span><i data-lucide="${isMerged ? 'link' : 'plus'}"></i><span>第${p + 1}排</span>`;
+                btn.onclick = () => {
+                    mergeRight[p-1] = !mergeRight[p-1];
+                    updateMergeUI();
+                    updateGridUI();
+                    updateUI();
+                    saveData();
+                };
+                cont.appendChild(btn);
             }
             const mergeCount = document.getElementById('mergeSummaryCount');
             if (mergeCount) {
