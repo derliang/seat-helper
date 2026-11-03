@@ -1171,7 +1171,7 @@ Authorization inquiries: derliang@gmail.com
                             <button type="button" onclick="exportJsonBackup()" class="btn btn-primary"><i data-lucide="download"></i>匯出備份</button>
                             <button type="button" onclick="document.getElementById('jsonBackupInput').click()" class="btn"><i data-lucide="upload"></i>匯入備份</button>
                         </div>
-                        <input id="jsonBackupInput" type="file" accept=".json,application/json" class="hidden" onchange="importJsonBackup(this)">
+                        <input id="jsonBackupInput" type="file" class="hidden" onchange="importJsonBackup(this)">
                         <p id="jsonBackupStatus" class="status-text is-muted"></p>
                         <div class="inset-box">
                             <b style="display:flex;align-items:center;gap:8px"><i data-lucide="cloud"></i>雲端硬碟</b>
@@ -1218,7 +1218,7 @@ Authorization inquiries: derliang@gmail.com
     </div>
 
     <script>
-        const APP_VERSION = "v3.3.1";
+        const APP_VERSION = "v3.3.2";
         /* 版號只寫在 APP_VERSION；<title> 與頁首徽章由程式產生，不要在 HTML 靜態文字寫版號 */
         document.title = `座位小幫手 ${APP_VERSION}`;
 
@@ -1966,6 +1966,8 @@ Authorization inquiries: derliang@gmail.com
             const status = document.getElementById('jsonBackupStatus');
             status.textContent = message;
             status.className = `status-text ${isError ? 'is-error' : 'is-ok'}`;
+            status.scrollIntoView({ block: 'nearest' });
+            showToast(message, isError);
         }
 
         function buildJsonBackupBlob() {
@@ -2020,6 +2022,7 @@ Authorization inquiries: derliang@gmail.com
         async function importJsonBackup(input) {
             const file = input.files[0];
             if (!file) return;
+            setJsonBackupStatus(`已選擇「${file.name}」，讀取中…`);
             if (isDrawing) {
                 setJsonBackupStatus('抽籤進行中，請等抽籤完成後再匯入備份。', true);
                 input.value = '';
