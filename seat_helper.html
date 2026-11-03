@@ -843,7 +843,7 @@ Authorization inquiries: derliang@gmail.com
                     <div id="exportActions" class="card exports">
                         <h3>匯出與分享</h3>
                         <div class="ex-grid">
-                            <button onclick="copyImageToClipboard()" class="btn btn-primary"><i data-lucide="copy-check"></i>複製圖片</button>
+                            <button onclick="shareImage()" class="btn btn-primary"><i data-lucide="share-2"></i>分享圖片</button>
                             <button onclick="exportToImage()" class="btn"><i data-lucide="file-image"></i>下載 PNG</button>
                             <button onclick="exportToPDF()" class="btn"><i data-lucide="file-down"></i>匯出 PDF</button>
                             <button onclick="exportToExcel()" class="btn"><i data-lucide="table"></i>匯出 Excel</button>
@@ -1014,7 +1014,7 @@ Authorization inquiries: derliang@gmail.com
                                     <div class="col-h"><label>匯出<input id="selectAllExport" type="checkbox" onchange="toggleAllDisplaySettings('export', this.checked)" class="check"></label></div>
                                     <div id="displaySettingRows" style="display:contents"></div>
                                 </div>
-                                <p class="hint" style="margin-top:16px">學生姓名固定顯示；座標固定顯示於頁面、複製圖片、PNG 與 PDF，Word、Excel 固定不顯示座標。</p>
+                                <p class="hint" style="margin-top:16px">學生姓名固定顯示；座標固定顯示於頁面、分享圖片、PNG 與 PDF，Word、Excel 固定不顯示座標。</p>
                             </div>
                             <div class="disp-preview">
                                 <div class="row" style="justify-content:space-between;margin-bottom:12px">
@@ -1218,7 +1218,7 @@ Authorization inquiries: derliang@gmail.com
     </div>
 
     <script>
-        const APP_VERSION = "v3.3.3";
+        const APP_VERSION = "v3.3.4";
         /* 版號只寫在 APP_VERSION；<title> 與頁首徽章由程式產生，不要在 HTML 靜態文字寫版號 */
         document.title = `座位小幫手 ${APP_VERSION}`;
 
@@ -3833,6 +3833,34 @@ Authorization inquiries: derliang@gmail.com
 
         async function exportToImage() {
             downloadBlob(await buildPngBlob(), getExportFileName('png'));
+        }
+
+        // 分享圖片：開啟系統分享選單（iPad／手機）；不支援檔案分享的裝置（多為電腦）退回複製到剪貼簿。
+        // 分享選單必須在點擊後的短時間內開啟，圖片若來不及產生就先備好，提示再按一次。
+        let sharePreparedImage = null;
+        async function shareImage() {
+            const makeFile = blob => new File([blob], getExportFileName('png'), { type: 'image/png' });
+            const canShare = file => { try { return !!navigator.share && !!navigator.canShare && navigator.canShare({ files: [file] }); } catch (e) { return false; } };
+            try {
+                let file = sharePreparedImage && Date.now() - sharePreparedImage.at < 60000 ? sharePreparedImage.file : null;
+                sharePreparedImage = null;
+                if (!file) file = makeFile(await buildPngBlob());
+                if (!canShare(file)) return copyImageToClipboard();
+                try {
+                    await navigator.share({ files: [file], title: classroomName || '座位表' });
+                } catch (err) {
+                    if (err.name === 'AbortError') return;
+                    if (err.name === 'NotAllowedError') {
+                        sharePreparedImage = { file, at: Date.now() };
+                        showToast('圖片已準備好，請再按一次「分享圖片」');
+                        return;
+                    }
+                    throw err;
+                }
+            } catch (err) {
+                console.error('Share image failed:', err);
+                showToast('分享圖片失敗', true);
+            }
         }
 
         async function copyImageToClipboard() {
