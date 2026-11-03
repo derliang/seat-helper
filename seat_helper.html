@@ -95,7 +95,7 @@ Authorization inquiries: derliang@gmail.com
         .hidden { display: none !important; }
         .grow { flex: 1 1 0; min-width: 0; }
         .min-w-0 { min-width: 0; }
-        html.export-capturing * { transition: none !important; }
+        html.export-capturing * { transition: none !important; animation: none !important; }
 
         /* ---------- 按鈕 ---------- */
         .btn {
@@ -1218,7 +1218,7 @@ Authorization inquiries: derliang@gmail.com
     </div>
 
     <script>
-        const APP_VERSION = "v3.3.0";
+        const APP_VERSION = "v3.3.1";
         /* 版號只寫在 APP_VERSION；<title> 與頁首徽章由程式產生，不要在 HTML 靜態文字寫版號 */
         document.title = `座位小幫手 ${APP_VERSION}`;
 
@@ -4437,7 +4437,7 @@ Authorization inquiries: derliang@gmail.com
             setShareModalStatus('');
             const intro = document.createElement('p');
             intro.className = 'hint';
-            intro.textContent = '選擇要存到雲端的格式（套用匯出顯示設定）。手機或平板會開啟分享選單，請選擇「雲端硬碟」；不支援分享的裝置會改為下載。';
+            intro.textContent = '選擇要存到雲端的格式（套用匯出顯示設定）。手機或平板會開啟分享選單，請選擇「雲端硬碟」；不支援分享的裝置會改為下載。iPad 的 Chrome 會把分享選單顯示在畫面左上角（瀏覽器行為，網頁無法調整）；改用 Safari 開啟，選單會出現在按鈕旁。';
             const options = document.createElement('div');
             options.className = 'share-opts';
             CLOUD_EXPORT_FORMATS.forEach(format => {
