@@ -1179,7 +1179,7 @@ Authorization inquiries: derliang@gmail.com
                                 <button type="button" onclick="shareJsonBackup()" class="btn"><i data-lucide="cloud-upload"></i>備份到雲端</button>
                                 <button type="button" onclick="document.getElementById('jsonBackupInput').click()" class="btn"><i data-lucide="cloud-download"></i>從雲端還原</button>
                             </div>
-                            <p class="hint">不需要登入 Google，也不使用任何 Google API。備份：下載備份檔，在儲存視窗選擇雲端硬碟資料夾（或之後從「檔案」app 移到雲端硬碟）。還原：在選檔畫面中選擇雲端硬碟裡的備份檔。</p>
+                            <p class="hint">不需要登入 Google，也不使用任何 Google API。備份：電腦會開存檔視窗；iPad、手機會開分享選單，請選「儲存到檔案」或雲端硬碟 app。還原：在選檔畫面中選擇雲端硬碟裡的備份檔。</p>
                         </div>
                     </section>
 
@@ -1218,7 +1218,7 @@ Authorization inquiries: derliang@gmail.com
     </div>
 
     <script>
-        const APP_VERSION = "v3.3.4";
+        const APP_VERSION = "v3.3.5";
         /* 版號只寫在 APP_VERSION；<title> 與頁首徽章由程式產生，不要在 HTML 靜態文字寫版號 */
         document.title = `座位小幫手 ${APP_VERSION}`;
 
@@ -1993,9 +1993,9 @@ Authorization inquiries: derliang@gmail.com
             setTimeout(() => URL.revokeObjectURL(url), 0);
         }
 
-        function exportJsonBackup() {
-            downloadBlob(buildJsonBackupBlob(), getExportFileName('json'));
-            setJsonBackupStatus('備份檔已匯出。');
+        async function exportJsonBackup() {
+            const file = new File([buildJsonBackupBlob()], getExportFileName('json'), { type: 'application/json' });
+            setJsonBackupStatus(SHARE_RESULT_MESSAGES[await shareOrDownloadFiles([file])]);
         }
 
         function validateJsonBackup(backup) {
@@ -3835,24 +3835,39 @@ Authorization inquiries: derliang@gmail.com
             downloadBlob(await buildPngBlob(), getExportFileName('png'));
         }
 
-        // 分享圖片：開啟系統分享選單（iPad／手機）；不支援檔案分享的裝置（多為電腦）退回複製到剪貼簿。
-        // 分享選單必須在點擊後的短時間內開啟，圖片若來不及產生就先備好，提示再按一次。
+        // 分享圖片：先複製到剪貼簿，再開系統分享選單（分享選單被遮住時，仍可直接貼上圖片給別人）。
+        // 不支援檔案分享的裝置（多為電腦）只複製。分享選單需在點擊後短時間內開啟，來不及時先備好、提示再按一次。
         let sharePreparedImage = null;
         async function shareImage() {
-            const makeFile = blob => new File([blob], getExportFileName('png'), { type: 'image/png' });
             const canShare = file => { try { return !!navigator.share && !!navigator.canShare && navigator.canShare({ files: [file] }); } catch (e) { return false; } };
             try {
                 let file = sharePreparedImage && Date.now() - sharePreparedImage.at < 60000 ? sharePreparedImage.file : null;
                 sharePreparedImage = null;
-                if (!file) file = makeFile(await buildPngBlob());
-                if (!canShare(file)) return copyImageToClipboard();
+                if (!file) {
+                    const blobPromise = buildPngBlob();
+                    let copied = false;
+                    if (navigator.clipboard?.write && typeof ClipboardItem !== 'undefined') {
+                        try {
+                            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blobPromise })]);
+                            copied = true;
+                        } catch (err) {
+                            console.warn('Clipboard copy before share failed:', err);
+                        }
+                    }
+                    file = new File([await blobPromise], getExportFileName('png'), { type: 'image/png' });
+                    if (!canShare(file)) {
+                        if (copied) showToast('已成功複製圖片至剪貼簿！');
+                        else await copyImageToClipboard();
+                        return;
+                    }
+                }
                 try {
                     await navigator.share({ files: [file], title: classroomName || '座位表' });
                 } catch (err) {
                     if (err.name === 'AbortError') return;
                     if (err.name === 'NotAllowedError') {
                         sharePreparedImage = { file, at: Date.now() };
-                        showToast('圖片已準備好，請再按一次「分享圖片」');
+                        showToast('圖片已複製並準備好，請再按一次「分享圖片」開啟分享選單');
                         return;
                     }
                     throw err;
@@ -4408,13 +4423,55 @@ Authorization inquiries: derliang@gmail.com
         ];
         let shareBusy = false;
 
-        function shareOrDownloadFiles(files) {
+        // 存檔：優先讓使用者直接選目的地（電腦版 Chrome／Edge 的存檔視窗），
+        // 不支援時（iPad、手機）開系統分享選單，在選單中選「儲存到檔案」或雲端硬碟 app；都不行才下載。
+        async function shareOrDownloadFiles(files) {
+            const isAbort = error => error && error.name === 'AbortError';
+            try {
+                if (files.length === 1 && window.showSaveFilePicker) {
+                    const file = files[0];
+                    const ext = file.name.includes('.') ? file.name.slice(file.name.lastIndexOf('.')) : '';
+                    const handle = await window.showSaveFilePicker({
+                        suggestedName: file.name,
+                        types: ext ? [{ description: file.name, accept: { [file.type || 'application/octet-stream']: [ext] } }] : undefined
+                    });
+                    const writable = await handle.createWritable();
+                    await writable.write(file);
+                    await writable.close();
+                    return 'saved';
+                }
+                if (files.length > 1 && window.showDirectoryPicker) {
+                    const dir = await window.showDirectoryPicker({ mode: 'readwrite' });
+                    for (const file of files) {
+                        const handle = await dir.getFileHandle(file.name, { create: true });
+                        const writable = await handle.createWritable();
+                        await writable.write(file);
+                        await writable.close();
+                    }
+                    return 'saved';
+                }
+            } catch (error) {
+                if (isAbort(error)) return 'cancelled';
+                console.warn('Save picker failed, trying share sheet:', error);
+            }
+            try {
+                if (navigator.share && navigator.canShare && navigator.canShare({ files })) {
+                    await navigator.share({ files, title: classroomName || '座位表' });
+                    return 'shared';
+                }
+            } catch (error) {
+                if (isAbort(error)) return 'cancelled';
+                console.warn('Share failed, falling back to download:', error);
+            }
             files.forEach(file => downloadBlob(file, file.name));
             return 'downloaded';
         }
 
         const SHARE_RESULT_MESSAGES = {
-            downloaded: '已下載。若出現儲存視窗，請選擇「雲端硬碟」資料夾；否則可到「檔案」app 的下載項目，把檔案移到雲端硬碟。'
+            saved: '已儲存到你選擇的位置。',
+            shared: '已開啟分享選單；請選「儲存到檔案」或雲端硬碟 app，選擇存放位置。',
+            cancelled: '已取消，檔案未儲存。',
+            downloaded: '此裝置無法選擇存放位置，已改為下載；可到下載項目把檔案移到雲端硬碟。'
         };
 
         function setShareModalStatus(message, tone = 'info') {
@@ -4447,7 +4504,7 @@ Authorization inquiries: derliang@gmail.com
             setShareModalStatus('');
             const intro = document.createElement('p');
             intro.className = 'hint';
-            intro.textContent = '選擇要存到雲端的格式（套用匯出顯示設定）。按下後會下載檔案；在儲存視窗選擇「雲端硬碟」資料夾，或之後從「檔案」app 移到雲端硬碟。';
+            intro.textContent = '選擇要存到雲端的格式（套用匯出顯示設定）。按下後可選擇存放位置：電腦會開存檔視窗；iPad、手機會開分享選單，請選「儲存到檔案」或雲端硬碟 app。';
             const options = document.createElement('div');
             options.className = 'share-opts';
             CLOUD_EXPORT_FORMATS.forEach(format => {
@@ -4501,9 +4558,10 @@ Authorization inquiries: derliang@gmail.com
                     prepareButton.disabled = false;
                 }
             };
-            shareButton.onclick = () => {
+            shareButton.onclick = async () => {
                 if (!preparedFiles.length) return;
-                setShareModalStatus(SHARE_RESULT_MESSAGES[shareOrDownloadFiles(preparedFiles)], 'success');
+                const result = await shareOrDownloadFiles(preparedFiles);
+                setShareModalStatus(SHARE_RESULT_MESSAGES[result], result === 'cancelled' ? 'info' : 'success');
             };
             body.append(intro, options, prepareButton, shareButton);
             document.getElementById('modalOverlay').classList.remove('hidden');
@@ -4511,10 +4569,8 @@ Authorization inquiries: derliang@gmail.com
             initIcons();
         }
 
-        async function shareJsonBackup() {
-            const file = new File([buildJsonBackupBlob()], getExportFileName('json'), { type: 'application/json' });
-            const result = shareOrDownloadFiles([file]);
-            setJsonBackupStatus(SHARE_RESULT_MESSAGES[result]);
+        function shareJsonBackup() {
+            return exportJsonBackup();
         }
 
         if(!loadData()) {
