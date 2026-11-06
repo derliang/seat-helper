@@ -43,6 +43,7 @@ Authorization inquiries: derliang@gmail.com
             --nb-bar: #8B5CF6; --nb-soft: #F5F3FF; --nb-line: #DDD6FE; --nb-ink: #5B21B6; --nb-fill: #6D28D9;
             --ns-bar: #F59E0B; --ns-soft: #FFFBEB; --ns-line: #FDE68A; --ns-ink: #92400E; --ns-fill: #B45309;
             --nm-bar: #6366F1; --nm-soft: #F5F6FF; --nm-line: #D5D9FB; --nm-ink: #3730A3;
+            --att-fill: #22201B; --att-on: #FFFDF8; --att-soft: #FFFDF8; --att-ink: #22201B; --att-line: #22201B;
             --screen: #22201B; --on-screen: #FFFFFF;
             --shadow-1: 0 1px 2px rgba(34,32,27,.07), 0 1px 1px rgba(34,32,27,.04);
             --shadow-2: 0 6px 18px rgba(34,32,27,.09);
@@ -68,6 +69,7 @@ Authorization inquiries: derliang@gmail.com
             --nb-bar: #A78BFA; --nb-soft: #25184A; --nb-line: #5B3FB0; --nb-ink: #E3D8FF; --nb-fill: #6D28D9;
             --ns-bar: #FBBF24; --ns-soft: #33240A; --ns-line: #8A5A12; --ns-ink: #FDE68A; --ns-fill: #B45309;
             --nm-bar: #818CF8; --nm-soft: #1B2142; --nm-line: #3A4382; --nm-ink: #D6DAFF;
+            --att-fill: #F1EDE2; --att-on: #13120E; --att-soft: #1C1A15; --att-ink: #F1EDE2; --att-line: #F1EDE2;
             --screen: #2B2820; --on-screen: #F1EDE2;
             --shadow-1: 0 1px 2px rgba(0,0,0,.4);
             --shadow-2: 0 6px 18px rgba(0,0,0,.4);
@@ -290,6 +292,21 @@ Authorization inquiries: derliang@gmail.com
         .tag-toggle.noBack.active { background: var(--nb-fill); }
         .tag-toggle.noSide.active { background: var(--ns-fill); }
         .tag-toggle:disabled, .tag-toggle.is-disabled { opacity: .45; cursor: not-allowed; pointer-events: none; }
+        /* 需求表「第8·9節」模式：亮起來＝不上；沒上第八節時第九節五天自動鎖定 */
+        .student-table.m-att tr { grid-template-columns: 30px minmax(0, 1fr) 222px; }
+        .student-table.m-att .t-stamp { display: none; }
+        .att-ctl { display: flex; gap: 8px; align-items: center; }
+        .att-ctl .cap-s { display: none; }
+        .att-ctl .th-8 { width: 62px; flex: none; text-align: center; }
+        .mk8 { width: 62px; height: 34px; flex: none; border-radius: 8px; border: 1px solid var(--line-2); background: var(--sunken); color: var(--text-2); font-weight: 800; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
+        .mk8[aria-pressed="true"] { background: var(--att-fill); border-color: var(--att-fill); color: var(--att-on); }
+        .mk8 svg, .mk8 i { width: 14px; height: 14px; }
+        .mk8:disabled, .mk8.is-disabled { opacity: .45; cursor: not-allowed; }
+        .days9 { display: inline-flex; gap: 4px; }
+        .student-table.m-att .dchip { width: 28px; }
+        .needs-mode { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .seg .cnt { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--att-fill); color: var(--att-on); font-size: 11px; display: inline-grid; place-items: center; font-variant-numeric: tabular-nums; margin-left: 6px; }
+        .seg .cnt:empty { display: none; }
 
         /* ---------- 抽籤階段 ---------- */
         .phases { display: flex; flex-direction: column; gap: 8px; }
@@ -328,9 +345,17 @@ Authorization inquiries: derliang@gmail.com
         .phase.finished .ph-btn .lbl-go { display: none; }
         .phase.finished .ph-btn .lbl-done { display: inline-flex; align-items: center; gap: 6px; }
         .names { grid-column: 2 / 4; display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
-        .nm { font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 6px; background: var(--sunken); border: 1px solid var(--line); color: var(--text-3); }
-        .nm.set { background: var(--text); color: var(--surface); border-color: var(--text); }
-        .nm.none { background: transparent; border-style: dashed; }
+        /* 抽籤名單標籤：與座位卡角標、需求表按鈕同一套語意色（--c-*） */
+        .ph-pri { --c-bar: var(--pri-bar); --c-soft: var(--pri-soft); --c-line: var(--pri-line); --c-ink: var(--pri-ink); --c-fill: var(--pri-fill); }
+        .ph-rear { --c-bar: var(--rear-bar); --c-soft: var(--rear-soft); --c-line: var(--rear-line); --c-ink: var(--rear-ink); --c-fill: var(--rear-fill); }
+        .ph-nb { --c-bar: var(--nb-bar); --c-soft: var(--nb-soft); --c-line: var(--nb-line); --c-ink: var(--nb-ink); --c-fill: var(--nb-fill); }
+        .ph-ns { --c-bar: var(--ns-bar); --c-soft: var(--ns-soft); --c-line: var(--ns-line); --c-ink: var(--ns-ink); --c-fill: var(--ns-fill); }
+        .nm { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; padding: 2px 10px 2px 8px; border-radius: 999px; background: var(--c-soft); border: 1px solid var(--c-line); color: var(--c-ink); }
+        .nm::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--c-bar); flex: none; }
+        .nm.set { background: var(--c-fill); border-color: var(--c-fill); color: #FFFFFF; }
+        .nm.set::before { background: #FFFFFF; }
+        .nm.none { background: transparent; border: 1px dashed var(--line-2); color: var(--text-3); padding: 2px 10px; }
+        .nm.none::before { display: none; }
         .base { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12px; color: var(--text-3); }
         .base:empty { display: none; }
         .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -350,12 +375,34 @@ Authorization inquiries: derliang@gmail.com
         .bar { height: 6px; border-radius: 99px; background: var(--line); overflow: hidden; }
         .bar i { display: block; height: 100%; width: 0; background: var(--pri-bar); border-radius: 99px; transition: width .3s ease; }
         .cfg { display: flex; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
-        details.merge { border: 1px solid var(--line); border-radius: var(--r-md); background: var(--sunken); flex: 1 1 220px; min-width: 0; }
-        details.merge[open] { flex-basis: 100%; order: 3; }
-        details.merge summary { min-height: 40px; padding: 0 14px; display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13px; cursor: pointer; color: var(--text-2); list-style: none; }
-        details.merge summary::-webkit-details-marker { display: none; }
-        details.merge summary .chev { margin-left: auto; transition: transform .15s; }
-        details.merge[open] summary .chev { transform: rotate(180deg); }
+        /* 併桌設定：整列是按鈕，右側有字的「展開設定／收合」，副標直接寫出已併哪幾排 */
+        details.merge { flex: 1 1 100%; order: 3; min-width: 0; border: 1px solid var(--line-2); border-radius: var(--r-md); background: var(--surface); box-shadow: var(--shadow-1); }
+        details.merge[open] { border-color: var(--accent-line); }
+        details.merge > summary { list-style: none; display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 10px 12px; cursor: pointer; border-radius: var(--r-md); }
+        details.merge > summary::-webkit-details-marker { display: none; }
+        details.merge[open] > summary { background: var(--accent-soft); border-bottom: 1px solid var(--line); border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+        .mg-ic { width: 40px; height: 40px; border-radius: 10px; flex: none; background: var(--accent-soft); color: var(--accent-ink); display: grid; place-items: center; }
+        details.merge[open] .mg-ic { background: var(--surface); }
+        .mg-tx { display: flex; flex-direction: column; min-width: 0; }
+        .mg-t { font-weight: 800; font-size: 14px; }
+        .mg-s { font-size: 12px; color: var(--text-3); }
+        .mg-s b { color: var(--accent-ink); }
+        .mg-mini { display: flex; align-items: center; margin-left: 8px; }
+        .mb { width: 11px; height: 20px; border-radius: 3px; background: var(--line-2); margin-right: 3px; }
+        .mb.j { background: var(--accent); margin-right: 0; }
+        .mb.j.l { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+        .mb.j.r { border-top-left-radius: 0; border-bottom-left-radius: 0; margin-right: 3px; }
+        .mb.j.m { border-radius: 0; }
+        .mg-act { margin-left: auto; flex: none; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 8px 0 16px; border-radius: 999px; border: 1.5px solid var(--accent); background: var(--surface); color: var(--accent-ink); font-weight: 800; font-size: 13px; transition: background-color .15s, color .15s; }
+        .mg-act .cc { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; }
+        .mg-act .cc svg, .mg-act .cc i { width: 16px; height: 16px; transition: transform .15s; }
+        details.merge[open] .mg-act .cc svg, details.merge[open] .mg-act .cc i { transform: rotate(180deg); }
+        details.merge > summary:hover .mg-act { background: var(--accent); color: var(--on-accent); }
+        details.merge > summary:hover .mg-act .cc { background: var(--on-accent); color: var(--accent); }
+        .lbl-c { display: none; }
+        details.merge[open] .lbl-o { display: none; }
+        details.merge[open] .lbl-c { display: inline; }
+        @media (max-width: 520px) { .mg-mini { display: none; } }
         #mergeUIContainer { display: flex; flex-direction: column; gap: 10px; padding: 0 14px 14px; }
         .merge-row { display: flex; flex-wrap: nowrap; align-items: center; overflow-x: auto; padding: 2px 0 6px; }
         .merge-label {
@@ -373,6 +420,44 @@ Authorization inquiries: derliang@gmail.com
         @media (max-width: 639px) { .merge-btn { width: 44px; height: 44px; } }
         .legend { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
         .legend .hint { margin-left: auto; }
+        .legend .btn { margin-left: 8px; }
+        .btn[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-ink); }
+
+        /* 第八、九節「章」：方角黑白，與圓角彩色的需求膠囊分開；不佔用五個需求色，黑白列印也分得出來 */
+        .att {
+            display: inline-flex; align-items: center; gap: 2px; padding: 0 clamp(4px, 6cqw, 7px); height: clamp(13px, 15cqw, 17px);
+            border-radius: 4px; border: 1.5px solid var(--att-line); background: var(--att-soft); color: var(--att-ink);
+            font-size: clamp(8px, 10.5cqw, 11px); font-weight: 800; line-height: 1; white-space: nowrap; font-variant-numeric: tabular-nums;
+        }
+        .att-both { background: var(--att-fill); color: var(--att-on); }
+        .att-part { border-style: dashed; }
+        .legend .att, .att-legend .att, .brush .att, .t-stamp .att { height: 18px; font-size: 11px; padding: 0 7px; }
+        .att-sum { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: 12px; color: var(--text-3); }
+        .att-sum .grp { display: inline-flex; align-items: center; gap: 6px; }
+        .att-sum:empty { display: none; }
+        .att-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--line-2); font-size: 12px; font-weight: 700; color: var(--text-2); }
+        .att-legend:empty { display: none; }
+        .att-legend > span { display: inline-flex; align-items: center; gap: 6px; }
+
+        /* 標示筆刷列（1a） */
+        .brushbar { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; border: 1px solid var(--accent-line); background: var(--accent-soft); border-radius: var(--r-md); }
+        .bb-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+        .bb-title { font-weight: 800; font-size: 13px; color: var(--accent-ink); display: inline-flex; align-items: center; gap: 6px; margin-right: 4px; }
+        .brush { min-height: 44px; padding: 0 12px; border-radius: var(--r-md); border: 1.5px solid var(--line-2); background: var(--surface); display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13px; color: var(--text); }
+        .brush:hover { border-color: var(--text-3); }
+        .brush[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-line); }
+        .brush svg, .brush i { width: 16px; height: 16px; }
+        .brush-days { display: inline-flex; align-items: center; gap: 4px; padding-right: 6px; border-radius: var(--r-md); border: 1.5px solid var(--line-2); background: var(--surface); }
+        .brush-days.is-on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-line); }
+        .brush-days > .brush { border: 0; box-shadow: none; background: transparent; }
+        .dchip { width: 32px; height: 34px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--sunken); color: var(--text-2); font-weight: 800; font-size: 13px; display: grid; place-items: center; }
+        .dchip[aria-pressed="true"] { background: var(--att-fill); border-color: var(--att-fill); color: var(--att-on); }
+        .dchip:disabled { cursor: not-allowed; }
+        .dchip.locked { opacity: .5; }
+        .bb-hint { font-size: 12px; color: var(--text-2); }
+        .bb-hint b { color: var(--accent-ink); }
+        #seatMapScrollWrapper.marking #captureArea { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-line); }
+        #seatMapScrollWrapper.marking .seat-card.occupied:hover { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-line); }
 
         #seatMapScrollWrapper { max-width: 100%; overflow-x: hidden; }
         #captureArea {
@@ -441,6 +526,26 @@ Authorization inquiries: derliang@gmail.com
         .status-noSide .seat-indicator { background: var(--ns-bar); }
         .status-normal { background: var(--nm-soft); border-color: var(--nm-line); color: var(--nm-ink); }
         .status-normal .seat-indicator { background: var(--nm-bar); }
+        /* 特殊需求角標（2a）：左上實色膠囊（字同需求表按鈕）＋整圈需求色外框，取代過去只有 8px 色點 */
+        .status-priority { --c-bar: var(--pri-bar); --c-fill: var(--pri-fill); }
+        .status-rear { --c-bar: var(--rear-bar); --c-fill: var(--rear-fill); }
+        .status-noBack { --c-bar: var(--nb-bar); --c-fill: var(--nb-fill); }
+        .status-noSide { --c-bar: var(--ns-bar); --c-fill: var(--ns-fill); }
+        .need-pill {
+            display: none; position: absolute; top: clamp(3px, 1cqw, 6px); left: clamp(3px, 1cqw, 6px); z-index: 11;
+            padding: 1px clamp(4px, 6cqw, 7px); border-radius: 999px; background: var(--c-fill); color: #FFFFFF;
+            font-size: clamp(8px, 10.5cqw, 11px); font-weight: 800; line-height: 1.35; white-space: nowrap;
+        }
+        .seat-card.has-needs { border-width: 2px; border-color: var(--c-bar); }
+        .has-needs .need-pill { display: inline-block; }
+        .has-needs .seat-indicator { display: none; }
+        .seat-card .att { position: absolute; bottom: clamp(3px, 1.2cqw, 5px); left: 50%; transform: translateX(-50%); z-index: 12; }
+        .seat-card .att .days { font-weight: 700; }
+        /* 窄卡片（≤62px，由 updateAttCompact 加 class；不用 @container，html2canvas 不一定支援）只留「無9」，星期到統計列與匯出文字看 */
+        .seat-card.att-compact .att .days { display: none; }
+        /* 有人標示時卡片略加高，章才不會壓到姓名 */
+        #captureArea.has-att-seats { --seat-card-min-height: clamp(58px, 11.5cqw, 100px); }
+        .seat-card.has-att .seat-name { padding-top: clamp(2px, 5cqw, 6px); padding-bottom: clamp(12px, 16cqw, 18px); }
         /* 併排（雙人桌）：相鄰座位連成一張 */
         .seat-card.mg-l { border-top-right-radius: 0; border-bottom-right-radius: 0; border-right-style: dashed; }
         .seat-card.mg-r { border-top-left-radius: 0; border-bottom-left-radius: 0; border-left-width: 0; }
@@ -461,7 +566,11 @@ Authorization inquiries: derliang@gmail.com
         .seat-map-display-surface.hide-front-label #screenContainer,
         .seat-map-display-surface.hide-row-labels #labelWrapper { display: none !important; }
         /* 五階段分類色點是抽籤結果的必要辨識資訊，不隨需求底色設定隱藏。 */
-        .seat-map-display-surface.hide-needs .seat-card.has-needs { background: var(--nm-soft) !important; border-color: var(--nm-line) !important; color: var(--nm-ink) !important; }
+        .seat-map-display-surface.hide-needs .seat-card.has-needs { background: var(--nm-soft) !important; border-color: var(--nm-line) !important; border-width: 1px !important; color: var(--nm-ink) !important; }
+        .seat-map-display-surface.hide-needs .seat-card.has-needs .need-pill { display: none !important; }
+        .seat-map-display-surface.hide-needs .seat-card.has-needs .seat-indicator { display: block !important; }
+        .seat-map-display-surface.hide-attendance .seat-card .att, .seat-map-display-surface.hide-attendance .att-legend { display: none !important; }
+        .seat-map-display-surface.hide-attendance .seat-card.has-att .seat-name { padding-top: clamp(10px, 16cqw, 16px); padding-bottom: 0; }
         .seat-map-display-surface.hide-disabled-seats .seat-card.seat-disabled { background: transparent !important; border: 1px dashed var(--line-2) !important; }
         .seat-map-display-surface.hide-disabled-seats .seat-card.seat-disabled > :not(.coord-badge) { display: none !important; }
         .seat-map-display-surface.hide-empty-seats .seat-card.seat-empty,
@@ -697,6 +806,26 @@ Authorization inquiries: derliang@gmail.com
             .student-table tbody tr { grid-template-columns: 36px minmax(0, 1fr) auto; grid-template-rows: auto auto; gap: 6px 8px; padding: 10px 12px; min-height: 0; }
             .student-table tbody td:last-child { grid-column: 1 / -1; }
             .tag-toggle { min-height: 44px; font-size: 13px; }
+            .student-table.m-att tbody tr { grid-template-columns: 36px minmax(0, 1fr) auto; }
+            .student-table.m-att .t-stamp { display: block; }
+            .att-ctl { align-items: flex-end; }
+            .att-ctl .cap-s { display: block; font-size: 11px; font-weight: 700; color: var(--text-3); margin-bottom: 3px; }
+            .att-ctl .col9 { flex: 1; min-width: 0; }
+            .mk8 { width: 64px; height: 44px; }
+            .days9, .student-table.m-att .days9 { display: flex; gap: 2px; }
+            .dchip, .student-table.m-att .dchip { flex: 1; min-width: 0; width: auto; height: 44px; }
+            .brush-days .dchip { flex: none; width: 40px; }
+            .brushbar { position: fixed; left: 8px; right: 8px; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); z-index: 70; background: var(--surface); box-shadow: var(--shadow-3); padding: 10px 12px; gap: 8px; }
+            #seatMapScrollWrapper.marking { margin-bottom: 200px; }
+            .brushbar .bb-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+            .brushbar .bb-title { order: -2; }
+            .brushbar .bb-row > .btn-primary { order: -1; grid-column: 2; justify-self: end; margin-left: 0 !important; }
+            .brushbar .bb-row > .brush:nth-last-child(2) { grid-column: 1 / -1; }
+            .brushbar .brush-days { grid-column: 1 / -1; flex-wrap: wrap; padding: 4px 6px 6px; gap: 4px; }
+            .brushbar .brush { white-space: nowrap; justify-content: center; padding: 0 8px; min-height: 42px; }
+            .brushbar .brush-days > .brush { flex: 1 1 100%; min-width: 0; min-height: 36px; }
+            .brushbar .brush-days .dchip { flex: 1; width: auto; min-width: 0; height: 40px; }
+            .brushbar .bb-hint { display: none; }
             .table-wrap { max-height: none; overflow: visible; }
             .phase { grid-template-columns: 36px minmax(0, 1fr); }
             .ph-btn { grid-column: 1 / -1; grid-row: auto; min-height: 44px; }
@@ -809,7 +938,12 @@ Authorization inquiries: derliang@gmail.com
                                 </span>
                             </label>
                             <details class="merge" id="mergeDetails">
-                                <summary><i data-lucide="link"></i>併排（雙人桌）設定<span class="hint" id="mergeSummaryCount"></span><i data-lucide="chevron-down" class="chev"></i></summary>
+                                <summary>
+                                    <span class="mg-ic"><i data-lucide="link"></i></span>
+                                    <span class="mg-tx"><span class="mg-t">併排（雙人桌）設定</span><span class="mg-s" id="mergeSummaryCount">尚未設定，所有座位都是單人桌</span></span>
+                                    <span class="mg-mini" id="mergeMini" aria-hidden="true"></span>
+                                    <span class="mg-act"><span class="lbl-o">展開設定</span><span class="lbl-c">收合</span><span class="cc"><i data-lucide="chevron-down"></i></span></span>
+                                </summary>
                                 <div id="mergeUIContainer"></div>
                             </details>
                             <button id="btnClearSeatMap" onclick="clearSeatMapAssignments()" class="btn btn-danger" title="清空座位表（已抽籤與已指定的座位）" aria-label="清空座位表"><i data-lucide="trash-2"></i>清空座位表</button>
@@ -822,8 +956,11 @@ Authorization inquiries: derliang@gmail.com
                         <span class="chip nb"><span class="dot"></span>不最後</span>
                         <span class="chip ns"><span class="dot"></span>不靠邊</span>
                         <span class="chip nm"><span class="dot"></span>其他</span>
-                        <span class="hint">點選座位可指定學生或設為禁排</span>
+                        <span class="hint" id="seatMapHint">點選座位可指定學生或設為禁排</span>
+                        <button type="button" id="btnMarkMode" class="btn btn-sm" onclick="toggleMarkMode()" aria-pressed="false"><i data-lucide="stamp"></i><span id="btnMarkModeText">標示第八、九節</span></button>
                     </div>
+                    <div id="attSummary" class="att-sum" aria-label="第八、九節標示統計"></div>
+                    <div id="brushBar" class="brushbar hidden" role="group" aria-label="第八、九節標示筆刷"></div>
 
                     <div id="seatMapScrollWrapper">
                         <div id="captureArea" class="seat-map-display-surface">
@@ -836,6 +973,7 @@ Authorization inquiries: derliang@gmail.com
                                 <div id="labelWrapper"></div>
                                 <div id="screenContainer"><div class="screen-bar" id="screenBar">大屏</div></div>
                                 <div class="cv-notes"><div id="frontDoorDisplay"></div><div id="seatMapNoteDisplay"></div></div>
+                                <div id="attLegendDisplay" class="att-legend"></div>
                             </div>
                         </div>
                     </div>
@@ -876,12 +1014,17 @@ Authorization inquiries: derliang@gmail.com
                         <div class="step-head">
                             <span class="num is-active" data-head-num="needs">2</span>
                             <div class="grow"><h2 class="step-title">需求設定</h2><p class="step-sub" id="stepSub-needs">沒有特別需求可略過</p></div>
-                            <button onclick="clearAllTags()" class="btn btn-danger btn-sm" title="清除需求" aria-label="清除需求"><i data-lucide="trash-2"></i>清除</button>
+                            <button id="btnClearNeeds" onclick="clearNeedsOrMarks()" class="btn btn-danger btn-sm" title="清除需求" aria-label="清除需求"><i data-lucide="trash-2"></i><span id="btnClearNeedsText">清除</span></button>
+                        </div>
+                        <div class="seg" id="needsModeSeg" role="group" aria-label="設定項目">
+                            <button type="button" onclick="setNeedsMode('need')" data-nmode="need" aria-pressed="true">需求</button>
+                            <button type="button" onclick="setNeedsMode('att')" data-nmode="att" aria-pressed="false">第8·9節<span class="cnt" id="attModeCount"></span></button>
                         </div>
                         <div id="needsEmpty" class="empty-st hidden"><i data-lucide="clipboard-paste"></i><b>還沒有名單</b><span>先到「名單」貼上全班名單，需求才能設定</span></div>
+                        <p id="attModeHint" class="hint hidden">亮起來＝不上。沒上第八節，第九節五天一律視為不上並鎖住。標示記在名單裡，下次匯入同名同學自動帶回。</p>
                         <div class="student-table-wrap table-wrap">
-                            <table class="student-table">
-                                <thead>
+                            <table class="student-table" id="studentTable">
+                                <thead id="studentTableHead">
                                     <tr><th>座號</th><th class="col-name">學生姓名</th><th>目前座位</th><th>個別需求</th></tr>
                                 </thead>
                                 <tbody id="studentTableBody"></tbody>
@@ -1218,7 +1361,7 @@ Authorization inquiries: derliang@gmail.com
     </div>
 
     <script>
-        const APP_VERSION = "v3.3.5";
+        const APP_VERSION = "v3.4.0";
         /* 版號只寫在 APP_VERSION；<title> 與頁首徽章由程式產生，不要在 HTML 靜態文字寫版號 */
         document.title = `座位小幫手 ${APP_VERSION}`;
 
@@ -1274,6 +1417,7 @@ Authorization inquiries: derliang@gmail.com
             main.dataset.tab = tab === 'map' ? 'map' : '';
             syncViewControls();
             window.scrollTo({ top: 0 });
+            if (typeof updateAttCompact === 'function') updateAttCompact();
         }
 
         // 後台目錄：捲動時標示目前所在的設定區塊
@@ -1336,7 +1480,14 @@ Authorization inquiries: derliang@gmail.com
         }
 
         let students = [];
-        let seating = []; 
+        // 第八、九節標示：記在學生物件的 skip8（不上第八節）與 skip9（不上第九節的星期 1–5）；
+        // 另以姓名存一份 attendanceMemory，清除名單或重新匯入同名同學時自動帶回，不必重複標示。
+        let attendanceMemory = {};
+        let markMode = false;
+        let brush = { type: 'nine', days: [1, 3] };
+        let needsMode = 'need';
+        const DAY_NAMES = ['一', '二', '三', '四', '五'];
+        let seating = [];
         let gridConfig = { cols: 7, rows: 7 };
         let activeSeatIdx = null;
         let mergeRight = [];
@@ -1415,8 +1566,8 @@ Authorization inquiries: derliang@gmail.com
 
         let drawPreferences = normalizeDrawPreferences();
         const defaultDisplaySettings = {
-            preview: { classroomName: true, schoolName: true, schoolYear: true, semester: true, advisorName: false, className: true, frontLabel: true, frontDoor: false, rearDoor: false, seatMapNote: false, rowLabels: true, needs: false, disabledSeats: true, emptySeats: true },
-            export: { classroomName: true, schoolName: true, schoolYear: true, semester: true, advisorName: true, className: true, frontLabel: true, frontDoor: false, rearDoor: false, seatMapNote: true, rowLabels: true, needs: false, disabledSeats: false, emptySeats: false, exportDate: true }
+            preview: { classroomName: true, schoolName: true, schoolYear: true, semester: true, advisorName: false, className: true, frontLabel: true, frontDoor: false, rearDoor: false, seatMapNote: false, rowLabels: true, needs: false, attendance: true, disabledSeats: true, emptySeats: true },
+            export: { classroomName: true, schoolName: true, schoolYear: true, semester: true, advisorName: true, className: true, frontLabel: true, frontDoor: false, rearDoor: false, seatMapNote: true, rowLabels: true, needs: false, attendance: true, disabledSeats: false, emptySeats: false, exportDate: true }
         };
         let displaySettings = JSON.parse(JSON.stringify(defaultDisplaySettings));
         let displayPreviewMode = 'preview';
@@ -1438,9 +1589,74 @@ Authorization inquiries: derliang@gmail.com
         let adminAuthMode = 'unlock';
         let adminPinSubmitting = false;
 
+        function normalizeSkip9(list) {
+            return Array.from(new Set((Array.isArray(list) ? list : []).map(Number).filter(d => Number.isInteger(d) && d >= 1 && d <= 5))).sort((a, b) => a - b);
+        }
+        function normalizeStudentAttendance(student) {
+            student.skip8 = student.skip8 === true;
+            student.skip9 = normalizeSkip9(student.skip9);
+            return student;
+        }
+        function normalizeAttendanceMemory(raw) {
+            const out = {};
+            if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+                Object.entries(raw).forEach(([name, value]) => {
+                    if (!value || typeof value !== 'object') return;
+                    const skip8 = value.skip8 === true;
+                    const skip9 = normalizeSkip9(value.skip9);
+                    if (skip8 || skip9.length) out[name] = { skip8, skip9 };
+                });
+            }
+            return out;
+        }
+        // 第九節實際不上的星期；沒上第八節就一定沒上第九節（規則 1）
+        const effectiveSkip9 = (s) => s.skip8 ? [1, 2, 3, 4, 5] : (s.skip9 || []);
+        // 回傳章的種類與文字；沒有標示回傳 null
+        function attendanceState(s) {
+            if (!s) return null;
+            if (s.skip8) return { k: 'both', label: '無8·9', days: '', text: '無8·9', nineText: '不上' };
+            const d = effectiveSkip9(s);
+            if (!d.length) return null;
+            const dayText = (list) => list.map(x => DAY_NAMES[x - 1]).join('');
+            if (d.length === 5) return { k: 'nine', label: '無9', days: '', text: '無9', nineText: '不上' };
+            const nineText = `週${d.map(x => DAY_NAMES[x - 1]).join('、')}不上`;
+            if (d.length <= 3) return { k: 'part', label: '無9', days: dayText(d), text: `無9 ${dayText(d)}`, nineText };
+            const keep = [1, 2, 3, 4, 5].filter(x => !d.includes(x));
+            return { k: 'part', label: `僅${dayText(keep)}有9`, days: '', text: `僅${dayText(keep)}有9`, nineText };
+        }
+        function attStampHtml(s) {
+            const st = attendanceState(s);
+            if (!st) return '';
+            return `<span class="att att-${st.k}">${st.label}${st.days ? `<span class="days">&nbsp;${st.days}</span>` : ''}</span>`;
+        }
+        function attSampleHtml(kind) {
+            if (kind === 'both') return '<span class="att att-both">無8·9</span>';
+            if (kind === 'nine') return '<span class="att att-nine">無9</span>';
+            return '<span class="att att-part">無9<span class="days">&nbsp;一三</span></span>';
+        }
+        // 設定學生的標示並同步寫入姓名記憶（沒有任何標示就移除記憶）
+        function setAttendance(s, skip8, skip9) {
+            s.skip8 = !!skip8;
+            s.skip9 = normalizeSkip9(skip9);
+            if (s.skip8 || s.skip9.length) attendanceMemory[s.name] = { skip8: s.skip8, skip9: s.skip9.slice() };
+            else delete attendanceMemory[s.name];
+        }
+        function applyAttendanceFromMemory(s) {
+            const m = attendanceMemory[s.name];
+            s.skip8 = !!m?.skip8;
+            s.skip9 = normalizeSkip9(m?.skip9);
+            return s;
+        }
+        function attendanceCounts() {
+            const c = { both: 0, nine: 0, part: 0 };
+            students.forEach(s => { const st = attendanceState(s); if (st) c[st.k]++; });
+            return c;
+        }
+
         function getSerializableData() {
             return {
                 students: students.map(s => ({...s, tags: Array.from(s.tags)})),
+                attendanceMemory,
                 seating,
                 gridConfig,
                 mergeRight,
@@ -1505,8 +1721,9 @@ Authorization inquiries: derliang@gmail.com
                     };
                     delete displaySettings.preview.seatCoordinates;
                     delete displaySettings.export.seatCoordinates;
+                    attendanceMemory = normalizeAttendanceMemory(data.attendanceMemory);
                     if (data.students) {
-                        students = data.students.map(s => ({...s, tags: new Set(s.tags)}));
+                        students = data.students.map(s => normalizeStudentAttendance({...s, tags: new Set(s.tags)}));
                     }
                     if (data.seating) {
                         seating = data.seating;
@@ -1650,6 +1867,15 @@ Authorization inquiries: derliang@gmail.com
             const totalCols = gridConfig.cols + Math.max(0, gridConfig.cols - 1);
             document.getElementById('screenBar').style.gridColumn = `1 / span ${totalCols}`;
         }
+
+        // 座位卡太窄（≤62px）時章不顯示星期；座位表被隱藏（寬度 0）時不更動
+        function updateAttCompact() {
+            document.querySelectorAll('#captureArea .seat-card').forEach(card => {
+                const w = card.offsetWidth;
+                if (w > 0) card.classList.toggle('att-compact', w <= 62);
+            });
+        }
+        window.addEventListener('resize', updateAttCompact);
 
         function fitSeatNameText() {
             document.querySelectorAll('#captureArea .seat-name').forEach(el => {
@@ -1869,7 +2095,7 @@ Authorization inquiries: derliang@gmail.com
                 classroomName: '座位表主標題', schoolName: '校名', schoolYear: '學年度', semester: '學期',
                 className: '班級／課程名稱', advisorName: '導師',
                 frontLabel: '前方設備', frontDoor: '前門', rearDoor: '後門', seatMapNote: '備註', rowLabels: '各排名稱',
-                needs: '個別需求標示', disabledSeats: '禁排座位標示', emptySeats: '空座位外框'
+                needs: '個別需求標示', attendance: '第八、九節標示', disabledSeats: '禁排座位標示', emptySeats: '空座位外框'
             };
             document.getElementById('displaySettingRows').innerHTML = Object.entries(labels).map(([key, label]) => `
                 <div class="row-name">${label}</div>
@@ -1954,7 +2180,7 @@ Authorization inquiries: derliang@gmail.com
                 classroomName: 'hide-classroom-name', schoolName: 'hide-school-name', schoolYear: 'hide-school-year', semester: 'hide-semester', advisorName: 'hide-advisor-name',
                 className: 'hide-class-name',
                 frontLabel: 'hide-front-label', frontDoor: 'hide-front-door', rearDoor: 'hide-rear-door', seatMapNote: 'hide-seat-map-note', rowLabels: 'hide-row-labels',
-                needs: 'hide-needs', disabledSeats: 'hide-disabled-seats', emptySeats: 'hide-empty-seats'
+                needs: 'hide-needs', attendance: 'hide-attendance', disabledSeats: 'hide-disabled-seats', emptySeats: 'hide-empty-seats'
             };
             Object.entries(classMap).forEach(([key, className]) => area.classList.toggle(className, !settings[key]));
             if (target === 'preview' && !area.querySelector('.seat-card.occupied')) {
@@ -2014,6 +2240,7 @@ Authorization inquiries: derliang@gmail.com
             if (data.drawPreferences && typeof data.drawPreferences !== 'object') throw new Error('抽籤偏好設定不正確。');
             if (data.lastDrawSnapshot && (!Array.isArray(data.lastDrawSnapshot.seating) || !data.lastDrawSnapshot.gridConfig)) throw new Error('上次抽籤資料不正確。');
             if (data.autoSaveHistory !== undefined && typeof data.autoSaveHistory !== 'boolean') throw new Error('自動儲存歷史紀錄設定不正確。');
+            if (data.attendanceMemory !== undefined && (!data.attendanceMemory || typeof data.attendanceMemory !== 'object' || Array.isArray(data.attendanceMemory))) throw new Error('第八、九節標示資料格式不正確。');
             if (data.displaySettings && (!data.displaySettings.preview || !data.displaySettings.export)) throw new Error('座位表顯示設定不正確。');
             if (!['light', 'dark'].includes(backup.theme)) throw new Error('主題設定不正確。');
             return data;
@@ -2047,7 +2274,8 @@ Authorization inquiries: derliang@gmail.com
 
         function applyJsonBackup(backup) {
             const data = backup.data;
-            students = data.students.map(student => ({ ...student, tags: new Set(student.tags) }));
+            students = data.students.map(student => normalizeStudentAttendance({ ...student, tags: new Set(student.tags) }));
+            attendanceMemory = normalizeAttendanceMemory(data.attendanceMemory);
             seating = data.seating;
             gridConfig = data.gridConfig;
             mergeRight = data.mergeRight;
@@ -2610,9 +2838,28 @@ Authorization inquiries: derliang@gmail.com
             cont.append(hint, row);
             const mergeCount = document.getElementById('mergeSummaryCount');
             if (mergeCount) {
-                // 連續的併排算同一組（例如三排併在一起算 1 組）
-                const groups = mergeRight.filter((on, i) => on && !mergeRight[i - 1]).length;
-                mergeCount.textContent = groups ? `已併排 ${groups} 組` : '';
+                // 連續的併排算同一組（例如三排併在一起算 1 組）；副標直接寫出已併哪幾排
+                const groups = [];
+                for (let g = 1; g < gridConfig.cols; g++) {
+                    if (mergeRight[g - 1] && !(g > 1 && mergeRight[g - 2])) {
+                        let last = g + 1;
+                        while (last < gridConfig.cols && mergeRight[last - 1]) last++;
+                        groups.push([g, last]);
+                    }
+                }
+                mergeCount.innerHTML = groups.length
+                    ? `已併 <b>${groups.length} 組</b>：${groups.map(([a, b]) => `第 ${Array.from({ length: b - a + 1 }, (_, k) => a + k).join('・')} 排`).join('、')}`
+                    : '尚未設定，所有座位都是單人桌';
+            }
+            const mini = document.getElementById('mergeMini');
+            if (mini) {
+                mini.innerHTML = Array.from({ length: gridConfig.cols }, (_, k) => {
+                    const p = k + 1;
+                    const withPrev = p > 1 && !!mergeRight[p - 2];
+                    const withNext = p < gridConfig.cols && !!mergeRight[p - 1];
+                    const cls = withPrev || withNext ? ` j ${withPrev && withNext ? 'm' : (withNext ? 'l' : 'r')}` : '';
+                    return `<span class="mb${cls}"></span>`;
+                }).join('');
             }
             applyCaptureDisplaySettings('preview');
             initIcons();
@@ -2633,6 +2880,21 @@ Authorization inquiries: derliang@gmail.com
                 const disClass = isAssigned ? 'is-disabled' : '';
                 const disAttr = isAssigned ? 'disabled' : '';
 
+                if (needsMode === 'att') {
+                    const locked = s.skip8;
+                    const eff = effectiveSkip9(s);
+                    const nm = escapeHtml(s.name);
+                    const chips = DAY_NAMES.map((dn, k) => `<button type="button" class="dchip${locked ? ' locked' : ''}" aria-pressed="${eff.includes(k + 1)}" ${locked ? 'disabled title="沒上第八節，第九節一定也沒上"' : ''} onclick="toggleSkip9Day(${i}, ${k + 1})" aria-label="${nm}週${dn}第九節不上">${dn}</button>`).join('');
+                    tr.innerHTML = `
+                    <td class="t-no">${seatNo}</td>
+                    <td class="t-name">${nm}</td>
+                    <td class="t-stamp">${attStampHtml(s)}</td>
+                    <td><div class="att-ctl">
+                        <div class="col8"><span class="cap-s">第八節</span><button type="button" class="mk8" aria-pressed="${s.skip8}" onclick="toggleSkip8(${i})" aria-label="${nm}第八節不上">${s.skip8 ? '<i data-lucide="check"></i>' : ''}不上</button></div>
+                        <div class="col9"><span class="cap-s">第九節　不上的日子${locked ? '（已鎖定）' : ''}</span><span class="days9">${chips}</span></div>
+                    </div></td>
+                `;
+                } else {
                 tr.innerHTML = `
                     <td class="t-no">${seatNo}</td>
                     <td class="t-name">${escapeHtml(s.name)}</td>
@@ -2644,6 +2906,7 @@ Authorization inquiries: derliang@gmail.com
                         <button onclick="toggleTag(${i}, 'noSide')" ${disAttr} class="tag-toggle noSide ${s.tags.has('noSide')?'active':''} ${disClass}">不邊</button>
                     </div></td>
                 `;
+                }
                 tableRows.appendChild(tr);
             });
             tbody.appendChild(tableRows);
@@ -2663,21 +2926,25 @@ Authorization inquiries: derliang@gmail.com
                     const student = studentBySeatName.get(data.name);
                     const dispName = student ? (student.displayName || `${student.seatNo || ''}${student.name}`) : data.name;
                     let statusClass = 'status-normal';
+                    let pillText = '';
                     if (student) {
-                        if (student.tags.has('priority')) statusClass = 'status-priority';
-                        else if (student.tags.has('rear')) statusClass = 'status-rear';
-                        else if (student.tags.has('noSide')) statusClass = 'status-noSide';
-                        else if (student.tags.has('noBack')) statusClass = 'status-noBack';
+                        if (student.tags.has('priority')) { statusClass = 'status-priority'; pillText = '靠前'; }
+                        else if (student.tags.has('rear')) { statusClass = 'status-rear'; pillText = '靠後'; }
+                        else if (student.tags.has('noSide')) { statusClass = 'status-noSide'; pillText = '不邊'; }
+                        else if (student.tags.has('noBack')) { statusClass = 'status-noBack'; pillText = '不後'; }
                     }
                     const needsClass = student?.tags?.size ? 'has-needs' : '';
-                    seat.className = `seat-card occupied ${statusClass} ${needsClass} ${mergeBorder}`.replace(/\s+/g, ' ').trim();
+                    const attState = attendanceState(student);
+                    const attClass = attState ? 'has-att' : '';
+                    seat.className = `seat-card occupied ${statusClass} ${needsClass} ${attClass} ${mergeBorder}`.replace(/\s+/g, ' ').trim();
+                    const pillHtml = pillText ? `<span class="need-pill">${pillText}</span>` : '';
                     const lockIcon = data.locked ? `<div class="lock-icon"><i data-lucide="pin"></i></div>` : '';
                     // 座號與姓名分兩行顯示；自訂顯示名稱或沒有座號時維持單行
                     const hasSplitName = !!(student && student.seatNo && dispName === `${student.seatNo}${student.name}`);
                     const nameHtml = hasSplitName
                         ? `<span class="seat-no">${escapeHtml(String(student.seatNo))}</span>${escapeHtml(student.name)}`
                         : escapeHtml(dispName);
-                    seat.innerHTML = `${badge}<div class="seat-indicator"></div>${lockIcon}<div class="seat-name">${nameHtml}</div>`;
+                    seat.innerHTML = `${badge}${pillHtml}<div class="seat-indicator"></div>${lockIcon}<div class="seat-name">${nameHtml}</div>${attStampHtml(student)}`;
                 } else {
                     seat.className = `seat-card seat-empty ${mergeBorder}`.trim();
                     seat.innerHTML = badge;
@@ -2779,7 +3046,9 @@ Authorization inquiries: derliang@gmail.com
                 document.getElementById('box-final')?.classList.toggle('finished', students.length > 0 && waitingAll === 0);
             }
 
+            updateAttendanceUI();
             updateStepStatus();
+            updateAttCompact();
             fitSeatNameText();
             initIcons();
         }
@@ -2807,6 +3076,152 @@ Authorization inquiries: derliang@gmail.com
             updateUI();
             saveData();
         };
+
+        /* ---------- 第八、九節標示 ---------- */
+        window.setNeedsMode = (mode) => {
+            needsMode = mode === 'att' ? 'att' : 'need';
+            updateUI();
+        };
+
+        window.clearNeedsOrMarks = () => {
+            if (needsMode !== 'att') { clearAllTags(); return; }
+            if (guardDrawing()) return;
+            if (!confirm('確定要清除全班的第八、九節標示嗎？（已記住的標示也會一併清除）')) return;
+            students.forEach(s => { s.skip8 = false; s.skip9 = []; });
+            attendanceMemory = {};
+            updateUI();
+            saveData();
+        };
+
+        window.toggleSkip8 = (i) => {
+            const s = students[i];
+            if (!s || guardDrawing()) return;
+            setAttendance(s, !s.skip8, s.skip9);
+            updateUI();
+            saveData();
+        };
+
+        window.toggleSkip9Day = (i, day) => {
+            const s = students[i];
+            if (!s || s.skip8 || guardDrawing()) return;
+            const list = s.skip9.slice();
+            const at = list.indexOf(day);
+            if (at >= 0) list.splice(at, 1); else list.push(day);
+            setAttendance(s, false, list);
+            updateUI();
+            saveData();
+        };
+
+        window.toggleMarkMode = () => {
+            if (!markMode && guardDrawing()) return;
+            markMode = !markMode;
+            updateUI();
+        };
+
+        window.setBrush = (type) => {
+            brush.type = type;
+            updateUI();
+        };
+
+        window.toggleBrushDay = (day) => {
+            brush.type = 'days';
+            const at = brush.days.indexOf(day);
+            if (at >= 0) brush.days.splice(at, 1); else brush.days.push(day);
+            brush.days.sort((a, b) => a - b);
+            updateUI();
+        };
+
+        // 筆刷語意：再點一次同樣的標示即取消；「指定星期」以筆刷選的星期整組取代
+        function applyBrush(s) {
+            if (brush.type === 'erase') { setAttendance(s, false, []); return; }
+            if (brush.type === 'both') { setAttendance(s, !s.skip8, []); return; }
+            if (brush.type === 'nine') {
+                const isFull = !s.skip8 && s.skip9.length === 5;
+                setAttendance(s, false, isFull ? [] : [1, 2, 3, 4, 5]);
+                return;
+            }
+            if (brush.type === 'days') {
+                if (!brush.days.length) { showToast('請先在筆刷列選擇星期', true); return; }
+                const target = brush.days.slice().sort((a, b) => a - b);
+                const same = !s.skip8 && s.skip9.join() === target.join();
+                setAttendance(s, false, same ? [] : target);
+            }
+        }
+
+        function applyBrushToSeat(idx) {
+            const seat = seating[idx];
+            if (!seat?.name) { showToast('這個座位沒有學生，標示只能用在有人的座位', true); return; }
+            const s = students.find(x => x.name === seat.name || x.displayName === seat.name);
+            if (!s) return;
+            applyBrush(s);
+            updateUI();
+            saveData();
+        }
+
+        function updateAttendanceUI() {
+            const counts = attendanceCounts();
+            const total = counts.both + counts.nine + counts.part;
+            const showBar = markMode && !isDrawing;
+            const table = document.getElementById('studentTable');
+            if (table) table.classList.toggle('m-att', needsMode === 'att');
+            document.querySelectorAll('#needsModeSeg [data-nmode]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.nmode === needsMode)));
+            const cnt = document.getElementById('attModeCount');
+            if (cnt) cnt.textContent = total ? String(total) : '';
+            const head = document.getElementById('studentTableHead');
+            if (head) head.innerHTML = needsMode === 'att'
+                ? '<tr><th>座號</th><th class="col-name">學生姓名</th><th class="t-stamp"></th><th><div class="att-ctl"><span class="th-8">第八節</span><span>第九節　不上的日子</span></div></th></tr>'
+                : '<tr><th>座號</th><th class="col-name">學生姓名</th><th>目前座位</th><th>個別需求</th></tr>';
+            document.getElementById('attModeHint')?.classList.toggle('hidden', needsMode !== 'att');
+            const clearText = document.getElementById('btnClearNeedsText');
+            if (clearText) clearText.textContent = needsMode === 'att' ? '清除標示' : '清除';
+            const clearBtn = document.getElementById('btnClearNeeds');
+            if (clearBtn) { const t = needsMode === 'att' ? '清除標示' : '清除需求'; clearBtn.title = t; clearBtn.setAttribute('aria-label', t); }
+
+            const summary = document.getElementById('attSummary');
+            if (summary) summary.innerHTML = students.length
+                ? `<span class="grp"><b>第八、九節</b></span><span class="grp">${attSampleHtml('both')}${counts.both} 人</span><span class="grp">${attSampleHtml('nine')}${counts.nine} 人</span><span class="grp">${attSampleHtml('part')}${counts.part} 人</span>`
+                : '';
+            const legend = document.getElementById('attLegendDisplay');
+            if (legend) {
+                const items = [];
+                if (counts.both) items.push(`<span>${attSampleHtml('both')}未參加第八、九節</span>`);
+                if (counts.nine) items.push(`<span>${attSampleHtml('nine')}未參加第九節</span>`);
+                if (counts.part) items.push(`<span>${attSampleHtml('part')}指定星期未參加第九節</span>`);
+                legend.innerHTML = items.join('');
+            }
+
+            document.getElementById('captureArea')?.classList.toggle('has-att-seats', total > 0);
+            const wrapper = document.getElementById('seatMapScrollWrapper');
+            if (wrapper) wrapper.classList.toggle('marking', showBar);
+            const btn = document.getElementById('btnMarkMode');
+            if (btn) {
+                btn.setAttribute('aria-pressed', String(showBar));
+                btn.disabled = isDrawing;
+                document.getElementById('btnMarkModeText').textContent = showBar ? '標示中' : '標示第八、九節';
+            }
+            const bar = document.getElementById('brushBar');
+            if (!bar) return;
+            bar.classList.toggle('hidden', !showBar);
+            if (!showBar) return;
+            const dayChips = DAY_NAMES.map((dn, k) => `<button type="button" class="dchip" aria-pressed="${brush.days.includes(k + 1)}" onclick="toggleBrushDay(${k + 1})" aria-label="週${dn}">${dn}</button>`).join('');
+            const dayList = brush.days.map(d => DAY_NAMES[d - 1]).join('、');
+            const hint = {
+                both: '點座位：標「無8·9」（沒上第八節就不會上第九節）',
+                nine: '點座位：標「無9」（每天都不上第九節）',
+                days: brush.days.length ? `點座位：標「無9」，只有週${dayList}不上` : '請先在右邊選擇星期',
+                erase: '點座位：清除該同學的標示'
+            }[brush.type];
+            bar.innerHTML = `
+                <div class="bb-row">
+                    <span class="bb-title"><i data-lucide="stamp"></i>標示筆刷</span>
+                    <button type="button" class="brush" onclick="setBrush('both')" aria-pressed="${brush.type === 'both'}">${attSampleHtml('both')}<span>沒上第八節</span></button>
+                    <button type="button" class="brush" onclick="setBrush('nine')" aria-pressed="${brush.type === 'nine'}">${attSampleHtml('nine')}<span>每天不上第九節</span></button>
+                    <span class="brush-days${brush.type === 'days' ? ' is-on' : ''}"><button type="button" class="brush" onclick="setBrush('days')" aria-pressed="${brush.type === 'days'}">${attSampleHtml('part')}<span>指定星期</span></button>${dayChips}</span>
+                    <button type="button" class="brush" onclick="setBrush('erase')" aria-pressed="${brush.type === 'erase'}"><i data-lucide="eraser"></i><span>清除標示</span></button>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="toggleMarkMode()" style="margin-left:auto"><i data-lucide="check"></i>完成標示</button>
+                </div>
+                <p class="bb-hint"><b>標示中</b>　${hint}。再點一次同樣的筆刷會取消；標示會記在名單裡，下次匯入同名同學自動帶回。</p>`;
+        }
 
         function getSurroundingSeatIndices(index, config) {
             const indices = [];
@@ -3399,6 +3814,7 @@ Authorization inquiries: derliang@gmail.com
 
         function handleSeatClick(idx) {
             if (guardDrawing()) return;
+            if (markMode) { applyBrushToSeat(idx); return; }
             activeSeatIdx = idx;
             const current = seating[idx];
             document.getElementById('pickerSeatLabel').textContent = getCoord(idx).str;
@@ -3718,7 +4134,8 @@ Authorization inquiries: derliang@gmail.com
                 return;
             }
             students = roster.map(({ seatNo, name, height }, i) => {
-                return {
+                // 第八、九節標示依姓名自動帶回，不必重複標示
+                return applyAttendanceFromMemory({
                     id: i,
                     seatNo: seatNo,
                     name: name,
@@ -3726,7 +4143,7 @@ Authorization inquiries: derliang@gmail.com
                     height: Number.isFinite(height) ? height : undefined,
                     tags: new Set(),
                     currentPos: null
-                };
+                });
             });
             document.getElementById('rawInput').value = '';
             drawPreferences.separationPairs = [];
@@ -3757,6 +4174,9 @@ Authorization inquiries: derliang@gmail.com
             if (!confirm("最後確認：是否清除座位小幫手的所有本機資料？")) return;
 
             students = [];
+            attendanceMemory = {};
+            markMode = false;
+            needsMode = 'need';
             seating = [];
             gridConfig = { cols: 7, rows: 7 };
             activeSeatIdx = null;
@@ -3809,6 +4229,10 @@ Authorization inquiries: derliang@gmail.com
             const root = document.documentElement;
             const originalClassName = area.className;
             const wasDark = root.classList.contains('dark');
+            // 標示模式的藍色外框只是操作提示，不能出現在匯出圖片裡
+            const markWrapper = document.getElementById('seatMapScrollWrapper');
+            const wasMarking = markWrapper.classList.contains('marking');
+            markWrapper.classList.remove('marking');
             try {
                 // 匯出一律用淺色版面（列印用），擷取期間關閉過場動畫
                 root.classList.add('export-capturing');
@@ -3822,6 +4246,7 @@ Authorization inquiries: derliang@gmail.com
             } finally {
                 area.className = originalClassName;
                 if (wasDark) root.classList.add('dark');
+                if (wasMarking) markWrapper.classList.add('marking');
                 root.classList.remove('export-capturing');
             }
         }
@@ -3931,10 +4356,13 @@ Authorization inquiries: derliang@gmail.com
         }
 
         function getExportStudentText(student, fallbackName) {
-            const name = student ? (student.displayName || `${student.seatNo || ''}${student.name}`) : fallbackName;
-            if (!displaySettings.export.needs || !student?.tags?.size) return name;
-            const labels = { priority: '靠前', rear: '靠後', noBack: '不後', noSide: '不邊' };
-            return `${name}（${Array.from(student.tags).map(tag => labels[tag]).filter(Boolean).join('、')}）`;
+            let name = student ? (student.displayName || `${student.seatNo || ''}${student.name}`) : fallbackName;
+            if (displaySettings.export.needs && student?.tags?.size) {
+                const labels = { priority: '靠前', rear: '靠後', noBack: '不後', noSide: '不邊' };
+                name = `${name}（${Array.from(student.tags).map(tag => labels[tag]).filter(Boolean).join('、')}）`;
+            }
+            const att = displaySettings.export.attendance ? attendanceState(student) : null;
+            return att ? `${name} [${att.text}]` : name;
         }
 
         function buildExcelBlob() {
@@ -3983,14 +4411,19 @@ Authorization inquiries: derliang@gmail.com
             if (displaySettings.export.frontDoor && frontDoor) layoutData.push([frontDoor]);
             if (displaySettings.export.seatMapNote && seatMapNote) layoutData.push([seatMapNote]);
 
-            let listData = [["學生姓名", "狀態"]];
+            const showAtt = displaySettings.export.attendance;
+            let listData = [showAtt ? ["學生姓名", "狀態", "第八節", "第九節"] : ["學生姓名", "狀態"]];
             seating.forEach((s, i) => {
                 if(s?.name) {
                     const student = students.find(st => st.name === s.name || st.displayName === s.name);
                     const row = [getExportStudentText(student, s.name), "已定位"];
+                    if (showAtt) {
+                        const att = attendanceState(student);
+                        row.push(student?.skip8 ? '不上' : '上', att ? att.nineText : '上');
+                    }
                     listData.push(row);
                 } else if(s === "disabled" && displaySettings.export.disabledSeats) {
-                    listData.push(["---", "禁排區"]);
+                    listData.push(showAtt ? ["---", "禁排區", "", ""] : ["---", "禁排區"]);
                 }
             });
 
