@@ -1007,6 +1007,11 @@ Authorization inquiries: derliang@gmail.com
                         </div>
                         <textarea id="rawInput" class="input" style="height:132px" placeholder="每行一位學生；可貼上姓名、座號＋姓名，或試算表的座號與姓名兩欄..." aria-label="學生名單"></textarea>
                         <p class="hint">支援純姓名、座號加姓名、Tab 或逗號分隔，以及試算表兩欄貼上；會自動略過標題與空白列。</p>
+                        <label class="row" style="flex-wrap:nowrap;cursor:pointer;min-height:44px">
+                            <input id="autoSeatNoToggle" type="checkbox" class="check" checked aria-describedby="autoSeatNoHint">
+                            <span style="font-weight:700">自動貼上座號</span>
+                        </label>
+                        <p class="hint" id="autoSeatNoHint" style="margin-top:-4px">勾選：沒寫座號的學生會依序補上座號。取消：維持純姓名，只保留你貼上的座號。</p>
                         <button id="btnInit" class="btn btn-primary btn-lg"><i data-lucide="arrow-right-circle"></i>匯入並進行下一步</button>
                     </section>
 
@@ -1361,7 +1366,7 @@ Authorization inquiries: derliang@gmail.com
     </div>
 
     <script>
-        const APP_VERSION = "v3.4.0";
+        const APP_VERSION = "v3.4.1";
         /* 版號只寫在 APP_VERSION；<title> 與頁首徽章由程式產生，不要在 HTML 靜態文字寫版號 */
         document.title = `座位小幫手 ${APP_VERSION}`;
 
@@ -2526,7 +2531,7 @@ Authorization inquiries: derliang@gmail.com
                 const safeName = escapeHtml(student.name);
                 row.className = `height-data-card${hasHeight ? '' : ' is-empty'}`;
                 row.innerHTML = `
-                    <div class="height-card-seat">${student.seatNo}</div>
+                    <div class="height-card-seat">${student.noSeatNo ? '–' : student.seatNo}</div>
                     <div class="height-card-name">${safeName}</div>
                     <div class="height-card-value${hasHeight ? '' : ' none'}">${heightText}</div>
                     <div class="row" style="gap:4px;flex-wrap:nowrap;justify-content:flex-end">
@@ -2599,13 +2604,13 @@ Authorization inquiries: derliang@gmail.com
             student.height = Math.round(height * 10) / 10;
             document.getElementById('manualHeightSeatInput').value = '';
             document.getElementById('manualHeightValueInput').value = '';
-            syncHeightDataState(`已更新 ${student.seatNo} ${student.name} 的身高。`);
+            syncHeightDataState(`已更新 ${student.noSeatNo ? '' : student.seatNo + ' '}${student.name} 的身高。`);
         }
 
         function editHeightData(seatNo) {
             const student = students.find(item => item.seatNo === seatNo);
             if (!student) return;
-            const value = prompt(`請輸入 ${student.seatNo} ${student.name} 的身高（公分）`, Number.isFinite(student.height) ? student.height : '');
+            const value = prompt(`請輸入 ${student.noSeatNo ? '' : student.seatNo + ' '}${student.name} 的身高（公分）`, Number.isFinite(student.height) ? student.height : '');
             if (value === null) return;
             const height = Number(value);
             if (!Number.isFinite(height) || height < 80 || height > 250) {
@@ -2613,16 +2618,16 @@ Authorization inquiries: derliang@gmail.com
                 return;
             }
             student.height = Math.round(height * 10) / 10;
-            syncHeightDataState(`已更新 ${student.seatNo} ${student.name} 的身高。`);
+            syncHeightDataState(`已更新 ${student.noSeatNo ? '' : student.seatNo + ' '}${student.name} 的身高。`);
         }
 
         function deleteHeightData(seatNo) {
             const student = students.find(item => item.seatNo === seatNo);
             if (!student || !Number.isFinite(student.height)) return;
-            if (!confirm(`確定要刪除 ${student.seatNo} ${student.name} 的身高資料嗎？`)) return;
+            if (!confirm(`確定要刪除 ${student.noSeatNo ? '' : student.seatNo + ' '}${student.name} 的身高資料嗎？`)) return;
             delete student.height;
             drawPreferences.considerHeight = false;
-            syncHeightDataState(`已刪除 ${student.seatNo} ${student.name} 的身高資料。`);
+            syncHeightDataState(`已刪除 ${student.noSeatNo ? '' : student.seatNo + ' '}${student.name} 的身高資料。`);
         }
 
         function sortHeightData() {
@@ -2655,7 +2660,7 @@ Authorization inquiries: derliang@gmail.com
                 students.forEach(student => {
                     const option = document.createElement('option');
                     option.value = student.seatNo;
-                    option.textContent = `${student.seatNo} ${student.name}`;
+                    option.textContent = student.noSeatNo ? student.name : `${student.noSeatNo ? '' : student.seatNo + ' '}${student.name}`;
                     select.appendChild(option);
                 });
             });
@@ -2669,7 +2674,7 @@ Authorization inquiries: derliang@gmail.com
                 const badge = document.createElement('button');
                 badge.type = 'button';
                 badge.className = 'sep-badge';
-                badge.textContent = `${first.seatNo}${first.name} × ${second.seatNo}${second.name}　移除`;
+                badge.textContent = `${first.displayName || first.name} × ${second.displayName || second.name}　移除`;
                 badge.onclick = () => removeSeparationPair(index);
                 list.appendChild(badge);
             });
@@ -2873,7 +2878,7 @@ Authorization inquiries: derliang@gmail.com
             students.forEach((s, i) => {
                 if (!studentBySeatName.has(s.name)) studentBySeatName.set(s.name, s);
                 if (s.displayName && !studentBySeatName.has(s.displayName)) studentBySeatName.set(s.displayName, s);
-                const seatNo = s.seatNo || (i + 1);
+                const seatNo = s.noSeatNo ? '' : (s.seatNo || (i + 1));
                 const tr = document.createElement('tr');
                 const ps = s.currentPos ? `<span class="pos">${s.currentPos}</span>` : `<span class="pos none">未安排</span>`;
                 const isAssigned = !!s.currentPos;
@@ -4116,6 +4121,7 @@ Authorization inquiries: derliang@gmail.com
                 if (item.seatNo !== null) return;
                 while (usedNumbers.has(nextNumber)) nextNumber++;
                 item.seatNo = nextNumber;
+                item.autoNo = true; // 程式補的號碼；取消「自動貼上座號」時只當內部編號，不顯示
                 usedNumbers.add(nextNumber);
             });
             return parsed;
@@ -4133,13 +4139,24 @@ Authorization inquiries: derliang@gmail.com
                 alert(error.message);
                 return;
             }
-            students = roster.map(({ seatNo, name, height }, i) => {
+            // 取消勾選時，程式補的號碼不顯示（seatNo 仍保留當內部編號，身高與分開指定都靠它）
+            const showAutoNo = document.getElementById('autoSeatNoToggle').checked;
+            const hiddenNo = item => item.autoNo && !showAutoNo;
+            const labels = roster.map(item => hiddenNo(item) ? item.name : `${item.seatNo}${item.name}`);
+            const dupLabel = labels.find((label, index) => labels.indexOf(label) !== index);
+            if (dupLabel !== undefined) {
+                alert(`名單裡有重複的「${dupLabel}」，沒有座號無法分辨。請勾選「自動貼上座號」，或在名單前加上座號。`);
+                return;
+            }
+            students = roster.map((item, i) => {
+                const { seatNo, name, height } = item;
                 // 第八、九節標示依姓名自動帶回，不必重複標示
                 return applyAttendanceFromMemory({
                     id: i,
                     seatNo: seatNo,
                     name: name,
-                    displayName: `${seatNo}${name}`,
+                    noSeatNo: hiddenNo(item) || undefined,
+                    displayName: labels[i],
                     height: Number.isFinite(height) ? height : undefined,
                     tags: new Set(),
                     currentPos: null
