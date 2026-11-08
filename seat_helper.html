@@ -1366,7 +1366,7 @@ Authorization inquiries: derliang@gmail.com
     </div>
 
     <script>
-        const APP_VERSION = "v3.4.2";
+        const APP_VERSION = "v3.4.3";
         /* 版號只寫在 APP_VERSION；<title> 與頁首徽章由程式產生，不要在 HTML 靜態文字寫版號 */
         document.title = `座位小幫手 ${APP_VERSION}`;
 
@@ -1795,16 +1795,19 @@ Authorization inquiries: derliang@gmail.com
             colsInput.value = gridConfig.cols;
             rowsInput.value = gridConfig.rows;
             seating = new Array(gridConfig.cols * gridConfig.rows).fill(null);
-            // 以座標 (p, w) 對應舊座位，不用平面索引；改橫排數時禁排與指定座位才不會錯位
+            // 以座標 (p, w) 對應舊座位，不用平面索引；改橫排數時所有座位（已抽籤、禁排、指定）都依座標保留，
+            // 只有被縮掉的座位上的學生會回到待抽
             old.forEach((seat, oldIdx) => {
-                if (seat !== "disabled" && !seat?.locked) return;
+                if (!seat) return;
                 const p = (oldIdx % oldConfig.cols) + 1;
                 const w = Math.floor(oldIdx / oldConfig.cols) + 1;
                 if (p <= gridConfig.cols && w <= gridConfig.rows) seating[getIdx(p, w)] = seat;
             });
             syncStudentPositions();
             if (mergeRight.length !== Math.max(0, gridConfig.cols - 1)) {
-                mergeRight = new Array(Math.max(0, gridConfig.cols - 1)).fill(false);
+                // 依位置保留既有併排設定，新增的排預設不併排
+                const oldMerge = mergeRight;
+                mergeRight = Array.from({ length: Math.max(0, gridConfig.cols - 1) }, (_, i) => !!oldMerge[i]);
             }
             updateMergeUI();
             updateGridUI();
@@ -1885,10 +1888,19 @@ Authorization inquiries: derliang@gmail.com
         function fitSeatNameText() {
             document.querySelectorAll('#captureArea .seat-name').forEach(el => {
                 el.style.fontSize = '';
+                el.style.whiteSpace = '';
+                el.style.wordBreak = '';
+                el.style.textOverflow = '';
                 let fontSize = parseFloat(getComputedStyle(el).fontSize);
-                while (el.scrollWidth > el.clientWidth + 1 && fontSize > 8) {
+                // 字級最低縮到 10px；仍放不下就換行，避免長姓名縮到讀不出來
+                while (el.scrollWidth > el.clientWidth + 1 && fontSize > 10) {
                     fontSize -= 0.5;
                     el.style.fontSize = `${fontSize}px`;
+                }
+                if (el.scrollWidth > el.clientWidth + 1) {
+                    el.style.whiteSpace = 'normal';
+                    el.style.wordBreak = 'break-all';
+                    el.style.textOverflow = 'clip';
                 }
             });
         }
@@ -2070,7 +2082,15 @@ Authorization inquiries: derliang@gmail.com
         function syncBasicInfoInputs() {
             classroomName = document.getElementById('classroomNameInput').value.trim();
             schoolName = document.getElementById('schoolNameInput').value.trim();
-            schoolYear = document.getElementById('schoolYearInput').value.trim();
+            const yearInput = document.getElementById('schoolYearInput');
+            const yearRaw = yearInput.value.trim();
+            if (yearRaw === '' || /^[1-9]\d{0,2}$/.test(yearRaw)) {
+                schoolYear = yearRaw;
+            } else {
+                // 學年度只接受 1～999 的正整數；其他輸入擋下並還原
+                yearInput.value = schoolYear;
+                showToast('學年度請輸入 1～999 的正整數', true);
+            }
             semester = document.getElementById('semesterInput').value.trim();
             advisorName = document.getElementById('advisorNameInput').value.trim();
             className = document.getElementById('classNameInput').value.trim();
