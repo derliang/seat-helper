@@ -1366,7 +1366,7 @@ Authorization inquiries: derliang@gmail.com
     </div>
 
     <script>
-        const APP_VERSION = "v3.4.1";
+        const APP_VERSION = "v3.4.2";
         /* 版號只寫在 APP_VERSION；<title> 與頁首徽章由程式產生，不要在 HTML 靜態文字寫版號 */
         document.title = `座位小幫手 ${APP_VERSION}`;
 
@@ -4127,6 +4127,16 @@ Authorization inquiries: derliang@gmail.com
             return parsed;
         }
 
+        // 「自動貼上座號」記住上次選擇（只存在這個瀏覽器，不進備份；預設勾選）
+        const AUTO_SEAT_NO_KEY = 'seatHelperAutoSeatNo';
+        (() => {
+            const toggle = document.getElementById('autoSeatNoToggle');
+            try { if (localStorage.getItem(AUTO_SEAT_NO_KEY) === '0') toggle.checked = false; } catch (e) { /* 無法讀取就用預設 */ }
+            toggle.addEventListener('change', () => {
+                try { localStorage.setItem(AUTO_SEAT_NO_KEY, toggle.checked ? '1' : '0'); } catch (e) { /* 無法儲存就只在本次有效 */ }
+            });
+        })();
+
         document.getElementById('btnInit').onclick = () => {
             if (guardDrawing()) return;
             const input = document.getElementById('rawInput').value.trim();
@@ -4226,7 +4236,8 @@ Authorization inquiries: derliang@gmail.com
             document.getElementById('rawInput').value = '';
             document.getElementById('cfgCols').value = gridConfig.cols;
             document.getElementById('cfgRows').value = gridConfig.rows;
-            ['seatHelperDataV2', 'seatHelperTheme', 'seatHelperData_v2', 'seatHelperHistory_v2', ADMIN_LOCK_STORAGE_KEY].forEach(key => localStorage.removeItem(key));
+            ['seatHelperDataV2', 'seatHelperTheme', 'seatHelperData_v2', 'seatHelperHistory_v2', ADMIN_LOCK_STORAGE_KEY, AUTO_SEAT_NO_KEY].forEach(key => localStorage.removeItem(key));
+            document.getElementById('autoSeatNoToggle').checked = true;
 
             initGrid();
             updateClassroomNameUI();
