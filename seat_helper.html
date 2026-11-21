@@ -3429,7 +3429,7 @@ Authorization inquiries: derliang@gmail.com
 })();
     </script>
     <script>
-        const APP_VERSION = "v3.5.0";
+        const APP_VERSION = "v3.5.1";
         /* 版號只寫在 APP_VERSION；<title> 與頁首徽章由程式產生，不要在 HTML 靜態文字寫版號 */
         document.title = `座位小幫手 ${APP_VERSION}`;
 
@@ -3443,7 +3443,7 @@ Authorization inquiries: derliang@gmail.com
 
         function toggleTheme() {
             const isDark = document.documentElement.classList.toggle('dark');
-            localStorage.setItem('seatHelperTheme', isDark ? 'dark' : 'light');
+            try { localStorage.setItem('seatHelperTheme', isDark ? 'dark' : 'light'); } catch (e) { /* 儲存不可用，僅本次有效 */ }
             updateThemeIcon();
         }
 
@@ -3752,7 +3752,12 @@ Authorization inquiries: derliang@gmail.com
         }
 
         function saveData() {
-            localStorage.setItem('seatHelperDataV2', JSON.stringify(getSerializableData()));
+            try {
+                localStorage.setItem('seatHelperDataV2', JSON.stringify(getSerializableData()));
+            } catch (e) {
+                // 容量已滿或瀏覽器禁用儲存（如 Safari 無痕）：不中斷流程，只提示
+                showToast('儲存失敗，本次變更只在目前頁面有效', true);
+            }
         }
 
         function loadData() {
@@ -4060,7 +4065,13 @@ Authorization inquiries: derliang@gmail.com
                 crypto.getRandomValues(saltBytes);
                 const salt = bytesToBase64(saltBytes);
                 const hash = await hashAdminPassword(password, salt);
-                localStorage.setItem(ADMIN_LOCK_STORAGE_KEY, JSON.stringify({ type: 'pin4', salt, hash }));
+                try {
+                    localStorage.setItem(ADMIN_LOCK_STORAGE_KEY, JSON.stringify({ type: 'pin4', salt, hash }));
+                } catch (e) {
+                    adminPinSubmitting = false;
+                    showToast('儲存失敗，管理密碼未設定', true);
+                    return;
+                }
                 adminPinSubmitting = false;
                 closeAdminAuth();
                 showAdminView();
