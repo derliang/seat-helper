@@ -18,6 +18,20 @@ function loadGroupLogic(file) {
     return ctx.GroupLogic;
 }
 
+/* 依序執行 index.html 裡指定 id 的 <script>（同一個 context），例如 ['group-logic', 'score-import'] */
+function loadScripts(ids, file) {
+    const html = fs.readFileSync(path.join(ROOT, file || 'index.html'), 'utf8');
+    const ctx = { TextEncoder, TextDecoder, Uint8Array, Uint32Array, DataView, ArrayBuffer, Map, Set, Math, Date, JSON, Number, String, Array, Object, Error, TypeError };
+    ctx.globalThis = ctx;
+    vm.createContext(ctx);
+    ids.forEach(id => {
+        const m = html.match(new RegExp('<script id="' + id + '">([\\s\\S]*?)</script>'));
+        if (!m) throw new Error('index.html 找不到 <script id="' + id + '">');
+        vm.runInContext(m[1], ctx, { filename: id });
+    });
+    return ctx;
+}
+
 /* 只支援不壓縮（stored）的 zip，並檢查 CRC */
 function unzip(u8, crc32) {
     const buf = Buffer.from(u8.buffer, u8.byteOffset, u8.byteLength);
@@ -111,4 +125,4 @@ function makeRoster(n, o) {
     return out;
 }
 
-module.exports = { ROOT, loadGroupLogic, unzip, checkXml, openPackage, tinyPng, makeRoster };
+module.exports = { ROOT, loadGroupLogic, loadScripts, unzip, checkXml, openPackage, tinyPng, makeRoster };
