@@ -103,6 +103,9 @@ button{font:inherit;color:inherit}
 .tab:not([aria-selected=true]):hover{background:var(--surface);color:var(--text)}
 .hdr-r{display:flex;gap:8px;margin-left:auto}
 .frame.m .tabs,.frame.m .hdr-r{margin-inline:0}
+.frame.m .btn,.frame.m .btn-sm,.frame.m .st,.frame.m .tab,.frame.m .seg button,.frame.m .stepper button,.frame.m select,.frame.m summary,.frame.m .fbtn{min-height:44px}
+.frame.m .st{padding-block:0}.frame.m .stepper button{width:44px;height:44px}.frame.m .seg button{min-width:44px}
+.frame.m .opt:has(.sw){min-height:56px;cursor:pointer}.frame.m .opt .sw{position:relative}.frame.m .opt .sw input{outline-offset:2px}
 @container (max-width:640px){.hdr{padding:10px 12px}.tabs{order:3;width:100%;display:flex}.tab{flex:1;padding:0 8px}.hdr-r{margin-left:auto}}
 .steps{display:flex;gap:8px;padding:12px 20px;background:var(--bg);border-bottom:1px solid var(--line);overflow-x:auto}
 .st{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:99px;border:1px solid var(--line-2);background:var(--surface);color:var(--text-2);font-weight:700;white-space:nowrap}
@@ -523,7 +526,7 @@ table.xl td.xgap{border:0}
 
   <section class="sec" id="s-result">
     <div class="sec-h"><h2>③ 分組：結果</h2><span>桌機 1280</span></div>
-    <p class="note">這裡用 S 型分 8 組的結果示範。姓名可拖曳換組（示意）；右欄「下載」可下載分組名單的 Word 與 Excel（檔案內容看⑧）。</p>
+    <p class="note">這裡用 S 型分 8 組的結果示範。點一位同學再點另一位即可互換；右欄「下載」可下載分組名單的 Word 與 Excel（檔案內容看⑧）。</p>
     <div id="f-result"></div>
   </section>
 
@@ -553,7 +556,7 @@ table.xl td.xgap{border:0}
   <section class="sec" id="s-files">
     <div class="sec-h"><h2>⑧ 下載稿：四份檔案</h2><span>分組名單 Word／Excel、座位表 Word／Excel</span></div>
     <p class="note">下面是檔案打開後的樣子，用目前畫面上的假資料即時畫出來：在④⑤換座位、在③換人、改上方的下載選項，這裡都會跟著變。紙張與試算表一律淺色（印出來與在 Office 裡就是淺色）。</p>
-    <div id="pv"></div>
+    <p class="note">缺成績略過的同學：下載檔名單最後多一行「未分組：林小安、楊承恩、周柏宇」（Word 兩頁、Excel 兩個工作表都有；沒人被略過時不出現），表尾「共 N 人」只算有分組的人。</p><div id="pv"></div>
   </section>
 </div>
 
@@ -917,7 +920,7 @@ table.xl td.xgap{border:0}
     '<div class="card" id="rc"><div class="card-h"><h3>S 型分組結果</h3><span class="badge info">按成績・8 組・每組 4 人</span><span data-adjbadge>'+adjBadge()+'</span><span class="sp"></span><label class="row" style="gap:8px;font-size:13px;font-weight:700">顯示成績 '+sw(true,'swsc','顯示成績')+'</label></div>'+gcards()+'<p class="hint" style="margin-top:10px">點一位同學再點另一位可以互換；座位畫面的調整也會同步到這裡，右欄統計會一起更新。</p></div>'+
     '<div class="btn-row" style="justify-content:space-between"><button class="btn" type="button">'+ic('shuffle')+'重新分組</button><button class="btn btn-primary" type="button">下一步：安排座位</button></div></div>'+
     '<aside class="col"><div class="card"><div class="card-h"><h3>各組平均</h3></div><div data-bars>'+statBars()+'</div></div>'+
-    '<div class="card"><div class="card-h"><h3>與上次同組</h3><span class="sp"></span><span class="badge ok">'+ic('check')+'沒有重複</span></div><p class="hint">與 11/14 的分組比對，沒有任何兩人再度同組。</p></div>'+dlCard('group')+histCard()+'</aside></div>';
+    '<div class="card"><div class="card-h"><h3>與上次同組</h3><span class="sp"></span><span class="badge ok">'+ic('check')+'沒有重複</span></div><p class="hint">與 11/14 的分組比對，沒有任何兩人再度同組。</p></div>'+dlCard('group')+'<div class="card" id="d1-demo"><div class="card-h"><h3>與最近 3 次同組</h3><span class="sp"></span><span class="badge warn">'+ic('warn')+'2 對再度同組</span></div><p class="hint">有 2 對同學無法避開最近 3 次的同組：乙＆丙、丁＆甲。</p><p class="hint" style="margin-top:6px">示範：比對範圍選「最近 3 次」且做不到時，卡片標題改叫「與最近 N 次同組」，結果頁上方的黃色提示條用同一句話。</p></div>'+histCard()+'</aside></div>';
 
   /* ── ④ 傳統座位 ── */
   var lays={block:'2×2 方塊',row:'橫向一段',col:'縱向一段'};
