@@ -958,6 +958,52 @@ Authorization inquiries: derliang@gmail.com
         #groupView th{background:var(--sunken);font-size:12px;color:var(--text-2)}
         #groupView tr:last-child td{border-bottom:0}
         #groupView td.miss{background:var(--warn-soft);color:var(--warn-ink);font-weight:700}
+        /* 匯入成績檔（DESIGN.md 10.1a、模擬頁⑨） */
+        #groupView td.orig{background:var(--warn-soft);color:var(--warn-ink);font-weight:700}
+        #groupView td.err{background:var(--danger-soft);color:var(--danger-ink);font-weight:700}
+        #groupView td.prev{color:var(--text-2)}
+        #groupView th .conf{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--warn-ink);margin-right:6px;vertical-align:middle}
+        #groupView th.hasconf .sel{width:calc(100% - 14px)}
+        #groupView .sumrow{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;padding:10px 12px;margin-bottom:12px;background:var(--sunken);border:1px solid var(--line);border-radius:var(--r-md);font-size:13px;color:var(--text-2)}
+        #groupView .sumrow .k{color:var(--text-3)}
+        #groupView .ichip{display:inline-flex;align-items:center;gap:4px;min-height:30px;padding:0 10px;border-radius:99px;border:1px solid var(--accent-line);background:var(--accent-soft);color:var(--accent-ink);font:700 12px var(--font);cursor:pointer}
+        #groupView .ichip.warn{border-color:var(--warn-line);background:var(--warn-soft);color:var(--warn-ink)}
+        #groupView .iedit{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:-4px 0 12px;font-size:13px}
+        #groupView .iedit .sel{width:auto;min-width:140px}
+        #groupView .sheets{display:grid;gap:6px;margin-top:8px}
+        #groupView .sheet{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line-2);border-radius:var(--r-md);background:var(--surface);cursor:pointer}
+        #groupView .sheet.on{border-color:var(--accent);background:var(--accent-soft)}
+        #groupView .sheet.dis{background:var(--sunken)}
+        #groupView .sheet input{margin-top:3px;width:18px;height:18px;accent-color:var(--accent);flex:none}
+        #groupView .sheet b,#groupView .sheet .hint{display:block}
+        #groupView .fileline{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:10px 12px;border:1px solid var(--line-2);border-radius:var(--r-md);background:var(--sunken)}
+        #groupView .fileline .fx{width:32px;height:32px;border-radius:8px;display:grid;place-items:center;background:var(--g2-soft);color:var(--g2-ink);font:700 15px var(--font-display);flex:none}
+        #groupView .fileline b{display:block;overflow-wrap:anywhere}
+        #groupView .fileline>div{flex:1 1 180px;min-width:0}
+        #groupView .warns{display:grid;gap:8px;margin-top:14px}
+        #groupView .warns>header{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+        #groupView .warns>header b{font-size:13px}
+        #groupView .warns>header .btn{margin-left:auto}
+        #groupView .wl{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:var(--r-md);border:1px solid var(--accent-line);background:var(--accent-soft);color:var(--accent-ink);font-size:13px}
+        #groupView .wl.w{border-color:var(--warn-line);background:var(--warn-soft);color:var(--warn-ink)}
+        #groupView .wl.x{border-color:var(--danger-line);background:var(--danger-soft);color:var(--danger-ink)}
+        #groupView .wl .ic{margin-top:2px;flex:none}
+        #groupView .wl>div{flex:1;min-width:0}
+        #groupView .wl .btn{margin-top:6px}
+        #groupView .badge.err{background:var(--danger-soft);border-color:var(--danger-line);color:var(--danger-ink)}
+        #groupView .ipanel{margin-top:14px;border:1px solid var(--line-2);border-radius:var(--r-md);background:var(--surface);padding:14px}
+        #groupView .ipanel h4{font:700 15px var(--font-display);margin:0 0 4px}
+        #groupView .prow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:8px 12px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+        #groupView .prow:first-of-type{border-top:0}
+        #groupView .prow .o{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+        #groupView .prow .o b{font:700 15px var(--font-display)}
+        #groupView .prow .pc{display:flex;gap:8px;align-items:center}
+        #groupView .prow .pc .sel{width:auto;flex:1}
+        #groupView .prow .input.sm{width:72px}
+        #groupView .nexthint{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:flex-end;margin-top:14px}
+        #groupView .nexthint .hint{color:var(--warn-ink);font-weight:700}
+        #groupView .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+        #groupView .ghist li.imp{border-color:var(--accent-line);background:var(--accent-soft)}
         #groupView .sel{min-height:32px;border:1px solid var(--line-2);border-radius:6px;background:var(--surface);color:var(--text);font:700 12px var(--font);padding:0 8px;width:100%}
         #groupView .dz{border:2px dashed var(--line-2);border-radius:var(--r-md);background:var(--sunken);padding:56px 16px;min-height:280px;align-content:center;text-align:center;color:var(--text-2);display:grid;gap:10px;justify-items:center}
         #groupView .dz b{font-size:17px;color:var(--text)}
@@ -1156,6 +1202,9 @@ Authorization inquiries: derliang@gmail.com
         }
         /* D2：手機與平板窄版（≤768）分組頁所有可點元素至少 44px（DESIGN.md 手機點擊區規範）；只動這裡，桌機版面不變 */
         @media (max-width:768px){
+        #groupView .sheet,#groupView .ichip{min-height:44px}
+        #groupView .sheet input{width:22px;height:22px}
+        #groupView .prow{grid-template-columns:1fr}
         #groupView .gsi{min-height:44px}
         #groupView .gseg button{min-height:44px}
         #groupView .gstep button{width:44px;height:44px}
@@ -2873,6 +2922,13 @@ function classifyColumns(sh, block, hdr, labels) {
         let best = 0;
         cols.forEach(x => { if (x.nameRatio > best && x.st.distinct >= x.st.filled * 0.5) { best = x.nameRatio; nameX = x; } });
         if (nameX) { nameX.confidence = best >= C.NAME_RATIO ? (hasHdr ? 'mid' : 'high') : 'low'; nameX.why = best >= C.NAME_RATIO ? WHY.nameCnt : WHY.nameWeak; }
+        else {
+            /* 都不像人名（綽號、名字後面帶數字）：取不重複文字最多的那一欄；沒有標題又只有這一欄是文字時，就是它 */
+            const nn = x => x.st.filled - x.st.num - x.st.err - x.st.fnv;
+            const texts = cols.filter(x => nn(x) > 0 && x.st.distinct >= x.st.filled * 0.5);
+            texts.forEach(x => { if (!nameX || nn(x) > nn(nameX)) nameX = x; });
+            if (nameX) { nameX.confidence = !hasHdr && texts.length === 1 ? 'high' : 'low'; nameX.why = WHY.nameWeak; }
+        }
     }
     if (nameX) nameX.role = 'name';
     const rows = nameX ? all.filter(r => nameLike(sh.rows[r][nameX.col])) : all;
@@ -2926,6 +2982,8 @@ function pickRows(sh, block, cols, hdr, opts) {
     if (!nameX) return out;
     const hdrTexts = new Set();
     if (hdr.row >= 0) for (let c = block.c1; c <= block.c2; c++) { const t = cellText(sh.rows[hdr.row][c]); if (t) hdrTexts.add(t); }
+    /* 沒有標題列（貼上的名單）或老師自己指定的姓名欄：不像人名也收（綽號、外文名） */
+    const lenient = hdr.row < 0 || nameX.why === WHY.override;
     let stopped = false;
     dataRows(sh, hdr).forEach(r => {
         const row = sh.rows[r], cells = row.slice(block.c1, block.c2 + 1);
@@ -2937,7 +2995,7 @@ function pickRows(sh, block, cols, hdr, opts) {
         if (sh.hiddenRows.has(r) && !(opts && opts.includeHidden)) { if (!isBlank(nm)) { out.hidden++; out.skipped.push({ row: r, why: 'hidden', text: cellText(nm) }); } return; }
         if (hdrTexts.size >= 2 && texts.filter(t => hdrTexts.has(t)).length >= 2) { out.skipped.push({ row: r, why: 'repeatHeader', text: '' }); return; }
         if (isBlank(nm)) { out.skipped.push({ row: r, why: 'noName', text: texts[0] || '' }); return; }
-        if (!nl) { out.skipped.push({ row: r, why: 'notName', text: cellText(nm) }); return; }
+        if (!nl && !(lenient && parseNum(nm) == null && !isErr(nm) && !isFnv(nm))) { out.skipped.push({ row: r, why: 'notName', text: cellText(nm) }); return; }
         out.rows.push(r);
     });
     return out;
@@ -3294,7 +3352,8 @@ root.ScoreImport = {
     const ic = n => '<svg class="ic" aria-hidden="true"><use href="#gi-' + n + '"/></svg>';
     const LAYS = { block: '2×2 方塊', row: '橫向一段', col: '縱向一段' };
     const LAY_TIP = { block: '每組 4 人坐成 2×2，前後左右都是組員', row: '每組坐在同一個位置、左右相鄰的幾排', col: '每組坐在同一排、前後相鄰' };
-    const COL_TYPES = [['cls', '班級'], ['no', '座號'], ['name', '姓名'], ['score', '成績'], ['skip', '略過']];
+    const SI = window.ScoreImport;
+    const COL_TYPES = [['cls', '班級'], ['no', '座號'], ['name', '姓名'], ['score', '成績'], ['group', '上次分組'], ['skip', '略過']];
     const PRESETS = {
         island: { name: '方桌', sub: '4 人 × N 張', seats: 4, cols: 4, shape: 'rect' },
         long: { name: '長桌', sub: '8 人 × N 張', seats: 8, cols: 2, shape: 'rect' },
@@ -3304,8 +3363,10 @@ root.ScoreImport = {
     /* ── 狀態 ── */
     const S = {
         mode: 'seat', step: 1, res: 'result',
-        src: 'paste', paste: '', colMap: null, colN: 0, autoNo: true, hand: [{ no: '', name: '', score: '' }, { no: '', name: '', score: '' }, { no: '', name: '', score: '' }],
+        src: 'paste', paste: '', autoNo: true, hand: [{ no: '', name: '', score: '' }, { no: '', name: '', score: '' }, { no: '', name: '', score: '' }],
         confirmClear: false, numTouched: false,
+        /* 匯入（貼上與檔案走同一條 ScoreImport 管線）：ovP／ovF 是老師在畫面上改的判斷；imp 是讀進來的檔案（只在記憶體）；impSaved 是匯入後的名單（存瀏覽器） */
+        ovP: {}, ovF: {}, imp: null, impSaved: null, ires: null, iedit: '', warnOpen: null, ivm: {},
         roster: [], parsed: null,
         meth: 'rand', by: 'count', num: 6, avoid: true, cmp: 1, mode2: 'snake', fix: {}, skip: false, viewPast: null,
         gRoster: [], groups: [], orig: [], origG: {}, hist: [], hi: 0, selS: null, confirming: false, used: null, showScore: true, recId: null,
@@ -3319,7 +3380,7 @@ root.ScoreImport = {
     /* ── 儲存（只存這個瀏覽器；失敗就只在本次有效）── */
     function save() {
         try {
-            localStorage.setItem(KEY, JSON.stringify({ src: S.src, paste: S.paste, autoNo: S.autoNo, hand: S.hand, meth: S.meth, by: S.by, num: S.num, avoid: S.avoid, cmp: S.cmp, mode2: S.mode2, recs: S.recs, trad: S.trad, D: S.D, showScore: S.showScore }));
+            localStorage.setItem(KEY, JSON.stringify({ src: S.src, paste: S.paste, impSaved: S.impSaved, autoNo: S.autoNo, hand: S.hand, meth: S.meth, by: S.by, num: S.num, avoid: S.avoid, cmp: S.cmp, mode2: S.mode2, recs: S.recs, trad: S.trad, D: S.D, showScore: S.showScore }));
         } catch (e) { /* 空間不足或被禁用 */ }
     }
     function load() {
@@ -3328,41 +3389,18 @@ root.ScoreImport = {
             if (!j) return;
             ['src', 'paste', 'autoNo', 'meth', 'by', 'num', 'avoid', 'cmp', 'mode2', 'showScore'].forEach(k => { if (j[k] !== undefined) S[k] = j[k]; });
             if (Array.isArray(j.hand) && j.hand.length) S.hand = j.hand;
+            if (j.impSaved && Array.isArray(j.impSaved.roster)) S.impSaved = j.impSaved;
             if (Array.isArray(j.recs)) S.recs = j.recs.slice(0, 10);
             if (j.trad) Object.assign(S.trad, j.trad);
             if (j.D) Object.assign(S.D, j.D);
         } catch (e) { /* 資料壞掉就用預設 */ }
     }
 
-    /* ── 名單解析：貼上文字 → 欄位判斷 → 名單 ── */
-    function parseRows(text) {
-        const lines = String(text || '').replace(/\r/g, '').split('\n').filter(l => l.trim() !== '');
-        if (!lines.length) return [];
-        const tab = lines.some(l => l.indexOf('\t') >= 0), comma = !tab && lines.some(l => /[,，]/.test(l));
-        return lines.map(l => (tab ? l.split('\t') : comma ? l.split(/[,，]/) : l.trim().split(/[\s、]+/)).map(c => c.trim()));
-    }
-    const HDR = { 班級: 'cls', 年班: 'cls', 座號: 'no', 學號: 'no', 號碼: 'no', 姓名: 'name', 名字: 'name', 成績: 'score', 分數: 'score', class: 'cls', no: 'no', name: 'name', score: 'score' };
-    function detectTypes(rows, ncol) {
-        const types = new Array(ncol).fill('skip'), stat = [];
-        for (let c = 0; c < ncol; c++) {
-            const vals = rows.map(r => r[c] || '').filter(v => v !== '');
-            const num = vals.filter(v => /^\d+(\.\d+)?$/.test(v)).length;
-            stat.push({ isNum: vals.length > 0 && num / vals.length >= 0.9, distinct: new Set(vals).size, n: vals.length });
-        }
-        let nameCol = -1, best = -1;
-        stat.forEach((s, c) => { if (!s.isNum && s.n > 0 && s.distinct > best) { best = s.distinct; nameCol = c; } });
-        if (nameCol < 0) nameCol = 0;
-        types[nameCol] = 'name';
-        const numsLeft = [], numsRight = [];
-        stat.forEach((s, c) => { if (c === nameCol) return; if (s.isNum) (c < nameCol ? numsLeft : numsRight).push(c); else if (c < nameCol && s.n > 0) types[c] = 'cls'; });
-        if (numsLeft.length >= 2) { types[numsLeft[0]] = 'cls'; types[numsLeft[1]] = 'no'; } else if (numsLeft.length === 1) types[numsLeft[0]] = 'no';
-        if (numsRight.length) types[numsRight[0]] = 'score';
-        return types;
-    }
+    /* ── 名單解析：貼上文字或檔案 → ScoreImport（找標題列、欄位、成績欄）→ 名單；逐筆輸入照舊 ── */
     function buildRoster(rows, types, autoNo) {
         const ix = t => types.indexOf(t), ci = ix('cls'), ni = ix('no'), mi = ix('name'), si = ix('score');
         const out = [];
-        rows.forEach((r, i) => {
+        rows.forEach(r => {
             const name = (mi >= 0 ? r[mi] : '') || '';
             if (!name) return;
             let no = ni >= 0 ? (r[ni] || '') : '';
@@ -3373,7 +3411,9 @@ root.ScoreImport = {
         });
         return out;
     }
+    const curOv = () => (S.src === 'file' ? S.ovF : S.ovP);
     function parseList() {
+        S.ires = null;
         if (S.src === 'hand') {
             const rows = S.hand.filter(h => String(h.name).trim()).map(h => [String(h.no).trim(), String(h.name).trim(), String(h.score).trim()]);
             const types = ['no', 'name', 'score'];
@@ -3381,22 +3421,39 @@ root.ScoreImport = {
             S.roster = buildRoster(rows, types, S.autoNo);
             return;
         }
-        let rows = parseRows(S.paste), hdr = false;
-        if (rows.length && rows[0].some(c => HDR[String(c).toLowerCase()] && !/^\d+$/.test(c))) {
-            hdr = true;
-            const h = rows[0].map(c => HDR[String(c).toLowerCase()] || 'skip');
-            rows = rows.slice(1);
-            const ncol = Math.max(h.length, ...rows.map(r => r.length), 0);
-            const auto = h.concat(new Array(Math.max(0, ncol - h.length)).fill('skip'));
-            const types = S.colMap && S.colN === ncol ? S.colMap : auto;
-            S.parsed = { rows, types, auto, hdr, ncol };
-        } else {
-            const ncol = Math.max(0, ...rows.map(r => r.length));
-            const auto = ncol ? detectTypes(rows, ncol) : [];
-            const types = S.colMap && S.colN === ncol ? S.colMap : auto;
-            S.parsed = { rows, types, auto, hdr, ncol };
-        }
-        S.roster = buildRoster(S.parsed.rows, S.parsed.types, S.autoNo);
+        let sheets = [];
+        if (S.src === 'file') {
+            if (!S.imp) {
+                const sv = S.impSaved;
+                S.roster = sv ? sv.roster.map(x => Object.assign({}, x)) : [];
+                if (sv && S.autoNo) { const c = {}; S.roster.forEach(x => { c[x.cls] = (c[x.cls] || 0) + 1; if (!x.no) x.no = String(c[x.cls]); }); }
+                S.parsed = sv ? { saved: true, rows: [], types: [], hdr: false, ncol: 0 } : null;
+                return;
+            }
+            sheets = S.imp.sheets;
+        } else if (String(S.paste || '').trim()) sheets = [SI.fromRows(S.paste, '貼上的名單')];
+        if (!sheets.length) { S.parsed = null; S.roster = []; return; }
+        const res = SI.analyze(sheets, { override: curOv(), autoNo: S.autoNo });
+        const pv = res.report.preview, h0 = res.report.header[0];
+        S.ires = res;
+        S.roster = res.roster.map(x => Object.assign({}, x));
+        S.parsed = { rows: pv ? pv.rows : [], types: pv ? pv.cols.map(c => c.role) : [], hdr: !!(h0 && h0.row > 0), hdrRow: h0 ? h0.row : 0, ncol: pv ? pv.cols.length : 0 };
+        if (S.src === 'file') S.impSaved = { name: S.imp.name, roster: res.roster.map(x => Object.assign({}, x)), labels: res.prevGroupLabels, group: res.report.group };
+    }
+    /* 匯入的上次分組（檔案「組別」欄）：換成和分組紀錄一樣的鍵，給「避免與上次同組」比對；不進分組紀錄 */
+    function impLabels() {
+        if (S.src === 'hand') return null;
+        const l = S.ires ? S.ires.prevGroupLabels : (S.src === 'file' && S.impSaved ? S.impSaved.labels : null);
+        return l && l.some(Boolean) && l.length === S.roster.length ? l : null;
+    }
+    function impGroups() { const l = impLabels(); return l ? SI.toAvoidGrouping(S.roster, l) : null; }
+    function impGroupInfo() {
+        const l = impLabels();
+        if (!l) return null;
+        const m = new Map();
+        l.forEach((g, i) => { if (g == null) return; if (!m.has(g)) m.set(g, []); m.get(g).push(i); });
+        const rep = S.ires ? S.ires.report.group : (S.impSaved && S.impSaved.group);
+        return { label: (rep && rep.label) || '組別', groups: Array.from(m.entries()), people: l.filter(Boolean).length };
     }
 
     /* ── 小工具：時間、文字 ── */
@@ -3497,6 +3554,8 @@ root.ScoreImport = {
         const method = score ? S.mode2 : 'random';
         const cmp = (!score && S.avoid) ? S.cmp : 0;
         const past = cmp ? S.recs.slice(0, cmp).map(pastKeys) : [];
+        const ig = cmp ? impGroups() : null;
+        if (ig && ig.length) past.push(ig);
         const r = GL.groupRoster(roster, { method, count: rc.count, avoid: past, indices: idx });
         const rec = { id: 'r' + Date.now().toString(36) + Math.floor(Math.random() * 1e4), ts: Date.now(), method, label: (GL.METHOD_LABELS[method] || '分組') + '・' + r.groups.length + ' 組', roster, groups: cp(r.groups), orig: cp(r.groups), notice: r.notice || '', avoidCmp: cmp, skipped };
         S.recs.unshift(rec); S.recs.length = Math.min(S.recs.length, 10);
@@ -3550,52 +3609,143 @@ root.ScoreImport = {
     }
 
     /* ── ① 名單 ── */
+    const WL = { info: ['', 'check', '資訊'], warn: ['w', 'warn', '請確認'], error: ['x', 'warn', '無法使用'] };
+    function impTableHTML(rep) {
+        const pv = rep.preview, grp = rep.group;
+        const head = pv.cols.map((c, i) => {
+            const conf = c.confidence !== 'high';
+            return '<th' + (conf ? ' class="hasconf"' : '') + '>' + (conf ? '<span class="conf" title="請確認：' + esc(c.why) + '"></span>' : '') + '<select class="sel" data-in="col" data-i="' + i + '" aria-label="第' + (i + 1) + '欄' + (c.label ? '（' + esc(c.label) + '）' : '') + '是"' + (conf ? ' title="請確認：' + esc(c.why) + '"' : '') + '>' +
+                COL_TYPES.map(o => '<option value="' + o[0] + '"' + (o[0] === c.role ? ' selected' : '') + '>' + o[1] + '</option>').join('') + '</select></th>';
+        }).join('');
+        let body = pv.rows.map(r => '<tr>' + r.cells.map((x, i) => {
+            const role = pv.cols[i].role;
+            if (role === 'score' && (x.k === 'absent' || x.k === 'grade' || x.k === 'text')) return '<td class="orig" title="原文：' + esc(x.t) + '，目前當作沒有成績">' + esc(x.t) + '</td>';
+            if (x.k === 'err' || x.k === 'fnv') return '<td class="err" title="' + (x.k === 'err' ? 'Excel 公式錯誤，當作沒有成績' : '公式沒有計算結果') + '">' + esc(x.t) + '</td>';
+            if (role === 'score' && x.k === 'blank' && x.used) return '<td class="miss">缺</td>';
+            if (role === 'score' && x.k === 'conv') return '<td title="原文：' + esc(x.t) + '，換算成 ' + x.v + ' 分">' + esc(x.t) + '</td>';
+            return '<td' + (role === 'group' ? ' class="prev"' : '') + '>' + esc(x.t) + '</td>';
+        }).join('') + '</tr>').join('');
+        if (pv.more) body += '<tr><td colspan="' + pv.cols.length + '" class="hint">…另 ' + pv.more + ' 人</td></tr>';
+        let h = '<div class="tbl-wrap"><table><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table></div>';
+        h += '<p class="hint" style="margin-top:8px">欄位是程式自動判斷的；判斷錯了，直接改表頭的下拉選單。' + (S.parsed.hdr ? (S.src === 'file' ? '第 ' + S.parsed.hdrRow + ' 列是標題，已略過。' : '第一列是標題，已略過。') : '') + '</p>';
+        if (grp) h += '<div class="alert info" style="margin-top:12px">' + ic('check') + '<div><b>偵測到「' + esc(grp.label) + '」欄，已當作「上次分組」</b>「避免與上次同組」會多一筆「匯入的分組（來自' + (S.src === 'file' ? '檔案' : '') + '「' + esc(grp.label) + '」欄）」可以比對。不要的話，把表頭改成「略過」。</div></div>';
+        if (rep.score.multi) h += '<div class="opt" style="margin-top:12px"><div><b>有多個成績欄時</b><span class="hint">已把 ' + rep.score.cols.length + ' 欄標成成績（' + rep.score.cols.slice(-3).map(esc).join('、') + (rep.score.cols.length > 3 ? '…' : '') + '）；輸出仍是單一成績</span></div>' +
+            gseg('imerge', [['right', '只取最右'], ['mean', '平均']].concat(rep.score.weights ? [['weighted', '依比重加權']] : []), rep.score.mode) + '</div>';
+        return h;
+    }
+    function panelHTML(rep) {
+        if (!rep.values.length) return '';
+        const ov = curOv();
+        return '<div class="ipanel" id="gvIpanel"><h4>缺考、請假與等第怎麼算</h4><p class="hint" style="margin:0 0 6px">只有偵測到才會出現。缺考、請假預設是「沒有成績」，等第預設 A=95、B=85、C=75、D=65、E=55。</p>' + rep.values.map(v => {
+            const k = v.type + '|' + v.raw, mode = S.ivm[k] || (v.value == null ? 'none' : (v.value === 0 && v.type === 'absent' ? 'zero' : 'conv'));
+            const opts = v.type === 'grade' ? [['conv', '換算成 N 分'], ['none', '沒有成績']] : [['none', '沒有成績'], ['conv', '換算成 N 分'], ['zero', '當 0 分']];
+            const val = v.value != null ? v.value : (ov[v.type === 'grade' ? 'grades' : 'absent'] || {})[v.raw];
+            return '<div class="prow"><div class="o"><b>' + esc(v.raw) + '</b><span class="hint">' + v.cat + '，出現 ' + v.count + ' 次</span></div><div class="pc"><select class="sel" data-in="ival" data-k="' + esc(k) + '" aria-label="' + esc(v.raw) + '的算法">' +
+                opts.map(o => '<option value="' + o[0] + '"' + (o[0] === mode ? ' selected' : '') + '>' + o[1] + '</option>').join('') + '</select>' +
+                (mode === 'conv' ? '<input class="input sm" inputmode="decimal" data-in="ivaln" data-k="' + esc(k) + '" aria-label="' + esc(v.raw) + '換算成幾分" placeholder="分數" value="' + esc(val == null ? '' : val) + '">' : '') + '</div></div>';
+        }).join('') + '<p class="hint" style="margin-top:6px">換算表可改；沒用到的項目不會出現。</p></div>';
+    }
+    function warnsHTML(rep) {
+        const W = rep.warnings;
+        if (!W.length) return '';
+        const n = { info: 0, warn: 0, error: 0 };
+        W.forEach(w => { n[w.level]++; });
+        const open = S.warnOpen != null ? S.warnOpen : (n.warn + n.error > 0);
+        const btn = { panel: rep.values.length ? '<br><button class="btn btn-sm" type="button" data-a="igo" data-v="panel">逐項設定</button>' : '', sheets: '', score: '<br><button class="btn btn-sm" type="button" data-a="iedit" data-v="score">改成績欄</button>', hdr: '<br><button class="btn btn-sm" type="button" data-a="iedit" data-v="hdr">改標題列</button>', hidden: '' };
+        let h = '<div class="warns" id="gvWarns"><header><b>程式的判斷與提醒</b>' + (n.info ? '<span class="badge info">資訊 ' + n.info + '</span>' : '') + (n.warn ? '<span class="badge warn">' + ic('warn') + '請確認 ' + n.warn + '</span>' : '') + (n.error ? '<span class="badge err">無法使用 ' + n.error + '</span>' : '') +
+            '<button class="btn btn-sm" type="button" data-a="iwarn" aria-expanded="' + open + '">' + (open ? '收合' : '展開') + '</button></header>';
+        if (open) h += W.map(w => { const L = WL[w.level]; return '<div class="wl ' + L[0] + '" role="' + (w.level === 'info' ? 'note' : 'alert') + '">' + ic(L[1]) + '<div><span class="sr-only">' + L[2] + '：</span>' + esc(w.text) + (w.act && (S.src === 'file' || w.act === 'panel') ? (btn[w.act] || '') : '') + '</div></div>'; }).join('');
+        else h += '<div class="wl">' + ic('check') + '<div>' + esc(W[0].text) + (W.length > 1 ? '…（共 ' + W.length + ' 則）' : '') + '</div></div>';
+        return h + '</div>';
+    }
+    function sumrowHTML(rep) {
+        const sel = rep.sheets.filter(x => x.selected), h0 = rep.header[0], skip = rep.skipped.filter(x => x.why !== 'hidden').length;
+        let h = '<div class="sumrow"><span><span class="k">讀取</span>　' + (sel.map(x => esc(x.name)).join('、') || '沒有選') + (rep.sheets.length > 1 ? '（共 ' + rep.sheets.length + ' 個工作表，已選 ' + sel.length + '）' : '') + '</span>' +
+            '<span><span class="k">標題列</span>　' + (h0 && h0.row ? '第 ' + h0.row + ' 列' : '沒有') + '</span>' +
+            '<span><span class="k">成績欄</span>　' + (rep.score.label ? esc(rep.score.label) : '沒有') + '</span>' +
+            '<span>共 ' + rep.people + ' 人' + (rep.classes > 1 ? '（' + rep.classes + ' 個班級）' : '') + '</span>' +
+            (skip || rep.hidden ? '<span><span class="k">略過</span>　' + skip + ' 列' + (rep.hidden ? '、隱藏 ' + rep.hidden + ' 列' : '') + '</span>' : '') +
+            (rep.sheets.length > 1 ? '<button class="ichip" type="button" data-a="iedit" data-v="sheet">改工作表</button>' : '') +
+            '<button class="ichip" type="button" data-a="iedit" data-v="hdr" aria-expanded="' + (S.iedit === 'hdr') + '">改標題列</button>' +
+            '<button class="ichip' + (rep.score.confidence !== 'high' ? ' warn' : '') + '" type="button" data-a="iedit" data-v="score" aria-expanded="' + (S.iedit === 'score') + '">' + (rep.score.confidence !== 'high' ? ic('warn') : '') + '改成績欄</button></div>';
+        if (S.iedit === 'hdr' && h0) {
+            const n = Math.max(h0.rows, h0.row);
+            h += '<div class="iedit"><label class="label" for="gvIhdr" style="margin:0">標題在第幾列</label><select class="sel" id="gvIhdr" data-in="ihdr"><option value="0"' + (!h0.row ? ' selected' : '') + '>沒有標題列</option>' +
+                Array.from({ length: n }, (_, i) => '<option value="' + (i + 1) + '"' + (h0.row === i + 1 ? ' selected' : '') + '>第 ' + (i + 1) + ' 列</option>').join('') + '</select></div>';
+        }
+        if (S.iedit === 'score' && rep.preview) {
+            const cs = rep.preview.cols, cur = cs.map((c, i) => c.role === 'score' ? i : -1).filter(i => i >= 0).pop();
+            h += '<div class="iedit"><label class="label" for="gvIscore" style="margin:0">用哪一欄當成績</label><select class="sel" id="gvIscore" data-in="iscore"><option value="-1"' + (cur == null ? ' selected' : '') + '>沒有成績</option>' +
+                cs.map((c, i) => c.role === 'name' ? '' : '<option value="' + i + '"' + (i === cur ? ' selected' : '') + '>' + esc(c.label || '第 ' + (i + 1) + ' 欄') + '</option>').join('') + '</select><span class="hint">只用這一欄，其他成績欄改成略過</span></div>';
+        }
+        return h;
+    }
     function previewHTML() {
-        const p = S.parsed, r = S.roster;
-        if (!p || !r.length) return '<div class="gempty">貼上、匯入檔案或逐筆輸入名單後，這裡會顯示程式讀到的內容。</div>';
+        const p = S.parsed, r = S.roster, rep = S.ires && S.ires.report;
+        if (!p || (!r.length && !rep)) return '<div class="gempty">貼上、匯入檔案或逐筆輸入名單後，這裡會顯示程式讀到的內容。</div>';
         const miss = r.filter(x => x.score === '').length, sc = r.length - miss, hasS = sc > 0;
         let h = '<div class="card-h"><h3>程式讀到的內容</h3><span class="sp"></span><span class="badge">共 ' + r.length + ' 人</span>' +
             (hasS ? '<span class="badge ok">有成績 ' + sc + ' 人</span>' : '<span class="badge info">沒有成績</span>') +
             (hasS && miss ? '<span class="badge warn">' + ic('warn') + '缺成績 ' + miss + ' 人</span>' : '') + '</div>';
-        let head, body = '';
-        if (S.src === 'hand') {
-            head = ['座號', '姓名', '成績'].map(c => '<th>' + c + '</th>').join('');
+        if (S.src === 'hand' || p.saved) {
+            const head = ['座號', '姓名', '成績'].map(c => '<th>' + c + '</th>').join('');
+            let body = '';
             r.slice(0, 7).forEach(x => { body += '<tr><td>' + esc(x.no) + '</td><td>' + esc(x.name) + '</td><td' + (hasS && x.score === '' ? ' class="miss">缺' : '>' + esc(x.score)) + '</td></tr>'; });
             if (r.length > 7) body += '<tr><td colspan="3" class="hint">…另 ' + (r.length - 7) + ' 人</td></tr>';
+            h += '<div class="tbl-wrap"><table><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table></div>';
+            if (p.saved) h += '<p class="hint" style="margin-top:8px">這是上次匯入的名單（' + esc(S.impSaved.name) + '）。要修改程式的判斷，請重新選擇檔案。</p>';
         } else {
-            head = p.types.map((t, i) => '<th><select class="sel" data-in="col" data-i="' + i + '" aria-label="第' + (i + 1) + '欄是">' + COL_TYPES.map(o => '<option value="' + o[0] + '"' + (o[0] === t ? ' selected' : '') + '>' + o[1] + '</option>').join('') + '</select></th>').join('');
-            const scoreCol = p.types.indexOf('score'), nameCol = p.types.indexOf('name');
-            p.rows.filter(row => nameCol < 0 || row[nameCol]).slice(0, 7).forEach(row => {
-                body += '<tr>' + p.types.map((t, i) => '<td' + (t === 'score' && hasS && !String(row[i] || '').trim() ? ' class="miss">缺' : '>' + esc(row[i] || '')) + '</td>').join('') + '</tr>';
-            });
-            if (r.length > 7) body += '<tr><td colspan="' + p.types.length + '" class="hint">…另 ' + (r.length - 7) + ' 人</td></tr>';
+            if (S.src === 'file') h += sumrowHTML(rep);
+            if (rep.preview) h += impTableHTML(rep);
+            h += panelHTML(rep) + warnsHTML(rep);
         }
-        h += '<div class="tbl-wrap"><table><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table></div>';
-        if (S.src !== 'hand') h += '<p class="hint" style="margin-top:8px">欄位是程式自動判斷的；判斷錯了，直接改表頭的下拉選單。' + (p.hdr ? '第一列是標題，已略過。' : '') + '</p>';
-        if (r.length < 2) h += '<div class="alert" style="margin-top:12px">' + ic('warn') + '<div><b>至少要 2 個人才能分組</b>請再多貼幾位同學。</div></div>';
-        h += '<div class="btn-row" style="margin-top:14px;justify-content:flex-end"><button class="btn btn-primary btn-lg" type="button" data-a="next1"' + (r.length < 2 ? ' disabled' : '') + '>下一步：選擇分組方式</button></div>';
+        if (r.length < 2) h += '<div class="alert" style="margin-top:12px">' + ic('warn') + '<div><b>至少要 2 個人才能分組</b>' + (S.src === 'file' ? '請確認上面勾選的工作表與程式的判斷。' : '請再多貼幾位同學。') + '</div></div>';
+        const need = rep ? rep.confirm : 0;
+        h += '<div class="nexthint">' + (need ? '<span class="hint">有 ' + need + ' 項需要確認</span>' : '') + '<button class="btn btn-primary btn-lg" type="button" data-a="next1"' + (r.length < 2 ? ' disabled' : '') + '>下一步：選擇分組方式</button></div>';
         return h;
     }
+    function sheetsHTML() {
+        const rep = S.ires && S.ires.report;
+        if (!rep || rep.sheets.length < 2) return '';
+        return '<label class="label" style="margin-top:14px" id="gvSheetsLbl">要匯入哪些工作表</label><div class="sheets" id="gvSheets" role="group" aria-labelledby="gvSheetsLbl">' + rep.sheets.map((x, i) =>
+            '<label class="sheet' + (x.selected ? ' on' : '') + (!x.selected && x.why !== 'list' ? ' dis' : '') + '"><input type="checkbox" data-a="isheet" data-v="' + i + '"' + (x.selected ? ' checked' : '') + '><div><b>' + esc(x.name) + (x.selected ? ' <span class="badge ok">已選</span>' : '') + (x.gradeOnly ? ' <span class="badge warn">' + ic('warn') + '等第</span>' : '') + '</b><span class="hint">' + esc(x.text) + '</span></div></label>').join('') + '</div>';
+    }
+    function filePaneHTML() {
+        const pick = '<input type="file" id="gvFile" accept=".xlsx,.xls,.csv" hidden>';
+        if (!S.imp && !S.impSaved) return '<div class="dz" data-drop><b>把 Excel 或 CSV 檔拖到這裡</b><span class="hint">支援 .xlsx、.xls、.csv；會自動挑選名單所在的工作表，也可以自己選</span><button class="btn" type="button" data-a="pickfile">選擇檔案</button>' + pick + '</div>';
+        const nm = S.imp ? S.imp.name : S.impSaved.name, n = S.imp ? S.imp.sheets.length : 0, isX = !/\.csv$/i.test(nm);
+        let h = '<div class="fileline" data-drop><span class="fx" aria-hidden="true">' + (isX ? 'X' : 'C') + '</span><div><b>' + esc(nm) + '</b><span class="hint">' + (S.imp ? (n > 1 ? n + ' 個工作表，會自動挑選名單所在的工作表，也可以自己選' : '1 個工作表') : '上次匯入的名單') + '</span></div><button class="btn btn-sm" type="button" data-a="pickfile">換一個檔案</button>' + pick + '</div>';
+        if (S.imp) {
+            h += sheetsHTML();
+            if (S.imp.sheets.some(x => x.hiddenRows && x.hiddenRows.size)) {
+                const rep = S.ires.report;
+                h += '<div class="opt" style="margin-top:12px"><div><b>納入被隱藏的列</b><span class="hint">' + (S.ovF.includeHidden ? '已納入被隱藏的列' : '檔案裡有 ' + rep.hidden + ' 列被隱藏，預設略過（可能是已轉出的同學）') + '</span></div>' + gsw(!!S.ovF.includeHidden, 'ihidden', '納入被隱藏的列') + '</div>';
+            }
+        }
+        return h;
+    }
+    const hdrBadge = () => { const p = S.parsed; if (!p || !p.hdr) return '自動判斷：沒有標題'; return S.src === 'file' ? '自動判斷：第 ' + p.hdrRow + ' 列是標題' : '自動判斷：有標題'; };
     function namesHTML() {
         const src = S.src;
         let pane = '';
         if (src === 'paste') pane = '<label class="label" for="gvPaste">貼上名單（可從 Excel 直接複製）</label><textarea id="gvPaste" data-in="paste" spellcheck="false" aria-label="貼上名單" placeholder="3A\t1\t王小明\t86">' + esc(S.paste) + '</textarea>';
-        else if (src === 'file') pane = '<div class="dz" data-drop><b>把 Excel 或 CSV 檔拖到這裡</b><span class="hint">支援 .xlsx、.xls、.csv；第一個工作表會被讀取</span><button class="btn" type="button" data-a="pickfile">選擇檔案</button><input type="file" id="gvFile" accept=".xlsx,.xls,.csv" hidden></div>';
+        else if (src === 'file') pane = filePaneHTML();
         else pane = '<div class="tbl-wrap"><table><thead><tr><th>座號</th><th>姓名</th><th>成績（可空白）</th><th></th></tr></thead><tbody>' + S.hand.map((h, i) =>
             '<tr><td><input class="input sm" inputmode="numeric" data-in="hand" data-i="' + i + '" data-f="no" aria-label="座號" value="' + esc(h.no) + '"></td><td><input class="input" data-in="hand" data-i="' + i + '" data-f="name" aria-label="姓名" placeholder="輸入姓名" value="' + esc(h.name) + '"></td><td><input class="input sm" inputmode="decimal" data-in="hand" data-i="' + i + '" data-f="score" aria-label="成績" value="' + esc(h.score) + '"></td><td><button class="btn btn-sm" type="button" data-a="handdel" data-v="' + i + '" aria-label="刪除這一列">' + ic('trash') + '</button></td></tr>').join('') +
             '</tbody></table></div><button class="btn btn-sm" style="margin-top:8px" type="button" data-a="handadd">' + ic('plus') + '新增一列</button>';
+        const fileAside = '<aside class="col"><div class="card"><div class="card-h"><h3>可以匯入的檔案</h3></div><p class="hint">支援 .xlsx、.xls、.csv（含繁體 Windows 存的 Big5 編碼）。</p><p class="hint" style="margin-top:8px">檔案在你的電腦上讀取，名單不會上傳。</p><p class="hint" style="margin-top:8px">程式會自動找標題列、姓名欄與總成績欄，並告訴你怎麼判斷；不對的地方都能一鍵改。</p></div></aside>';
         return '<div class="body grid2"><div class="col"><div class="card"><div class="card-h"><span class="gnb">1</span><h3>匯入名單</h3><span class="sp"></span>' +
-            (S.confirmClear ? '<span class="confirm"><span>清除全部名單？</span><button class="btn btn-danger btn-sm" type="button" data-a="clearyes">確定清除</button><button class="btn btn-sm" type="button" data-a="clearno">取消</button></span>' : '<button class="btn btn-danger btn-sm" type="button" data-a="clear"' + ('') + '>' + ic('trash') + '清除名單</button>') +
+            (S.confirmClear ? '<span class="confirm"><span>清除全部名單？</span><button class="btn btn-danger btn-sm" type="button" data-a="clearyes">確定清除</button><button class="btn btn-sm" type="button" data-a="clearno">取消</button></span>' : '<button class="btn btn-danger btn-sm" type="button" data-a="clear">' + ic('trash') + '清除名單</button>') +
             '<p>貼上、匯入檔案或逐筆輸入都可以</p></div>' +
             gseg('src', [['paste', '貼上'], ['file', '匯入檔案'], ['hand', '逐筆輸入']], src) +
             '<div style="margin-top:12px">' + pane + '</div>' +
-            '<div style="margin-top:12px"><div class="opt"><div><b>自動加入座號</b><span class="hint">名單沒有座號時，依貼上的順序編 1、2、3…；已有座號就用原本的</span></div>' + gsw(S.autoNo, 'autono', '自動加入座號') + '</div>' +
-            (src === 'hand' ? '' : '<div class="opt"><div><b>第一列是標題</b><span class="hint">自動判斷：有「姓名」「成績」這類字樣就略過這一列</span></div><span class="badge info" id="gvHdrBadge">' + (S.parsed && S.parsed.hdr ? '自動判斷：有標題' : '自動判斷：沒有標題') + '</span></div>') + '</div></div>' +
+            '<div style="margin-top:12px"><div class="opt"><div><b>自動加入座號</b><span class="hint">名單沒有座號時，依順序編 1、2、3…（多個班級各自編）；已有座號就用原本的</span></div>' + gsw(S.autoNo, 'autono', '自動加入座號') + '</div>' +
+            (src === 'hand' || (src === 'file' && !S.imp) ? '' : '<div class="opt"><div><b>第一列是標題</b><span class="hint">' + (src === 'file' ? '自動判斷：有「姓名」「成績」這類字樣的那一列；不對可以在右邊「改標題列」' : '自動判斷：有「姓名」「成績」這類字樣就略過這一列') + '</span></div><span class="badge info" id="gvHdrBadge">' + hdrBadge() + '</span></div>') + '</div></div>' +
             '<div class="card" id="gvPreview">' + previewHTML() + '</div></div>' +
-            '<aside class="col"><div class="card"><div class="card-h"><h3>可以直接貼的格式</h3></div><div class="codes">' +
+            (src === 'file' ? fileAside : '<aside class="col"><div class="card"><div class="card-h"><h3>可以直接貼的格式</h3></div><div class="codes">' +
             '<div><b>只有姓名</b><code>王小明\n李小華</code></div><div><b>座號、姓名</b><code>1\t王小明\n2\t李小華</code></div>' +
             '<div><b>班級、座號、姓名</b><code>3A\t1\t王小明</code></div><div><b>班級、座號、姓名、成績</b><code>3A\t1\t王小明\t86</code></div></div>' +
-            '<hr><p class="hint">成績沒有也能貼。要用「按成績分組」時，程式會請你補輸入缺的成績。</p></div></aside></div>';
+            '<hr><p class="hint">成績沒有也能貼。要用「按成績分組」時，程式會請你補輸入缺的成績。也可以從 Excel 整張複製（含標題列），程式會自動找姓名與成績欄。</p></div></aside>') + '</div>';
     }
 
     /* ── ② 分組方式 ── */
@@ -3629,14 +3779,20 @@ root.ScoreImport = {
         return o + '</svg>';
     }
     function cmpList() {
-        const rs = S.recs.slice(0, S.cmp);
-        if (!rs.length) return '<p class="hint" style="margin:0 0 8px">還沒有分組紀錄，這是第一次分組，不需要比對。</p>';
-        return '<ul class="ghist">' + rs.map((r, i) => {
+        const rs = S.recs.slice(0, S.cmp), ig = impGroupInfo();
+        if (!rs.length && !ig) return '<p class="hint" style="margin:0 0 8px">還沒有分組紀錄，這是第一次分組，不需要比對。</p>';
+        let imp = '';
+        if (ig) {
+            const open = S.viewPast === 'imp';
+            imp = '<li class="imp"><span class="badge info" style="flex:none">匯入</span><span>匯入的分組（來自' + (S.src === 'file' ? '檔案' : '') + '「' + esc(ig.label) + '」欄）</span><span class="hint" style="flex:none">' + ig.groups.length + ' 組、' + ig.people + ' 人</span><button class="btn btn-sm" type="button" data-a="past" data-v="imp" style="flex:none">' + (open ? '收合' : '查看分組') + '</button></li>' +
+                (open ? '<li style="display:block">' + ig.groups.map((g, gi) => '<div class="grow ' + gc(gi) + '" style="gap:6px;margin:2px 0"><span class="gnum">' + (gi + 1) + '</span><span>' + esc(String(g[0]).replace(/^[^#]*#/, '')) + '　' + g[1].map(i => esc(S.roster[i] ? S.roster[i].name : '')).join('、') + '</span></div>').join('') + '</li>' : '');
+        }
+        return '<ul class="ghist">' + imp + rs.map((r, i) => {
             const open = S.viewPast === r.id;
             let det = '';
             if (open) det = '<li style="display:block">' + r.groups.map((g, gi) => '<div class="grow ' + gc(gi) + '" style="gap:6px;margin:2px 0"><span class="gnum">' + (gi + 1) + '</span><span>' + g.map(id => esc(r.roster[id] ? r.roster[id].name : '')).join('、') + '</span></div>').join('') + '</li>';
             return '<li' + (i === 0 ? ' class="cur"' : '') + '><span><b>' + fmtTs(r.ts) + '</b>　' + esc(r.label) + '・' + r.roster.length + ' 人</span>' + (i === 0 ? '<span class="badge info" style="flex:none">上一次</span>' : '') + '<button class="btn btn-sm" type="button" data-a="past" data-v="' + r.id + '" style="flex:none">' + (open ? '收合' : '查看分組') + '</button></li>' + det;
-        }).join('') + '</ul>';
+        }).join('') + '</ul>' + (ig ? '<p class="hint" style="margin-top:8px">匯入的分組只在這個瀏覽器的比對清單裡，不會變成分組紀錄。</p>' : '');
     }
     function startAreaHTML() {
         const m = methInfo();
@@ -3972,22 +4128,49 @@ root.ScoreImport = {
         renderDl();
     }
 
-    /* ═══ 匯入檔案 ═══ */
+    /* ═══ 匯入檔案：.csv 自己解碼（UTF-8／Big5），.xlsx／.xls 用 SheetJS 讀成中立格式，再交給 ScoreImport ═══ */
     function importFile(file) {
         if (!file) return;
-        if (typeof XLSX === 'undefined') { if (typeof showToast === 'function') showToast('讀檔元件尚未載入，請連上網路後重新整理，或改用貼上名單', true); return; }
+        const csv = /\.csv$/i.test(file.name || '');
+        if (!csv && typeof XLSX === 'undefined') { if (typeof showToast === 'function') showToast('讀檔元件尚未載入，請連上網路後重新整理，或改用貼上名單', true); return; }
         const fr = new FileReader();
         fr.onload = () => {
             try {
-                const wb = XLSX.read(fr.result, { type: 'array' });
-                const ws = wb.Sheets[wb.SheetNames[0]];
-                const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false });
-                S.paste = rows.filter(r => r.some(c => String(c).trim() !== '')).map(r => r.map(c => String(c).replace(/[\t\r\n]+/g, ' ').trim()).join('\t')).join('\n');
-                S.colMap = null; S.src = 'paste'; parseList(); render();
+                const sheets = csv ? [SI.fromRows(SI.decodeCsv(new Uint8Array(fr.result)), (file.name || 'CSV').replace(/\.csv$/i, ''))]
+                    : SI.fromSheetJS(XLSX.read(new Uint8Array(fr.result), { type: 'array', cellFormula: true, cellNF: true, cellStyles: true }), XLSX);
+                if (!sheets.length) throw new Error('檔案裡沒有工作表');
+                S.imp = { name: file.name || '檔案', sheets };
+                S.ovF = {}; S.ivm = {}; S.iedit = ''; S.warnOpen = null; S.src = 'file'; S.viewPast = null;
+                parseList(); save(); render();
             } catch (e) { if (typeof showToast === 'function') showToast('讀不懂這個檔案：' + (e && e.message ? e.message : e), true); }
         };
         fr.onerror = () => { if (typeof showToast === 'function') showToast('讀取檔案失敗', true); };
         fr.readAsArrayBuffer(file);
+    }
+    /* 老師在匯入畫面改判斷：改 override 再重新分析（ScoreImport 不保存狀態） */
+    function setRole(i, role) {
+        const rep = S.ires && S.ires.report, c = rep && rep.preview && rep.preview.cols[i];
+        if (!c) return;
+        const ov = curOv(), roles = ov.roles = Object.assign({}, ov.roles);
+        SI.sameColumnKeys(rep, c.key).forEach(k => { roles[k] = role; });
+    }
+    function setValue(k, mode, num) {
+        const i = k.indexOf('|'), type = k.slice(0, i), raw = k.slice(i + 1), ov = curOv(), f = type === 'grade' ? 'grades' : 'absent';
+        S.ivm[k] = mode;
+        ov[f] = Object.assign({}, ov[f]);
+        if (mode === 'none') ov[f][raw] = null;
+        else if (mode === 'zero') ov[f][raw] = 0;
+        else { const n = num == null ? NaN : parseFloat(String(num).normalize('NFKC')); ov[f][raw] = isFinite(n) ? n : null; }
+    }
+    /* 小面板打分數時：只換人數、表格、提醒與下一步，不重畫面板（游標留在輸入框） */
+    function refreshImpCounts() {
+        const pv = $('gvPreview');
+        if (!pv) return;
+        const t = document.createElement('div');
+        t.innerHTML = previewHTML();
+        ['.card-h', '.tbl-wrap', '#gvWarns', '.nexthint'].forEach(q => { const a = pv.querySelector(q), b = t.querySelector(q); if (a && b) a.replaceWith(b); });
+        const st = document.querySelector('#groupView .gsteps');
+        if (st) st.outerHTML = stepsHTML();
     }
 
     /* ═══ 畫面更新 ═══ */
@@ -4020,7 +4203,7 @@ root.ScoreImport = {
         const st = document.querySelector('#groupView .gsteps');
         if (st) st.outerHTML = stepsHTML();
         const hb = $('gvHdrBadge');
-        if (hb) hb.textContent = S.parsed && S.parsed.hdr ? '自動判斷：有標題' : '自動判斷：沒有標題';
+        if (hb) hb.textContent = hdrBadge();
     }
     function updateMiss() {
         const m = methInfo(), a = $('gvMiss');
@@ -4042,7 +4225,7 @@ root.ScoreImport = {
             case 'src': S.src = v; parseList(); break;
             case 'clear': S.confirmClear = true; break;
             case 'clearno': S.confirmClear = false; break;
-            case 'clearyes': S.paste = ''; S.hand = [{ no: '', name: '', score: '' }, { no: '', name: '', score: '' }, { no: '', name: '', score: '' }]; S.colMap = null; S.confirmClear = false; S.fix = {}; parseList(); save(); break;
+            case 'clearyes': S.paste = ''; S.hand = [{ no: '', name: '', score: '' }, { no: '', name: '', score: '' }, { no: '', name: '', score: '' }]; S.ovP = {}; S.ovF = {}; S.imp = null; S.impSaved = null; S.ivm = {}; S.iedit = ''; S.confirmClear = false; S.fix = {}; parseList(); save(); break;
             case 'pickfile': { const f = $('gvFile'); if (f) f.click(); return; }
             case 'handadd': S.hand.push({ no: '', name: '', score: '' }); break;
             case 'handdel': S.hand.splice(+v, 1); if (!S.hand.length) S.hand.push({ no: '', name: '', score: '' }); parseList(); save(); break;
@@ -4052,6 +4235,10 @@ root.ScoreImport = {
             case 'num': { S.numTouched = true; S.num = clamp(S.num + (+v), 1, Math.max(1, S.roster.length)); save(); updateMiss(); const o = el && el.parentNode && el.parentNode.querySelector('output'); if (o) o.textContent = S.num; return; }
             case 'cmp': S.cmp = +v; break;
             case 'past': S.viewPast = S.viewPast === v ? null : v; break;
+            case 'imerge': { const ov = curOv(); ov.scoreMerge = v; parseList(); save(); break; }
+            case 'iedit': if (v === 'sheet') { const c = document.querySelector('#gvSheets input'); if (c) { try { c.focus(); c.scrollIntoView({ block: 'center' }); } catch (e) { /* 略過 */ } } return; } S.iedit = S.iedit === v ? '' : v; break;
+            case 'iwarn': { const W = S.ires ? S.ires.report.warnings : []; const cur = S.warnOpen != null ? S.warnOpen : W.some(w => w.level !== 'info'); S.warnOpen = !cur; break; }
+            case 'igo': { const p = $('gvIpanel'); if (p) { const f = p.querySelector('select'); try { p.scrollIntoView({ block: 'center' }); if (f) f.focus(); } catch (e) { /* 略過 */ } } return; }
             case 'start': { if (el && el.getAttribute('aria-disabled') === 'true') return; if (!methInfo().canStart) return; if (!newGrouping()) return; break; }
             case 'res': S.res = v; S.selS = null; if (v === 'seat') S.smode = S.smode || 'trad'; break;
             case 'regroup': { if (!methInfo().canStart || !newGrouping()) { S.step = 2; } break; }
@@ -4126,17 +4313,21 @@ root.ScoreImport = {
     function onChange(e) {
         const el = e.target;
         if (el.id === 'gvFile') { importFile(el.files && el.files[0]); el.value = ''; return; }
-        if (el.getAttribute('data-in') === 'col') {
-            const i = +el.getAttribute('data-i'), p = S.parsed;
-            const t = p.types.slice(); t[i] = el.value;
-            // 同一種欄位只能有一欄（略過除外）：其他欄若原本是同種，改成略過
-            if (el.value !== 'skip') t.forEach((x, j) => { if (j !== i && x === el.value) t[j] = 'skip'; });
-            S.colMap = t; S.colN = p.ncol; parseList(); updatePreview(); return;
+        const din = el.getAttribute('data-in');
+        if (din === 'col') { setRole(+el.getAttribute('data-i'), el.value); parseList(); save(); updatePreview(); return; }
+        if (din === 'ihdr') { const ov = curOv(), hr = {}; S.ires.report.header.forEach(h => { hr[h.sheet] = +el.value; }); ov.headerRow = hr; ov.roles = {}; S.iedit = ''; parseList(); save(); render(); return; }
+        if (din === 'iscore') {
+            S.ires.report.preview.cols.forEach((c, j) => { if (c.role === 'score') setRole(j, 'skip'); });
+            if (+el.value >= 0) setRole(+el.value, 'score');
+            curOv().scoreMerge = 'right'; S.iedit = ''; parseList(); save(); render(); return;
         }
+        if (din === 'ival') { const k = el.getAttribute('data-k'), pv = (S.ires.report.values.find(v => v.type + '|' + v.raw === k) || {}).value; setValue(k, el.value, el.value === 'conv' ? pv : null); parseList(); save(); updatePreview(); return; }
         const a = el.getAttribute('data-a');
         if (!a || !(el.type === 'checkbox' || el.type === 'radio')) return;
         const v = el.getAttribute('data-v');
         if (a === 'autono') { S.autoNo = el.checked; parseList(); save(); render(); }
+        else if (a === 'isheet') { const rep = S.ires.report, i = +v; S.ovF.sheets = rep.sheets.filter((x, j) => (j === i ? el.checked : x.selected)).map(x => x.name); parseList(); save(); render(); }
+        else if (a === 'ihidden') { S.ovF.includeHidden = el.checked; parseList(); save(); render(); }
         else if (a === 'avoid') { S.avoid = el.checked; save(); render(); }
         else if (a === 'skip') { S.skip = el.checked; render(); }
         else if (a === 'mode2') { S.mode2 = v; save(); }
@@ -4147,7 +4338,8 @@ root.ScoreImport = {
     function onInput(e) {
         const el = e.target, k = el.getAttribute && el.getAttribute('data-in');
         if (!k) return;
-        if (k === 'paste') { S.paste = el.value; if (e.inputType === 'insertFromPaste') S.colMap = null; parseList(); save(); updatePreview(); }
+        if (k === 'paste') { S.paste = el.value; if (e.inputType === 'insertFromPaste') S.ovP = {}; parseList(); save(); updatePreview(); }
+        else if (k === 'ivaln') { setValue(el.getAttribute('data-k'), 'conv', el.value); parseList(); save(); refreshImpCounts(); }
         else if (k === 'hand') { S.hand[+el.getAttribute('data-i')][el.getAttribute('data-f')] = el.value; parseList(); save(); updatePreview(); }
         else if (k === 'fix') { S.fix[el.getAttribute('data-i')] = el.value; updateMiss(); }
     }
@@ -4182,12 +4374,12 @@ root.ScoreImport = {
         root.addEventListener('drop', e => { const z = e.target.closest && e.target.closest('[data-drop]'); if (z) { e.preventDefault(); importFile(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]); } });
         if (/^#group/.test(location.hash)) setMode('group');
     }
-    window.GroupUI = { setMode, render, state: S, parseList, newGrouping, init };
+    window.GroupUI = { setMode, render, state: S, parseList, newGrouping, importFile, init };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
     </script>
     <script>
-        const APP_VERSION = "v3.5.2";
+        const APP_VERSION = "v3.6.0";
         /* 版號只寫在 APP_VERSION；<title> 與頁首徽章由程式產生，不要在 HTML 靜態文字寫版號 */
         document.title = `座位小幫手 ${APP_VERSION}`;
 

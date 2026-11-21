@@ -328,8 +328,8 @@ test('同班座號重複、成績超出 0～100、只有部分成績欄、找不
     r = run([sheet('成績', [['座號', '姓名', '作業', '小考'], [1, '王小明', 80, null], [2, '李小華', 70, 90], [3, '張小美', 60, 70]])], { override: { scoreMerge: 'mean' } });
     assert.equal(r.roster[0].score, 80);
     assert.ok(codes(r).includes('partial'));
-    r = run([sheet('成績', [['甲', '乙'], [1, 2], [3, 4]])]);
-    assert.ok(codes(r).includes('noName') || codes(r).includes('noPeople'));
+    r = run([sheet('成績', [[1, 2], [3, 4], [5, 6]])]);
+    assert.ok(codes(r).includes('noName'));
     r = run([sheet('成績', [['座號', '姓名'], [1, '12345'], [2, 'A']])]);
     assert.ok(codes(r).includes('noPeople'));
     assert.ok(codes(r).includes('skipped'));
