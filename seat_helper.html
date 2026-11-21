@@ -852,6 +852,305 @@ Authorization inquiries: derliang@gmail.com
             *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
         }
     </style>
+    <style id="group-ui-style">
+        /* ===== 分組功能（v3.5.0）：組別 8 色與提示色 token；樣式只套在 #groupView 與標題列頁籤 ===== */
+        :root, .force-light { --ok-soft:#E4F5EC; --ok-line:#A9DDBF; --warn-soft:#FFFBEB; --warn-line:#FDE68A; --g1-bar:#3B6FD4; --g1-soft:#E6EEFB; --g1-line:#B7CBF0; --g1-ink:#1D3F8F; --g2-bar:#1FA36A; --g2-soft:#E4F5EC; --g2-line:#A9DDBF; --g2-ink:#0B5B3A; --g3-bar:#D98E0B; --g3-soft:#FDF1D8; --g3-line:#F2D08A; --g3-ink:#7A4A06; --g4-bar:#E0446A; --g4-soft:#FCE7EC; --g4-line:#F4B6C4; --g4-ink:#9A1B3D; --g5-bar:#7C5CD6; --g5-soft:#EEE9FB; --g5-line:#CBBDF1; --g5-ink:#4B2A9E; --g6-bar:#1B98A3; --g6-soft:#DDF3F4; --g6-line:#9FD8DC; --g6-ink:#0E5961; --g7-bar:#E0702A; --g7-soft:#FDE9DC; --g7-line:#F4BE9B; --g7-ink:#8A3A0B; --g8-bar:#5F7088; --g8-soft:#E9EDF2; --g8-line:#C3CCD8; --g8-ink:#2F3C4F; }
+        html.dark { --ok-soft:#0F2A20; --ok-line:#1E6A49; --warn-soft:#33240A; --warn-line:#8A5A12; --g1-bar:#5B8BEA; --g1-soft:#17233F; --g1-line:#2E4580; --g1-ink:#BCD0FA; --g2-bar:#34C48A; --g2-soft:#0F2A20; --g2-line:#1E6A49; --g2-ink:#B2EBCD; --g3-bar:#F0AE2B; --g3-soft:#33240A; --g3-line:#8A5A12; --g3-ink:#FDE3A6; --g4-bar:#F0698A; --g4-soft:#3A1522; --g4-line:#7D2A44; --g4-ink:#FBC2D0; --g5-bar:#9B80F0; --g5-soft:#231A45; --g5-line:#54409A; --g5-ink:#DCD2FB; --g6-bar:#3CBAC6; --g6-soft:#0C2C30; --g6-line:#1F6A72; --g6-ink:#B5E8EC; --g7-bar:#F28A4A; --g7-soft:#38200E; --g7-line:#8A4A1E; --g7-ink:#FAD2B4; --g8-bar:#8497B2; --g8-soft:#1E2530; --g8-line:#46536A; --g8-ink:#D5DCE7; }
+        .mode-tabs { display:inline-flex; background:var(--sunken); border:1px solid var(--line-2); border-radius:var(--r-md); padding:3px; margin-left:8px; flex:none; }
+        .mode-tab { min-height:36px; padding:0 20px; border-radius:9px; font-weight:700; font-size:14px; color:var(--text-2); }
+        .mode-tab[aria-selected="true"] { background:var(--accent); color:var(--on-accent); }
+        .mode-tab:not([aria-selected="true"]):hover { background:var(--surface); color:var(--text); }
+        .mode-tab:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+        #groupView { display:none; max-width:1600px; margin:0 auto; font-size:14px; line-height:1.6; }
+        body[data-mode="group"] #groupView { display:block; }
+        body[data-mode="group"] #mainView > .main, body[data-mode="group"] #tabBar { display:none; }
+        body[data-mode="group"] #mainView { padding-bottom:0; }
+        @media (max-width: 639px) {
+            .appbar { flex-wrap:wrap; }
+            .mode-tabs { order:3; width:100%; margin-left:0; display:flex; }
+            .mode-tab { flex:1; min-height:44px; }
+        }
+        #groupView .ic { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex:none; }
+        #groupView h1, #groupView h2, #groupView h3, #groupView h4, #groupView p { margin:0; }
+        #groupView button { font-family:inherit; }
+        #groupView .gsi { cursor:pointer; font:inherit; font-weight:700; }
+        #groupView .gsi:disabled { opacity:.5; cursor:not-allowed; }
+        #groupView .gempty { border:1.5px dashed var(--line-2); border-radius:var(--r-md); padding:20px 16px; text-align:center; color:var(--text-2); }
+        #groupView .flipx { display:inline-flex; transform:scaleX(-1); }
+        #groupView .gcard li, #groupView .gcell[data-s], #groupView .sg, #groupView .gcell[data-o] { cursor:pointer; }
+        #groupView .gcell.empty { cursor:default; }
+        #groupView .gseg button:focus-visible, #groupView .btn:focus-visible, #groupView .gstep button:focus-visible, #groupView .gsi:focus-visible, #groupView .tile:focus-visible, #groupView .fbtn:focus-visible, #groupView .mn:focus-visible, #groupView .hbtn:focus-visible, #groupView .gcard li:focus-visible, #groupView .gcell:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+        #groupView .gsw input:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+        #groupView .btn-row { display:flex; flex-wrap:wrap; gap:8px; }
+        #groupView .btn:disabled { opacity:.45; cursor:not-allowed; pointer-events:none; }
+        #groupView .btn-lg { width:auto; min-height:44px; }
+        #groupView .opt .hint { display:block; }
+        @media (prefers-reduced-motion: reduce) { #groupView .gsw input, #groupView .gsw input::after { transition:none; } }
+        #groupView .gsteps{display:flex;gap:8px;padding:12px 20px;background:var(--bg);border-bottom:1px solid var(--line);overflow-x:auto}
+        #groupView .gsi{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:99px;border:1px solid var(--line-2);background:var(--surface);color:var(--text-2);font-weight:700;white-space:nowrap}
+        #groupView .gsi .n{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--sunken);border:1px solid var(--line-2);font-size:12px}
+        #groupView .gsi.on{border-color:var(--accent);color:var(--accent-ink);background:var(--accent-soft)}
+        #groupView .gsi.on .n{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+        #groupView .gsi.done .n{background:var(--ok-soft);border-color:var(--ok-line);color:var(--ok-ink)}
+        #groupView .gsi .ic{width:14px;height:14px}
+        @media (max-width:639px){#groupView .gsteps{padding:10px 12px}
+        }
+        #groupView .body{padding:20px;display:grid;gap:16px}
+        @media (min-width:1024px){#groupView .grid2{grid-template-columns:minmax(0,1fr) 340px;align-items:start}
+        }
+        @media (max-width:639px){#groupView .body{padding:12px}
+        }
+        #groupView .col{display:grid;gap:16px;min-width:0}
+        #groupView .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow-1);padding:16px;min-width:0}
+        #groupView .card-h{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:14px}
+        #groupView .card-h .gnb{width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font-weight:700;font-size:13px}
+        #groupView .card-h h3{font:700 17px var(--font-display)}
+        #groupView .card-h p{color:var(--text-3);font-size:12px;width:100%;margin-top:-6px;padding-left:40px}
+        #groupView .card-h .sp{margin-left:auto}
+        #groupView .btn{min-height:40px;padding:0 14px;border:1px solid var(--line-2);background:var(--surface);color:var(--text);border-radius:var(--r-sm);font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer}
+        #groupView .btn:hover{background:var(--sunken);border-color:var(--text-3)}
+        #groupView .btn-primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+        #groupView .btn-primary:hover{background:var(--accent-h);border-color:var(--accent-h)}
+        #groupView .btn-danger{background:var(--danger-soft);border-color:var(--danger-line);color:var(--danger-ink)}
+        #groupView .btn-danger:hover{background:var(--danger-soft);border-color:var(--danger-ink)}
+        #groupView .btn-sm{min-height:32px;padding:0 10px;font-size:13px}
+        #groupView .btn[aria-disabled=true]{background:var(--sunken);border-color:var(--line);color:var(--text-3);cursor:not-allowed}
+        #groupView .btn-row{display:flex;flex-wrap:wrap;gap:8px}
+        #groupView .gseg{display:inline-flex;background:var(--sunken);border:1px solid var(--line);border-radius:var(--r-sm);padding:3px;max-width:100%}
+        #groupView .gseg button{min-height:34px;padding:0 14px;border:0;background:none;border-radius:6px;font-weight:700;color:var(--text-2);cursor:pointer;white-space:nowrap}
+        #groupView .gseg button[aria-selected=true]{background:var(--surface);color:var(--accent-ink);box-shadow:var(--shadow-1)}
+        #groupView .gseg.full{display:flex}
+        #groupView .gseg.full button{flex:1}
+        #groupView .label{display:block;font-size:12px;font-weight:700;color:var(--text-2);margin-bottom:6px}
+        #groupView .input,#groupView textarea{width:100%;min-height:40px;border:1px solid var(--line-2);border-radius:var(--r-sm);background:var(--sunken);color:var(--text);padding:8px 12px;font:inherit}
+        #groupView .input.sm{width:84px;text-align:center;font-variant-numeric:tabular-nums}
+        #groupView textarea{min-height:min(60vh,484px);resize:vertical;font:13px/1.7 ui-monospace,"Cascadia Mono","Microsoft JhengHei",monospace;tab-size:6;white-space:pre}
+        #groupView .hint{color:var(--text-3);font-size:12px}
+        #groupView .grow{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center}
+        #groupView .opt{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--line)}
+        #groupView .opt:first-of-type{border-top:0}
+        #groupView .opt{flex-wrap:wrap;align-items:center}
+        #groupView .opt>div:first-child{flex:1 1 220px;min-width:0}
+        #groupView .opt>.gseg,#groupView .opt>.gstep,#groupView .opt>.gsw,#groupView .opt>.badge,#groupView .opt>.btn{flex:none}
+        #groupView .opt b{display:block}
+        #groupView .gsw{position:relative;flex:none;width:44px;height:26px}
+        #groupView .gsw input{appearance:none;position:absolute;inset:0;margin:0;border-radius:99px;background:var(--line-2);cursor:pointer;border:1px solid var(--text-3);transition:background .15s}
+        #groupView .gsw input::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:var(--surface);box-shadow:var(--shadow-1);transition:transform .15s}
+        #groupView .gsw input:checked{background:var(--accent);border-color:var(--accent)}
+        #groupView .gsw input:checked::after{transform:translateX(18px)}
+        #groupView .gstep{display:inline-flex;align-items:center;border:1px solid var(--line-2);border-radius:var(--r-sm);background:var(--surface);overflow:hidden}
+        #groupView .gstep button{width:40px;height:40px;border:0;background:var(--sunken);cursor:pointer;display:grid;place-items:center;color:var(--text)}
+        #groupView .gstep button:hover{background:var(--accent-soft);color:var(--accent-ink)}
+        #groupView .gstep output{min-width:48px;text-align:center;font:700 16px var(--font);font-variant-numeric:tabular-nums}
+        #groupView .badge{display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:99px;font-size:12px;font-weight:700;border:1px solid var(--line-2);background:var(--sunken);color:var(--text-2)}
+        #groupView .badge.ok{background:var(--ok-soft);border-color:var(--ok-line);color:var(--ok-ink)}
+        #groupView .badge.warn{background:var(--warn-soft);border-color:var(--warn-line);color:var(--warn-ink)}
+        #groupView .badge.info{background:var(--accent-soft);border-color:var(--accent-line);color:var(--accent-ink)}
+        #groupView .badge .ic{width:14px;height:14px}
+        #groupView .alert{display:flex;gap:10px;padding:12px;border-radius:var(--r-md);border:1px solid var(--warn-line);background:var(--warn-soft);color:var(--warn-ink)}
+        #groupView .alert.ok{border-color:var(--ok-line);background:var(--ok-soft);color:var(--ok-ink)}
+        #groupView .alert.info{border-color:var(--accent-line);background:var(--accent-soft);color:var(--accent-ink)}
+        #groupView .alert b{display:block}
+        #groupView .alert>div{min-width:0;flex:1}
+        #groupView .tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r-md)}
+        #groupView table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+        #groupView th,#groupView td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+        #groupView th{background:var(--sunken);font-size:12px;color:var(--text-2)}
+        #groupView tr:last-child td{border-bottom:0}
+        #groupView td.miss{background:var(--warn-soft);color:var(--warn-ink);font-weight:700}
+        #groupView .sel{min-height:32px;border:1px solid var(--line-2);border-radius:6px;background:var(--surface);color:var(--text);font:700 12px var(--font);padding:0 8px;width:100%}
+        #groupView .dz{border:2px dashed var(--line-2);border-radius:var(--r-md);background:var(--sunken);padding:56px 16px;min-height:280px;align-content:center;text-align:center;color:var(--text-2);display:grid;gap:10px;justify-items:center}
+        #groupView .dz b{font-size:17px;color:var(--text)}
+        #groupView .codes{display:grid;gap:10px}
+        #groupView .codes div{display:grid;gap:2px}
+        #groupView .codes b{font-size:12px;color:var(--text-2)}
+        #groupView .codes code{display:block;background:var(--sunken);border:1px solid var(--line);border-radius:6px;padding:4px 10px;font:12px/1.6 ui-monospace,"Cascadia Mono",monospace;white-space:pre;overflow-x:auto}
+        #groupView .g1{--gb:var(--g1-bar);--gs:var(--g1-soft);--gl:var(--g1-line);--gi:var(--g1-ink)}
+        #groupView .g2{--gb:var(--g2-bar);--gs:var(--g2-soft);--gl:var(--g2-line);--gi:var(--g2-ink)}
+        #groupView .g3{--gb:var(--g3-bar);--gs:var(--g3-soft);--gl:var(--g3-line);--gi:var(--g3-ink)}
+        #groupView .g4{--gb:var(--g4-bar);--gs:var(--g4-soft);--gl:var(--g4-line);--gi:var(--g4-ink)}
+        #groupView .g5{--gb:var(--g5-bar);--gs:var(--g5-soft);--gl:var(--g5-line);--gi:var(--g5-ink)}
+        #groupView .g6{--gb:var(--g6-bar);--gs:var(--g6-soft);--gl:var(--g6-line);--gi:var(--g6-ink)}
+        #groupView .g7{--gb:var(--g7-bar);--gs:var(--g7-soft);--gl:var(--g7-line);--gi:var(--g7-ink)}
+        #groupView .g8{--gb:var(--g8-bar);--gs:var(--g8-soft);--gl:var(--g8-line);--gi:var(--g8-ink)}
+        #groupView .gnum{width:26px;height:26px;border-radius:50%;background:var(--gi);color:var(--gs);display:inline-grid;place-items:center;font:700 13px var(--font);flex:none}
+        #groupView .gchip{display:inline-flex;align-items:center;gap:6px;padding:2px 10px 2px 2px;border-radius:99px;background:var(--gs);color:var(--gi);border:1px solid var(--gl);font-weight:700;font-size:12px}
+        #groupView .gchip .gnum{width:20px;height:20px;font-size:11px}
+        #groupView .modes{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr))}
+        #groupView .deal{width:100%;max-width:300px;height:auto;justify-self:center;display:block}
+        #groupView .arrow{stroke:var(--text-2);stroke-width:1.6}
+        #groupView .arrow.jump{stroke-dasharray:4 3}
+        #groupView .mode{display:grid;gap:8px;align-content:start;padding:12px;border:1px solid var(--line-2);border-radius:var(--r-md);background:var(--surface);cursor:pointer;position:relative}
+        #groupView .mode:hover{border-color:var(--text-3)}
+        #groupView .mode:has(input:checked){border-color:var(--accent);box-shadow:0 0 0 1px var(--accent);background:var(--accent-soft)}
+        #groupView .mode input{position:absolute;opacity:0}
+        #groupView .mode:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+        #groupView .mode b{display:flex;align-items:center;gap:8px}
+        #groupView .mode b::before{content:"";width:16px;height:16px;border-radius:50%;border:2px solid var(--line-2);background:var(--surface);flex:none}
+        #groupView .mode:has(input:checked) b::before{border-color:var(--accent);background:radial-gradient(var(--accent) 45%,var(--surface) 50%)}
+        #groupView .mode p{font-size:12px;color:var(--text-2)}
+        #groupView .mini{display:grid;gap:3px;font-variant-numeric:tabular-nums}
+        #groupView .mini div{display:flex;gap:3px;align-items:center}
+        #groupView .mini i{font-style:normal;width:22px;height:20px;border-radius:4px;background:var(--gs);border:1px solid var(--gl);color:var(--gi);font-size:11px;font-weight:700;display:grid;place-items:center}
+        #groupView .mini em{font-style:normal;font-size:11px;color:var(--text-3);margin-left:4px}
+        #groupView .fixrow{display:grid;grid-template-columns:1fr 100px;gap:8px;align-items:center}
+        #groupView .gcards{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(168px,1fr))}
+        #groupView .gcard{border:1px solid var(--gl);border-radius:var(--r-md);background:var(--surface);overflow:hidden;min-width:0}
+        #groupView .gh{display:flex;align-items:center;gap:8px;background:var(--gs);color:var(--gi);padding:8px 10px;border-bottom:1px solid var(--gl);font-weight:700}
+        #groupView .gh .avg{margin-left:auto;font-size:12px;font-variant-numeric:tabular-nums}
+        #groupView .gcard ul{list-style:none;margin:0;padding:4px 0}
+        #groupView .gcard li{display:flex;gap:8px;padding:5px 10px;align-items:baseline;cursor:grab}
+        #groupView .gcard li:hover{background:var(--sunken)}
+        #groupView .gcard li .no{width:22px;color:var(--text-3);font-size:12px;font-variant-numeric:tabular-nums}
+        #groupView .gcard li .gnm{flex:1;font-weight:500}
+        #groupView .gcard li .sc{color:var(--text-2);font-size:12px;font-variant-numeric:tabular-nums}
+        #groupView .hide-sc .sc{display:none}
+        #groupView .bars{display:grid;gap:6px}
+        #groupView .gbar{display:grid;grid-template-columns:26px 1fr 44px;gap:8px;align-items:center;font-size:12px;font-variant-numeric:tabular-nums}
+        #groupView .gbar .t{height:10px;border-radius:99px;background:var(--sunken);border:1px solid var(--line);overflow:hidden}
+        #groupView .gbar .t i{display:block;height:100%;background:var(--gb)}
+        #groupView .gbar .v{text-align:right;color:var(--text-2)}
+        #groupView .exp{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+        #groupView .exp .btn{flex-direction:column;align-items:flex-start;min-height:56px;gap:0;justify-content:center;text-align:left}
+        #groupView .exp small{font-weight:500;font-size:11px;color:var(--text-3)}
+        #groupView .ghist{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+        #groupView .ghist li{display:flex;align-items:center;gap:8px;font-size:13px;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--sunken)}
+        #groupView .ghist li.cur{border-color:var(--accent-line);background:var(--accent-soft);color:var(--accent-ink)}
+        #groupView .ghist li span{flex:1;min-width:0}
+        #groupView .saved{display:inline-flex;align-items:center;gap:6px}
+        #groupView .tag-sub{margin-left:auto}
+        #groupView .room{background:var(--surface);border:1px solid var(--line-2);border-radius:var(--r-md);padding:12px;container-type:inline-size}
+        #groupView .board{background:var(--text);color:var(--bg);text-align:center;border-radius:6px;padding:4px;font-size:12px;font-weight:700;margin-bottom:10px}
+        #groupView .seatgrid{display:grid;grid-template-columns:repeat(4,1fr) 14px repeat(4,1fr);gap:6px}
+        #groupView .gcell{position:relative;min-height:54px;border-radius:8px;background:var(--gs);border:1px solid var(--gl);color:var(--gi);display:grid;place-items:center;padding:14px 2px 4px;text-align:center}
+        #groupView .gcell .gn{position:absolute;left:4px;top:3px;font-size:10px;font-weight:700;line-height:1.2;padding:0 5px;border-radius:99px;background:var(--gi);color:var(--gs)}
+        #groupView .gcfg{display:flex;flex-wrap:wrap;gap:10px 20px;align-items:flex-end;padding:12px;background:var(--sunken);border:1px solid var(--line);border-radius:var(--r-md);margin-bottom:12px}
+        #groupView .cfg-i{display:grid;gap:4px;min-width:0}
+        #groupView .cfg-i .label{margin:0}
+        #groupView .cfg-i .gseg,#groupView .cfg-i .gstep{justify-self:start}
+        #groupView .seat-e{fill:var(--sunken);stroke:var(--line-2);stroke-dasharray:3 3}
+        #groupView .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:12px}
+        #groupView .tile{display:grid;justify-items:center;gap:2px;padding:10px 8px;border:1px solid var(--line-2);border-radius:var(--r-md);background:var(--surface);cursor:pointer;color:var(--text)}
+        #groupView .tile:hover{border-color:var(--text-3)}
+        #groupView .tile[aria-pressed=true]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent);background:var(--accent-soft);color:var(--accent-ink)}
+        #groupView .tile svg{width:72px;height:45px}
+        #groupView .tile .tb{fill:var(--sunken);stroke:var(--line-2)}
+        #groupView .tile .st{fill:var(--accent-soft);stroke:var(--accent-line)}
+        #groupView .tile small{color:var(--text-3);font-size:12px}
+        #groupView .tile[aria-pressed=true] small{color:var(--accent-ink)}
+        #groupView .cfg2{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;margin-bottom:8px}
+        #groupView details.adv>summary{cursor:pointer;font-weight:700;color:var(--accent-ink);min-height:40px;display:flex;align-items:center;gap:6px}
+        #groupView details.adv[open]>summary{margin-bottom:8px}
+        #groupView .selbar{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin-top:10px;padding:10px 12px;border:1px solid var(--accent-line);background:var(--accent-soft);border-radius:var(--r-md)}
+        #groupView .selbar .hint{color:var(--accent-ink)}
+        #groupView .selbar-i{display:flex;align-items:center;gap:8px}
+        #groupView .selbar-i .label{margin:0;color:var(--accent-ink)}
+        #groupView .adv2{width:100%}
+        #groupView .adv2 .gcfg{margin-bottom:0;background:var(--surface)}
+        #groupView .cfg-cap{width:100%;font-size:12px;font-weight:700;color:var(--text-2)}
+        #groupView .cfg-t{font:700 16px var(--font-display);min-height:40px;display:flex;align-items:center}
+        #groupView .cfg-sum{margin-left:auto;align-content:end}
+        #groupView .cfg-tip{width:100%;margin:0}
+        #groupView .lbl{display:grid;place-items:center;font-size:11px;font-weight:700;color:var(--text-2);min-height:22px;white-space:nowrap}
+        #groupView .co{position:absolute;right:4px;top:3px;font-size:10px;font-weight:700;line-height:1.3;font-variant-numeric:tabular-nums;color:var(--gi)}
+        #groupView .gcell.empty,#groupView .gcell.off{background:var(--sunken);border:1px dashed var(--line-2);color:var(--text-3)}
+        #groupView .gcell.empty .co,#groupView .gcell.off .co{color:var(--text-3)}
+        #groupView .gcell.off{background:repeating-linear-gradient(135deg,var(--sunken) 0 6px,var(--line) 6px 8px)}
+        #groupView .gcell .adj-dot{top:auto;bottom:4px}
+        #groupView .board{margin:10px 0 0}
+        #groupView .gcell .gnm{font-weight:700;font-size:clamp(10px,2.4cqw,14px);white-space:nowrap}
+        #groupView .glegend{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+        #groupView .lay{display:grid;gap:8px}
+        #groupView .lay button{display:flex;gap:10px;align-items:center;text-align:left;padding:8px 10px;border:1px solid var(--line-2);border-radius:var(--r-md);background:var(--surface);cursor:pointer}
+        #groupView .lay button:hover{border-color:var(--text-3)}
+        #groupView .lay button[aria-pressed=true]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent);background:var(--accent-soft);color:var(--accent-ink)}
+        #groupView .lay svg{width:48px;height:34px;flex:none}
+        #groupView .lay small{display:block;color:var(--text-3);font-weight:500;font-size:12px}
+        #groupView .lay button[aria-pressed=true] small{color:var(--accent-ink)}
+        #groupView .lay-ic rect{fill:var(--gs);stroke:var(--gl)}
+        #groupView .canvas{border:1px solid var(--line-2);border-radius:var(--r-md);background:var(--surface);
+          background-image:radial-gradient(var(--line-2) 1px,transparent 1.2px);background-size:20px 20px;overflow:hidden}
+        #groupView .canvas svg{display:block;width:100%;height:auto}
+        #groupView .tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+        #groupView .tools .label{margin:0}
+        #groupView .sumbar{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin-top:12px}
+        #groupView .sumbar b{font-variant-numeric:tabular-nums}
+        #groupView .ins h4{font:700 15px var(--font-display);margin-bottom:12px}
+        #groupView .ins .f{display:grid;gap:6px;margin-bottom:14px}
+        #groupView .t-rect{fill:var(--sunken);stroke:var(--line-2)}
+        #groupView .t-half{fill:var(--gs);stroke:var(--gl)}
+        #groupView .seat{fill:var(--gs);stroke:var(--gl)}
+        #groupView .co-t{fill:var(--gi);font:700 8px var(--font);text-anchor:end;dominant-baseline:central}
+        #groupView .seat-t{fill:var(--gi);font:700 11px var(--font);text-anchor:middle;dominant-baseline:central}
+        #groupView .t-lab{fill:var(--text-2);font:700 11px var(--font);text-anchor:middle;dominant-baseline:central}
+        #groupView .sel-box{fill:none;stroke:var(--accent);stroke-width:2;stroke-dasharray:6 4}
+        #groupView .sel-h{fill:var(--surface);stroke:var(--accent);stroke-width:2}
+        #groupView .board-s{fill:var(--text)}
+        #groupView .board-t{fill:var(--bg);font:700 11px var(--font);text-anchor:middle;dominant-baseline:central}
+        #groupView .tg{cursor:pointer}
+        #groupView .tg:hover .t-rect,#groupView .tg:hover .t-half{stroke:var(--accent)}
+        #groupView .sheet{margin-top:12px;border:1px solid var(--line-2);border-radius:var(--r-md);background:var(--surface);padding:12px}
+        @media (max-width:639px){#groupView .exp{grid-template-columns:1fr 1fr}
+        #groupView .gcell{min-height:44px}
+        }
+        #groupView .fab-note{font-size:12px;color:var(--text-3);margin-top:8px}
+        #groupView .gcell,#groupView .gcard li,#groupView .sg{cursor:pointer}
+        #groupView .gcell:hover{border-color:var(--gi)}
+        #groupView .gcell.sel{outline:3px solid var(--accent);outline-offset:1px}
+        #groupView .gcard li.sel{background:var(--accent-soft);outline:2px solid var(--accent);outline-offset:-2px}
+        #groupView .seat-sel .seat{stroke:var(--accent);stroke-width:3}
+        #groupView .sg:hover .seat{stroke:var(--gi)}
+        #groupView .adj-dot{position:absolute;right:3px;top:3px;width:10px;height:10px;border-radius:50%;background:var(--accent);border:2px solid var(--surface);display:inline-block}
+        #groupView .adj-c{fill:var(--accent);stroke:var(--surface);stroke-width:2}
+        #groupView .adj-tx{font-size:11px;font-weight:700;color:var(--accent-ink);background:var(--accent-soft);border:1px solid var(--accent-line);border-radius:99px;padding:0 6px;white-space:nowrap}
+        #groupView .status{padding:8px 12px;border-radius:var(--r-sm);background:var(--accent-soft);color:var(--accent-ink);font-size:13px;margin-bottom:8px;border:1px solid var(--accent-line)}
+        #groupView .status.idle{background:var(--sunken);color:var(--text-2);border-color:var(--line)}
+        #groupView .mrow{display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-top:1px solid var(--line)}
+        #groupView .mrow .gnum{margin-top:2px}
+        #groupView .mnames{display:flex;flex-wrap:wrap;gap:4px;min-width:0}
+        #groupView .mn{position:relative;min-height:30px;padding:0 10px;border-radius:6px;border:1px solid var(--gl);background:var(--gs);color:var(--gi);font-weight:700;font-size:13px;cursor:pointer}
+        #groupView .mn:hover{border-color:var(--gi)}
+        #groupView .mn.sel{outline:2px solid var(--accent);outline-offset:1px;background:var(--surface)}
+        #groupView .mn .adj-dot{right:-3px;top:-3px}
+        #groupView .hlist{max-height:176px;overflow:auto;margin-top:8px}
+        #groupView .hlist li{padding:0}
+        #groupView .hbtn{display:flex;gap:8px;align-items:center;width:100%;min-height:36px;padding:4px 10px;border:0;background:none;text-align:left;cursor:pointer;border-radius:var(--r-sm);color:inherit}
+        #groupView .hbtn:hover{background:var(--surface)}
+        #groupView .hbtn .hn{flex:none;min-width:48px;font-size:12px}
+        #groupView .hbtn span:not(.badge){flex:1;min-width:0}
+        @media (max-width:639px){#groupView .hbtn{min-height:44px}
+        }
+        #groupView .rest{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+        #groupView .confirm{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+        @media (max-width:639px){#groupView .mn{min-height:44px}
+        #groupView .status .btn{min-height:44px}
+        }
+        #groupView .dl{display:grid;gap:8px;margin-bottom:6px}
+        #groupView .fbtn{display:grid;grid-template-columns:44px minmax(0,1fr) auto;column-gap:12px;row-gap:0;align-items:center;text-align:left;width:100%;min-height:64px;padding:10px 12px;border:1px solid var(--line-2);border-radius:var(--r-md);background:var(--surface);cursor:pointer}
+        #groupView .fbtn:hover{border-color:var(--text-3);background:var(--sunken)}
+        #groupView .fbtn .fi{grid-column:1;grid-row:1/3}
+        #groupView .fbtn b{grid-column:2;grid-row:1}
+        #groupView .fbtn small{grid-column:2;grid-row:2;color:var(--text-3);font-size:12px;overflow-wrap:anywhere;line-height:1.4}
+        #groupView .fbtn .fgo{grid-column:3;grid-row:1/3;color:var(--accent-ink)}
+        #groupView .fbtn.done{border-color:var(--ok-line);background:var(--ok-soft)}
+        #groupView .fbtn.done .fgo,#groupView .fbtn.done small{color:var(--ok-ink)}
+        #groupView .fbtn[aria-busy=true]{border-color:var(--accent-line);background:var(--accent-soft);cursor:progress}
+        #groupView .fbtn[aria-disabled=true]{background:var(--sunken);border-color:var(--line);color:var(--text-3);cursor:not-allowed}
+        #groupView .fbtn[aria-disabled=true] .fi{opacity:.5}
+        #groupView .fi{width:44px;height:44px;border-radius:10px;display:grid;place-items:center;font:700 18px var(--font-display);border:1px solid}
+        #groupView .fi.w{background:var(--accent-soft);color:var(--accent-ink);border-color:var(--accent-line)}
+        #groupView .fi.x{background:var(--ok-soft);color:var(--ok-ink);border-color:var(--ok-line)}
+        #groupView .fi.sm{width:22px;height:22px;font-size:12px;border-radius:5px}
+        #groupView .spin{width:18px;height:18px;border:2px solid var(--line-2);border-top-color:var(--accent);border-radius:50%;animation:sp .8s linear infinite}
+        @keyframes sp{to{transform:rotate(360deg)}}
+        @media (prefers-reduced-motion:reduce){#groupView .spin{animation:none}
+        }
+        #groupView .dl-states{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
+        #groupView .dl-states .cap{display:flex;gap:8px;align-items:center;font-weight:700;margin-bottom:10px}
+        @media (max-width:639px){#groupView .fbtn{min-height:56px}
+        }
+
+    </style>
 </head>
 <body>
     <div id="copySuccess">已成功複製圖片至剪貼簿！</div>
@@ -901,6 +1200,7 @@ Authorization inquiries: derliang@gmail.com
                     <p id="classroomNameDisplay" class="org"></p>
                 </div>
             </div>
+            <div class="mode-tabs" role="tablist" aria-label="功能"><button type="button" role="tab" id="modeTabSeat" class="mode-tab" aria-selected="true" onclick="GroupUI.setMode('seat')">排座位</button><button type="button" role="tab" id="modeTabGroup" class="mode-tab" aria-selected="false" onclick="GroupUI.setMode('group')">分組</button></div>
             <div id="mainHeaderSpacer" class="grow"></div>
             <div id="mainHeaderToolbar" class="toolbar-icons">
                 <button onclick="toggleTheme()" id="themeToggleBtn" class="icon-btn js-theme-btn" title="切換深色／淺色主題" aria-label="切換深色／淺色主題"><i data-lucide="moon"></i></button>
@@ -1089,6 +1389,7 @@ Authorization inquiries: derliang@gmail.com
                 </aside>
             </div>
         </main>
+        <section id="groupView" aria-label="分組"></section>
 
         <nav id="tabBar" class="tabbar" aria-label="主要分頁">
             <button type="button" data-tab-btn="list" onclick="setStep('list')"><i data-lucide="users"></i>名單<span class="bd ok" id="bd-list"></span></button>
@@ -2228,8 +2529,907 @@ Authorization inquiries: derliang@gmail.com
             };
         })(typeof window !== 'undefined' ? window : globalThis);
     </script>
+    <script id="group-ui">
+/* ═══ 分組功能：介面層（GroupUI）═══
+ * 規格：docs/design/DESIGN.md 第 10 節、docs/design/mockups/分組功能.html；邏輯在上一段 GroupLogic。
+ * 這一段負責：名單貼上與欄位判斷、分組方式、結果與座位畫面、互換與復原、分組紀錄、下載按鈕。
+ * 畫面全部畫在 #groupView，樣式都帶 #groupView 前綴，不影響「排座位」。 */
+(function () {
+    'use strict';
+    const GL = window.GroupLogic;
+    const $ = id => document.getElementById(id);
+    const KEY = 'seatHelperGroupV1';
+    const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+    const cp = gs => gs.map(a => a.slice());
+    const gc = g => 'g' + (g % 8 + 1);
+    const ic = n => '<svg class="ic" aria-hidden="true"><use href="#gi-' + n + '"/></svg>';
+    const LAYS = { block: '2×2 方塊', row: '橫向一段', col: '縱向一段' };
+    const LAY_TIP = { block: '每組 4 人坐成 2×2，前後左右都是組員', row: '每組坐在同一個位置、左右相鄰的幾排', col: '每組坐在同一排、前後相鄰' };
+    const COL_TYPES = [['cls', '班級'], ['no', '座號'], ['name', '姓名'], ['score', '成績'], ['skip', '略過']];
+    const PRESETS = {
+        island: { name: '方桌', sub: '4 人 × N 張', seats: 4, cols: 4, shape: 'rect' },
+        long: { name: '長桌', sub: '8 人 × N 張', seats: 8, cols: 2, shape: 'rect' },
+        hex: { name: '六邊形桌', sub: '6 人 × N 張', seats: 6, cols: 3, shape: 'hex' }
+    };
+
+    /* ── 狀態 ── */
+    const S = {
+        mode: 'seat', step: 1, res: 'result',
+        src: 'paste', paste: '', colMap: null, colN: 0, autoNo: true, hand: [{ no: '', name: '', score: '' }, { no: '', name: '', score: '' }, { no: '', name: '', score: '' }],
+        confirmClear: false, numTouched: false,
+        roster: [], parsed: null,
+        meth: 'rand', by: 'count', num: 6, avoid: true, cmp: 1, mode2: 'snake', fix: {}, skip: false, viewPast: null,
+        gRoster: [], groups: [], orig: [], origG: {}, hist: [], hi: 0, selS: null, confirming: false, used: null, showScore: true, recId: null,
+        recs: [],
+        smode: 'trad', tool: 'swap',
+        trad: { cols: 8, depth: 4, aisleOn: true, aisleAt: 4, layout: 'block', off: {} },
+        tbl: { preset: '', shape: 'rect', seats: 8, vert: false, one: false, ord: 'side', cols: 2, tables: [], sel: 0, inited: false, selOpen: false },
+        D: { pS: true, pN: true, avg: true, color: true, coord: true }, dlSt: {}
+    };
+
+    /* ── 儲存（只存這個瀏覽器；失敗就只在本次有效）── */
+    function save() {
+        try {
+            localStorage.setItem(KEY, JSON.stringify({ src: S.src, paste: S.paste, autoNo: S.autoNo, hand: S.hand, meth: S.meth, by: S.by, num: S.num, avoid: S.avoid, cmp: S.cmp, mode2: S.mode2, recs: S.recs, trad: S.trad, D: S.D, showScore: S.showScore }));
+        } catch (e) { /* 空間不足或被禁用 */ }
+    }
+    function load() {
+        try {
+            const j = JSON.parse(localStorage.getItem(KEY) || 'null');
+            if (!j) return;
+            ['src', 'paste', 'autoNo', 'meth', 'by', 'num', 'avoid', 'cmp', 'mode2', 'showScore'].forEach(k => { if (j[k] !== undefined) S[k] = j[k]; });
+            if (Array.isArray(j.hand) && j.hand.length) S.hand = j.hand;
+            if (Array.isArray(j.recs)) S.recs = j.recs.slice(0, 10);
+            if (j.trad) Object.assign(S.trad, j.trad);
+            if (j.D) Object.assign(S.D, j.D);
+        } catch (e) { /* 資料壞掉就用預設 */ }
+    }
+
+    /* ── 名單解析：貼上文字 → 欄位判斷 → 名單 ── */
+    function parseRows(text) {
+        const lines = String(text || '').replace(/\r/g, '').split('\n').filter(l => l.trim() !== '');
+        if (!lines.length) return [];
+        const tab = lines.some(l => l.indexOf('\t') >= 0), comma = !tab && lines.some(l => /[,，]/.test(l));
+        return lines.map(l => (tab ? l.split('\t') : comma ? l.split(/[,，]/) : l.trim().split(/[\s、]+/)).map(c => c.trim()));
+    }
+    const HDR = { 班級: 'cls', 年班: 'cls', 座號: 'no', 學號: 'no', 號碼: 'no', 姓名: 'name', 名字: 'name', 成績: 'score', 分數: 'score', class: 'cls', no: 'no', name: 'name', score: 'score' };
+    function detectTypes(rows, ncol) {
+        const types = new Array(ncol).fill('skip'), stat = [];
+        for (let c = 0; c < ncol; c++) {
+            const vals = rows.map(r => r[c] || '').filter(v => v !== '');
+            const num = vals.filter(v => /^\d+(\.\d+)?$/.test(v)).length;
+            stat.push({ isNum: vals.length > 0 && num / vals.length >= 0.9, distinct: new Set(vals).size, n: vals.length });
+        }
+        let nameCol = -1, best = -1;
+        stat.forEach((s, c) => { if (!s.isNum && s.n > 0 && s.distinct > best) { best = s.distinct; nameCol = c; } });
+        if (nameCol < 0) nameCol = 0;
+        types[nameCol] = 'name';
+        const numsLeft = [], numsRight = [];
+        stat.forEach((s, c) => { if (c === nameCol) return; if (s.isNum) (c < nameCol ? numsLeft : numsRight).push(c); else if (c < nameCol && s.n > 0) types[c] = 'cls'; });
+        if (numsLeft.length >= 2) { types[numsLeft[0]] = 'cls'; types[numsLeft[1]] = 'no'; } else if (numsLeft.length === 1) types[numsLeft[0]] = 'no';
+        if (numsRight.length) types[numsRight[0]] = 'score';
+        return types;
+    }
+    function buildRoster(rows, types, autoNo) {
+        const ix = t => types.indexOf(t), ci = ix('cls'), ni = ix('no'), mi = ix('name'), si = ix('score');
+        const out = [];
+        rows.forEach((r, i) => {
+            const name = (mi >= 0 ? r[mi] : '') || '';
+            if (!name) return;
+            let no = ni >= 0 ? (r[ni] || '') : '';
+            if (!no && autoNo) no = String(out.length + 1);
+            const raw = si >= 0 ? (r[si] || '') : '';
+            const sc = GL.toScore(raw);
+            out.push({ cls: ci >= 0 ? (r[ci] || '') : '', no, name, score: sc == null ? '' : sc });
+        });
+        return out;
+    }
+    function parseList() {
+        if (S.src === 'hand') {
+            const rows = S.hand.filter(h => String(h.name).trim()).map(h => [String(h.no).trim(), String(h.name).trim(), String(h.score).trim()]);
+            const types = ['no', 'name', 'score'];
+            S.parsed = { rows, types, auto: types, hdr: false, ncol: 3, labels: false };
+            S.roster = buildRoster(rows, types, S.autoNo);
+            return;
+        }
+        let rows = parseRows(S.paste), hdr = false;
+        if (rows.length && rows[0].some(c => HDR[String(c).toLowerCase()] && !/^\d+$/.test(c))) {
+            hdr = true;
+            const h = rows[0].map(c => HDR[String(c).toLowerCase()] || 'skip');
+            rows = rows.slice(1);
+            const ncol = Math.max(h.length, ...rows.map(r => r.length), 0);
+            const auto = h.concat(new Array(Math.max(0, ncol - h.length)).fill('skip'));
+            const types = S.colMap && S.colN === ncol ? S.colMap : auto;
+            S.parsed = { rows, types, auto, hdr, ncol };
+        } else {
+            const ncol = Math.max(0, ...rows.map(r => r.length));
+            const auto = ncol ? detectTypes(rows, ncol) : [];
+            const types = S.colMap && S.colN === ncol ? S.colMap : auto;
+            S.parsed = { rows, types, auto, hdr, ncol };
+        }
+        S.roster = buildRoster(S.parsed.rows, S.parsed.types, S.autoNo);
+    }
+
+    /* ── 小工具：時間、文字 ── */
+    const p2 = n => String(n).padStart(2, '0');
+    function fmtTs(ts) {
+        const d = new Date(ts), n = new Date();
+        const day = d.getFullYear() === n.getFullYear() && d.getMonth() === n.getMonth() && d.getDate() === n.getDate();
+        return (day ? '今天' : (d.getMonth() + 1) + '/' + d.getDate()) + ' ' + p2(d.getHours()) + ':' + p2(d.getMinutes());
+    }
+    const nameOf = id => (S.gRoster[id] ? S.gRoster[id].name : '');
+    const avgOf = a => { const v = a.map(i => GL.toScore(S.gRoster[i].score)).filter(x => x != null); return v.length ? v.reduce((t, x) => t + x, 0) / v.length : null; };
+    const peopleN = () => S.groups.reduce((t, g) => t + g.length, 0);
+    const info = () => GL.analyzeRoster(S.gRoster);
+    const hasSc = () => info().hasScores;
+    const isMulti = () => info().classMode === 'multi';
+    const nameC = id => (isMulti() && S.gRoster[id].cls ? S.gRoster[id].cls + ' ' : '') + nameOf(id);
+    function adjList() { const l = []; S.groups.forEach((m, g) => m.forEach(id => { if (S.origG[id] !== g) l.push(id); })); return l; }
+
+    /* ── 元件字串 ── */
+    const gseg = (name, items, cur, cls) => '<div class="gseg ' + (cls || '') + '" role="tablist">' + items.map(it => '<button type="button" role="tab" data-a="' + name + '" data-v="' + it[0] + '" aria-selected="' + (String(it[0]) === String(cur)) + '">' + it[1] + '</button>').join('') + '</div>';
+    const gstep = (v, act, extra) => '<div class="gstep"><button type="button" aria-label="減少" data-a="' + act + '" data-v="-1"' + (extra || '') + '>' + ic('minus') + '</button><output>' + v + '</output><button type="button" aria-label="增加" data-a="' + act + '" data-v="1"' + (extra || '') + '>' + ic('plus') + '</button></div>';
+    const gsw = (on, act, label, v) => '<span class="gsw"><input type="checkbox" data-a="' + act + '"' + (v != null ? ' data-v="' + v + '"' : '') + ' aria-label="' + label + '"' + (on ? ' checked' : '') + '></span>';
+    const SPRITE = '<svg width="0" height="0" style="position:absolute" aria-hidden="true"><marker id="garw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10z" style="fill:var(--text-2)"/></marker>' +
+        '<symbol id="gi-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol><symbol id="gi-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol><symbol id="gi-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>' +
+        '<symbol id="gi-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></symbol><symbol id="gi-down" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></symbol>' +
+        '<symbol id="gi-shuffle" viewBox="0 0 24 24"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></symbol><symbol id="gi-rot" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5"/></symbol>' +
+        '<symbol id="gi-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></symbol><symbol id="gi-warn" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></symbol></svg>';
+
+    /* ── 分組結果與紀錄 ── */
+    function recLabel(r) { return fmtTs(r.ts) + '　' + r.label; }
+    function curRec() { return S.recs.find(r => r.id === S.recId) || null; }
+    function prevRec() { const i = S.recs.findIndex(r => r.id === S.recId); return i >= 0 ? S.recs[i + 1] || null : null; }
+    function pastKeys(rec) { return rec.groups.map(g => g.map(i => GL.studentKey(rec.roster[i]))); }
+    function pastToIdx(keys) {
+        const byKey = new Map();
+        S.gRoster.forEach((st, i) => { const k = GL.studentKey(st); if (!byKey.has(k)) byKey.set(k, []); byKey.get(k).push(i); });
+        return keys.map(g => [].concat.apply([], g.map(k => byKey.get(k) || [])));
+    }
+    function setCurrent(rec) {
+        S.gRoster = rec.roster.map(x => Object.assign({}, x));
+        S.orig = cp(rec.orig || rec.groups);
+        S.groups = cp(rec.groups);
+        S.origG = {}; S.orig.forEach((m, g) => m.forEach(id => { S.origG[id] = g; }));
+        S.hist = [{ g: cp(S.orig), d: '分組結果（起點）' }];
+        if (JSON.stringify(S.groups) !== JSON.stringify(S.orig)) S.hist.push({ g: cp(S.groups), d: '載入時已有的調整' });
+        S.hi = S.hist.length - 1; S.selS = null; S.confirming = false; S.recId = rec.id;
+        S.used = { method: rec.method, count: rec.groups.length, notice: rec.notice || '', avoidCmp: rec.avoidCmp || 0 };
+        S.dlSt = {}; S.tbl.inited = false; // 組數可能變了：桌子數量下次進分組座位時重新估
+        fitTrad();
+    }
+    /* 傳統座位不夠坐時，先加排數（最多 12）再加每排位置數（最多 8），讓預設就坐得下 */
+    function fitTrad() {
+        const T = S.trad, lack = () => GL.tradSeatMap(tradCfg(), S.groups).lack;
+        while (lack() > 0 && T.cols < 12) T.cols++;
+        while (lack() > 0 && T.depth < 8) T.depth++;
+    }
+    function persistCurrent() {
+        const r = curRec();
+        if (r) { r.groups = cp(S.groups); r.saved = Date.now(); }
+        save();
+    }
+    function commit(desc) {
+        S.hist.length = S.hi + 1;
+        S.hist.push({ g: cp(S.groups), d: desc });
+        if (S.hist.length > 51) S.hist.shift();
+        S.hi = S.hist.length - 1; S.selS = null; S.confirming = false; S.dlSt = {};
+        persistCurrent();
+    }
+    function gotoHist(i) {
+        S.hi = clamp(i, 0, S.hist.length - 1); S.groups = cp(S.hist[S.hi].g); S.selS = null; S.confirming = false; S.dlSt = {};
+        persistCurrent();
+    }
+    function doSwap(a, b) {
+        const x = S.groups[a.g][a.k], y = S.groups[b.g][b.k];
+        S.groups[a.g][a.k] = y; S.groups[b.g][b.k] = x;
+        commit(nameOf(x) + '（第 ' + (a.g + 1) + ' 組）↔ ' + nameOf(y) + '（第 ' + (b.g + 1) + ' 組）');
+    }
+    function pickSeat(g, k) {
+        if (S.groups[g] == null || S.groups[g][k] == null) return;
+        if (!S.selS) S.selS = { g, k };
+        else if (S.selS.g === g && S.selS.k === k) S.selS = null;
+        else { const a = S.selS; doSwap(a, { g, k }); }
+    }
+    function newGrouping() {
+        const roster = S.roster.map(x => Object.assign({}, x));
+        let idx = roster.map((_, i) => i), skipped = 0;
+        const score = S.meth === 'score';
+        if (score) {
+            Object.keys(S.fix).forEach(i => { const v = String(S.fix[i]).trim(); if (v !== '' && !isNaN(+v) && +v >= 0 && +v <= 100 && roster[i] && GL.toScore(roster[i].score) == null) roster[i].score = +v; });
+            const miss = GL.missingScores(roster);
+            if (miss.length) {
+                if (!S.skip) return false;
+                const ms = new Set(miss); idx = idx.filter(i => !ms.has(i)); skipped = miss.length;
+            }
+        }
+        if (idx.length < 2) return false;
+        const rc = GL.resolveGroupCount(idx.length, S.by === 'size' ? 'size' : 'count', S.num);
+        const method = score ? S.mode2 : 'random';
+        const cmp = (!score && S.avoid) ? S.cmp : 0;
+        const past = cmp ? S.recs.slice(0, cmp).map(pastKeys) : [];
+        const r = GL.groupRoster(roster, { method, count: rc.count, avoid: past, indices: idx });
+        const rec = { id: 'r' + Date.now().toString(36) + Math.floor(Math.random() * 1e4), ts: Date.now(), method, label: (GL.METHOD_LABELS[method] || '分組') + '・' + r.groups.length + ' 組', roster, groups: cp(r.groups), orig: cp(r.groups), notice: r.notice || '', avoidCmp: cmp, skipped };
+        S.recs.unshift(rec); S.recs.length = Math.min(S.recs.length, 10);
+        setCurrent(rec);
+        S.used.skipped = skipped; S.used.clamped = rc.clamped;
+        S.step = 3; S.res = 'result';
+        save();
+        return true;
+    }
+    /* 與上次同組：和這筆之前的那一筆分組比對 */
+    function sameInfo() {
+        const prev = prevRec();
+        if (!prev) return { none: true };
+        const rep = GL.repeatPairs(S.groups, pastToIdx(pastKeys(prev)));
+        return { prev, rep };
+    }
+
+    /* ── 座位資料 ── */
+    const tradCfg = () => ({ cols: S.trad.cols, depth: S.trad.depth, layout: S.trad.layout, off: Object.keys(S.trad.off), aisleAfter: S.trad.aisleOn && S.trad.aisleAt < S.trad.cols ? [S.trad.aisleAt] : [] });
+    const tradMap = () => GL.tradSeatMap(tradCfg(), S.groups);
+    const tblList = () => S.tbl.tables.map(t => ({ n: t.n, shape: t.shape, one: !!t.one, ord: t.ord }));
+    const tblMap = () => GL.tableSeatMap(tblList(), S.groups);
+    function needSlots() { const mx = S.groups.reduce((m, g) => Math.max(m, g.length), 0); return mx * S.groups.length; }
+    const mkTable = () => ({ n: S.tbl.seats, shape: S.tbl.shape, vert: S.tbl.vert, one: S.tbl.one, ord: S.tbl.ord });
+    function setTblCount(n) { const T = S.tbl.tables; while (T.length < n) T.push(mkTable()); T.length = n; }
+    function applyPreset(k) {
+        const q = PRESETS[k], T = S.tbl;
+        T.preset = k; T.shape = q.shape; T.seats = q.seats; T.vert = false; T.one = false; T.ord = 'side'; T.tables = [];
+        setTblCount(Math.max(1, Math.ceil(needSlots() / q.seats)));
+        T.cols = clamp(q.cols, 1, T.tables.length); T.sel = 0; T.inited = true;
+    }
+    function ensureTbl() { if (!S.tbl.inited) applyPreset('long'); }
+    function tableGroups(map, i) { return map.tables[i] ? map.tables[i].groups : []; }
+
+    /* ═══ 畫面 ═══ */
+    const saved = () => '<span class="badge ok saved">' + ic('check') + (S.recId ? '已自動儲存　' + fmtClock(curRec() ? (curRec().saved || curRec().ts) : Date.now()) : '尚未分組') + '</span>';
+    const fmtClock = ts => { const d = new Date(ts); return p2(d.getHours()) + ':' + p2(d.getMinutes()); };
+
+    function stepsHTML() {
+        const labels = ['名單', '分組方式', '結果與座位'];
+        return '<div class="gsteps" role="navigation" aria-label="分組步驟">' + labels.map((s, i) => {
+            const n = i + 1, c = n === S.step ? 'on' : (n < S.step ? 'done' : '');
+            const ok = n === 1 || (n === 2 && S.roster.length >= 2) || (n === 3 && S.groups.length > 0);
+            return '<button type="button" class="gsi ' + c + '" data-a="step" data-v="' + n + '"' + (ok ? '' : ' disabled') + (n === S.step ? ' aria-current="step"' : '') + '><span class="n">' + (n < S.step ? ic('check') : n) + '</span>' + s + '</button>';
+        }).join('') + '</div>';
+    }
+
+    /* ── ① 名單 ── */
+    function previewHTML() {
+        const p = S.parsed, r = S.roster;
+        if (!p || !r.length) return '<div class="gempty">貼上、匯入檔案或逐筆輸入名單後，這裡會顯示程式讀到的內容。</div>';
+        const miss = r.filter(x => x.score === '').length, sc = r.length - miss, hasS = sc > 0;
+        let h = '<div class="card-h"><h3>程式讀到的內容</h3><span class="sp"></span><span class="badge">共 ' + r.length + ' 人</span>' +
+            (hasS ? '<span class="badge ok">有成績 ' + sc + ' 人</span>' : '<span class="badge info">沒有成績</span>') +
+            (hasS && miss ? '<span class="badge warn">' + ic('warn') + '缺成績 ' + miss + ' 人</span>' : '') + '</div>';
+        let head, body = '';
+        if (S.src === 'hand') {
+            head = ['座號', '姓名', '成績'].map(c => '<th>' + c + '</th>').join('');
+            r.slice(0, 7).forEach(x => { body += '<tr><td>' + esc(x.no) + '</td><td>' + esc(x.name) + '</td><td' + (hasS && x.score === '' ? ' class="miss">缺' : '>' + esc(x.score)) + '</td></tr>'; });
+            if (r.length > 7) body += '<tr><td colspan="3" class="hint">…另 ' + (r.length - 7) + ' 人</td></tr>';
+        } else {
+            head = p.types.map((t, i) => '<th><select class="sel" data-in="col" data-i="' + i + '" aria-label="第' + (i + 1) + '欄是">' + COL_TYPES.map(o => '<option value="' + o[0] + '"' + (o[0] === t ? ' selected' : '') + '>' + o[1] + '</option>').join('') + '</select></th>').join('');
+            const scoreCol = p.types.indexOf('score'), nameCol = p.types.indexOf('name');
+            p.rows.filter(row => nameCol < 0 || row[nameCol]).slice(0, 7).forEach(row => {
+                body += '<tr>' + p.types.map((t, i) => '<td' + (t === 'score' && hasS && !String(row[i] || '').trim() ? ' class="miss">缺' : '>' + esc(row[i] || '')) + '</td>').join('') + '</tr>';
+            });
+            if (r.length > 7) body += '<tr><td colspan="' + p.types.length + '" class="hint">…另 ' + (r.length - 7) + ' 人</td></tr>';
+        }
+        h += '<div class="tbl-wrap"><table><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table></div>';
+        if (S.src !== 'hand') h += '<p class="hint" style="margin-top:8px">欄位是程式自動判斷的；判斷錯了，直接改表頭的下拉選單。' + (p.hdr ? '第一列是標題，已略過。' : '') + '</p>';
+        if (r.length < 2) h += '<div class="alert" style="margin-top:12px">' + ic('warn') + '<div><b>至少要 2 個人才能分組</b>請再多貼幾位同學。</div></div>';
+        h += '<div class="btn-row" style="margin-top:14px;justify-content:flex-end"><button class="btn btn-primary btn-lg" type="button" data-a="next1"' + (r.length < 2 ? ' disabled' : '') + '>下一步：選擇分組方式</button></div>';
+        return h;
+    }
+    function namesHTML() {
+        const src = S.src;
+        let pane = '';
+        if (src === 'paste') pane = '<label class="label" for="gvPaste">貼上名單（可從 Excel 直接複製）</label><textarea id="gvPaste" data-in="paste" spellcheck="false" aria-label="貼上名單" placeholder="3A\t1\t王小明\t86">' + esc(S.paste) + '</textarea>';
+        else if (src === 'file') pane = '<div class="dz" data-drop><b>把 Excel 或 CSV 檔拖到這裡</b><span class="hint">支援 .xlsx、.xls、.csv；第一個工作表會被讀取</span><button class="btn" type="button" data-a="pickfile">選擇檔案</button><input type="file" id="gvFile" accept=".xlsx,.xls,.csv" hidden></div>';
+        else pane = '<div class="tbl-wrap"><table><thead><tr><th>座號</th><th>姓名</th><th>成績（可空白）</th><th></th></tr></thead><tbody>' + S.hand.map((h, i) =>
+            '<tr><td><input class="input sm" inputmode="numeric" data-in="hand" data-i="' + i + '" data-f="no" aria-label="座號" value="' + esc(h.no) + '"></td><td><input class="input" data-in="hand" data-i="' + i + '" data-f="name" aria-label="姓名" placeholder="輸入姓名" value="' + esc(h.name) + '"></td><td><input class="input sm" inputmode="decimal" data-in="hand" data-i="' + i + '" data-f="score" aria-label="成績" value="' + esc(h.score) + '"></td><td><button class="btn btn-sm" type="button" data-a="handdel" data-v="' + i + '" aria-label="刪除這一列">' + ic('trash') + '</button></td></tr>').join('') +
+            '</tbody></table></div><button class="btn btn-sm" style="margin-top:8px" type="button" data-a="handadd">' + ic('plus') + '新增一列</button>';
+        return '<div class="body grid2"><div class="col"><div class="card"><div class="card-h"><span class="gnb">1</span><h3>匯入名單</h3><span class="sp"></span>' +
+            (S.confirmClear ? '<span class="confirm"><span>清除全部名單？</span><button class="btn btn-danger btn-sm" type="button" data-a="clearyes">確定清除</button><button class="btn btn-sm" type="button" data-a="clearno">取消</button></span>' : '<button class="btn btn-danger btn-sm" type="button" data-a="clear"' + ('') + '>' + ic('trash') + '清除名單</button>') +
+            '<p>貼上、匯入檔案或逐筆輸入都可以</p></div>' +
+            gseg('src', [['paste', '貼上'], ['file', '匯入檔案'], ['hand', '逐筆輸入']], src) +
+            '<div style="margin-top:12px">' + pane + '</div>' +
+            '<div style="margin-top:12px"><div class="opt"><div><b>自動加入座號</b><span class="hint">名單沒有座號時，依貼上的順序編 1、2、3…；已有座號就用原本的</span></div>' + gsw(S.autoNo, 'autono', '自動加入座號') + '</div>' +
+            (src === 'hand' ? '' : '<div class="opt"><div><b>第一列是標題</b><span class="hint">自動判斷：有「姓名」「成績」這類字樣就略過這一列</span></div><span class="badge info" id="gvHdrBadge">' + (S.parsed && S.parsed.hdr ? '自動判斷：有標題' : '自動判斷：沒有標題') + '</span></div>') + '</div></div>' +
+            '<div class="card" id="gvPreview">' + previewHTML() + '</div></div>' +
+            '<aside class="col"><div class="card"><div class="card-h"><h3>可以直接貼的格式</h3></div><div class="codes">' +
+            '<div><b>只有姓名</b><code>王小明\n李小華</code></div><div><b>座號、姓名</b><code>1\t王小明\n2\t李小華</code></div>' +
+            '<div><b>班級、座號、姓名</b><code>3A\t1\t王小明</code></div><div><b>班級、座號、姓名、成績</b><code>3A\t1\t王小明\t86</code></div></div>' +
+            '<hr><p class="hint">成績沒有也能貼。要用「按成績分組」時，程式會請你補輸入缺的成績。</p></div></aside></div>';
+    }
+
+    /* ── ② 分組方式 ── */
+    function methInfo() {
+        const r = S.roster;
+        const filled = r.map((x, i) => ({ score: x.score !== '' ? x.score : (S.fix[i] !== undefined && String(S.fix[i]).trim() !== '' && !isNaN(+S.fix[i]) && +S.fix[i] >= 0 && +S.fix[i] <= 100 ? +S.fix[i] : '') }));
+        const origMiss = GL.missingScores(r), missIdx = GL.missingScores(filled);
+        let n = r.length;
+        if (S.meth === 'score' && S.skip) n = r.length - missIdx.length;
+        const rc = GL.resolveGroupCount(n, S.by === 'size' ? 'size' : 'count', S.num);
+        const canStart = n >= 2 && (S.meth === 'rand' || missIdx.length === 0 || S.skip);
+        return { n, origMiss, missIdx, rc, canStart };
+    }
+    function sizeHint(rc, n) {
+        const eq = rc.sizes.every(s => s === rc.sizes[0]);
+        return n + ' 人 → ' + rc.count + ' 組，' + (eq ? '每組 ' + rc.sizes[0] + ' 人（剛好整除）' : '前 ' + rc.sizes.filter(s => s === rc.sizes[0]).length + ' 組 ' + rc.sizes[0] + ' 人，其餘 ' + rc.sizes[rc.sizes.length - 1] + ' 人');
+    }
+    function dealSVG(kind) {
+        const A = { snake: [[1, 6, 7, 12], [2, 5, 8, 11], [3, 4, 9, 10]], round: [[1, 4, 7, 10], [2, 5, 8, 11], [3, 6, 9, 12]], avg: [[1, 5, 8, 12], [2, 4, 9, 11], [3, 6, 7, 10]] }[kind];
+        const V = { snake: ['79.3', '78.3', '79.0'], round: ['83.0', '78.3', '75.3'], avg: ['78.8', '78.8', '79.0'] }[kind];
+        const pos = {};
+        A.forEach((col, c) => col.forEach((rk, r) => { pos[rk] = { c, x: 4 + c * 72 + 32, y: 44 + r * 30 }; }));
+        let o = '<svg class="deal" viewBox="0 0 224 188" role="img" aria-label="發牌方向示意（範例數字）">';
+        A.forEach((_, c) => { o += '<g class="g' + (c + 1) + '"><rect x="' + (4 + c * 72) + '" y="4" width="64" height="146" rx="8" style="fill:var(--gs);stroke:var(--gl);stroke-width:1.5"/><text x="' + (36 + c * 72) + '" y="20" style="fill:var(--gi);font:700 12px var(--font);text-anchor:middle">第 ' + (c + 1) + ' 組</text><line x1="' + (10 + c * 72) + '" x2="' + (62 + c * 72) + '" y1="28" y2="28" style="stroke:var(--gl)"/></g>'; });
+        if (kind !== 'avg') for (let k = 1; k < 12; k++) {
+            const a = pos[k], b = pos[k + 1], dx = b.x - a.x, dy = b.y - a.y, L = Math.sqrt(dx * dx + dy * dy), ux = dx / L, uy = dy / L, jump = kind === 'round' && b.c < a.c;
+            o += '<line class="arrow' + (jump ? ' jump' : '') + '" x1="' + (a.x + ux * 13).toFixed(1) + '" y1="' + (a.y + uy * 13).toFixed(1) + '" x2="' + (b.x - ux * 15).toFixed(1) + '" y2="' + (b.y - uy * 15).toFixed(1) + '" marker-end="url(#garw)"/>';
+        }
+        A.forEach((col, c) => col.forEach(rk => { o += '<g class="g' + (c + 1) + '"><circle cx="' + pos[rk].x + '" cy="' + pos[rk].y + '" r="12" style="fill:var(--surface);stroke:var(--gi);stroke-width:1.5"/><text x="' + pos[rk].x + '" y="' + (pos[rk].y + 1) + '" style="fill:var(--gi);font:700 12px var(--font);text-anchor:middle;dominant-baseline:central">' + rk + '</text></g>'; }));
+        V.forEach((v, c) => { o += '<text x="' + (36 + c * 72) + '" y="168" style="fill:var(--text);font:700 13px var(--font);text-anchor:middle">' + v + '</text><text x="' + (36 + c * 72) + '" y="183" style="fill:var(--text-3);font:500 10px var(--font);text-anchor:middle">組平均（範例）</text>'; });
+        return o + '</svg>';
+    }
+    function cmpList() {
+        const rs = S.recs.slice(0, S.cmp);
+        if (!rs.length) return '<p class="hint" style="margin:0 0 8px">還沒有分組紀錄，這是第一次分組，不需要比對。</p>';
+        return '<ul class="ghist">' + rs.map((r, i) => {
+            const open = S.viewPast === r.id;
+            let det = '';
+            if (open) det = '<li style="display:block">' + r.groups.map((g, gi) => '<div class="grow ' + gc(gi) + '" style="gap:6px;margin:2px 0"><span class="gnum">' + (gi + 1) + '</span><span>' + g.map(id => esc(r.roster[id] ? r.roster[id].name : '')).join('、') + '</span></div>').join('') + '</li>';
+            return '<li' + (i === 0 ? ' class="cur"' : '') + '><span><b>' + fmtTs(r.ts) + '</b>　' + esc(r.label) + '・' + r.roster.length + ' 人</span>' + (i === 0 ? '<span class="badge info" style="flex:none">上一次</span>' : '') + '<button class="btn btn-sm" type="button" data-a="past" data-v="' + r.id + '" style="flex:none">' + (open ? '收合' : '查看分組') + '</button></li>' + det;
+        }).join('') + '</ul>';
+    }
+    function startAreaHTML() {
+        const m = methInfo();
+        if (S.meth === 'rand') return '<div class="btn-row" style="margin-top:8px;justify-content:flex-end"><button class="btn btn-primary" type="button" data-a="start"' + (m.canStart ? '' : ' disabled') + '>' + ic('shuffle') + '開始隨機分組</button></div>';
+        return '<div class="btn-row" style="margin-top:14px;justify-content:space-between;align-items:center"><span class="hint">' + (m.canStart ? '可以開始了' : '補完成績後才能開始') + '</span><button class="btn ' + (m.canStart ? 'btn-primary' : '') + '" type="button" data-a="start" aria-disabled="' + (!m.canStart) + '">開始按成績分組</button></div>';
+    }
+    function missBoxHTML() {
+        const m = methInfo();
+        if (!m.origMiss.length) return '';
+        const ok = m.missIdx.length === 0 || S.skip;
+        const all = m.origMiss.length === S.roster.length;
+        return '<div class="alert' + (ok ? ' ok' : '') + '" id="gvMiss">' + ic(ok ? 'check' : 'warn') + '<div><b>' + (ok ? (S.skip ? '已略過沒有成績的同學' : '成績都齊全了') : (all ? '名單沒有成績' : '有 ' + m.origMiss.length + ' 位同學還沒有成績')) + '</b>' +
+            '<span class="gmiss-note"' + (ok ? ' hidden' : '') + '>按成績分組需要每個人都有成績。請在下面補上，或選擇略過。</span>' +
+            '<div style="display:grid;gap:8px;margin-top:10px;max-width:360px">' + m.origMiss.map(i => '<div class="fixrow"><span>' + esc(S.roster[i].no) + ' 號　' + esc(S.roster[i].name) + '</span><input class="input miss-in" data-in="fix" data-i="' + i + '" inputmode="decimal" aria-label="' + esc(S.roster[i].name) + '的成績" placeholder="0–100" value="' + esc(S.fix[i] == null ? '' : S.fix[i]) + '"' + (S.skip ? ' disabled' : '') + '></div>').join('') + '</div>' +
+            '<div class="opt" style="border:0;padding:10px 0 0"><div><b>略過這些人</b><span class="hint" style="color:inherit">不放進分組，只分有成績的同學</span></div>' + gsw(S.skip, 'skip', '略過沒有成績的同學') + '</div></div></div>';
+    }
+    function methodHTML() {
+        const m = methInfo(), rc = m.rc, score = S.meth === 'score';
+        let h = '<div class="body"><div class="card"><div class="card-h"><span class="gnb">2</span><h3>分組方式</h3><span class="sp"></span><span class="badge">' + S.roster.length + ' 人</span><p>先選方式，再按開始</p></div>' +
+            gseg('meth', [['rand', '隨機分組'], ['score', '按成績分組']], S.meth);
+        h += '<div style="margin-top:16px"><div class="opt"><div><b>分組依據</b><span class="hint" id="gvSizeHint">' + sizeHint(rc, m.n) + (rc.clamped ? '（組數大於人數，已改為每人一組）' : '') + '</span></div>' + gseg('by', [['count', '分幾組'], ['size', '每組幾人']], S.by) + gstep(S.num, 'num') + '</div>';
+        if (!score) {
+            h += '<div class="opt"><div><b>避免與上次同組</b><span class="hint">盡量讓每一組都換新夥伴；做不到時，結果頁會告訴你重複幾對。</span></div>' + gsw(S.avoid, 'avoid', '避免與上次同組') + '</div>';
+            if (S.avoid) h += '<div class="opt" style="padding-top:0;border-top:0"><div><span class="label" style="margin:0">比對範圍</span><span class="hint">會和下面這些分組比對，避免再次同組</span></div>' + gseg('cmp', [['1', '上一次'], ['3', '最近 3 次']], S.cmp) + '</div>' + cmpList();
+        } else {
+            h += '<span class="label" style="margin-top:12px">按成績的分法</span><div class="modes">' +
+                [['snake', 'S 型分組', '蛇形發牌：第 1 輪由第 1 組往右發，第 2 輪掉頭從最後一組往回發，依此類推。每組強弱搭配，最常用。'],
+                ['round', '成績高到低輪流分組', '成績由高到低，一人發一組。每發完一輪（虛線）再回到第 1 組。第 1 組每輪都先拿到較高分，平均會偏高。'],
+                ['balanced', '總平均一致', '先 S 型發牌，再互換個別同學，讓各組平均盡量相同。']].map(x =>
+                '<label class="mode"><input type="radio" name="gvmode" data-a="mode2" data-v="' + x[0] + '"' + (S.mode2 === x[0] ? ' checked' : '') + '><b>' + x[1] + '</b>' + dealSVG(x[0] === 'balanced' ? 'avg' : x[0]) + '<p>' + x[2] + '</p></label>').join('') + '</div>' +
+                '<div id="gvMissBox" style="margin-top:12px">' + missBoxHTML() + '</div>';
+        }
+        h += '<div id="gvStart">' + startAreaHTML() + '</div></div></div></div>';
+        return h;
+    }
+
+    /* ── ③ 結果 ── */
+    function adjBadge() { const n = adjList().length; return n ? '<span class="badge warn">' + ic('warn') + '已手動調整 ' + n + ' 人</span>' : '<span class="badge">與分組結果相同</span>'; }
+    function gcardsInner() {
+        const hs = hasSc() && S.showScore;
+        return S.groups.map((m, g) => {
+            const a = avgOf(m);
+            return '<div class="gcard ' + gc(g) + '"><div class="gh"><span class="gnum">' + (g + 1) + '</span>第 ' + (g + 1) + ' 組' + (hs && a != null ? '<span class="avg">平均 ' + a.toFixed(1) + '</span>' : '') + '</div><ul>' +
+                m.map((id, k) => { const ad = S.origG[id] !== g, se = S.selS && S.selS.g === g && S.selS.k === k, st = S.gRoster[id]; return '<li class="' + (se ? 'sel' : '') + '" tabindex="0" role="button" data-s="' + g + ',' + k + '"><span class="no">' + esc(st.no) + '</span><span class="gnm">' + esc(nameC(id)) + (ad ? ' <span class="adj-tx">已調整</span>' : '') + '</span>' + (hs && st.score !== '' ? '<span class="sc">' + esc(st.score) + '</span>' : '') + '</li>'; }).join('') + '</ul></div>';
+        }).join('');
+    }
+    function membersInner() {
+        const n = adjList().length, pick = S.selS ? nameOf(S.groups[S.selS.g][S.selS.k]) : null;
+        let h = '<div class="card-h"><h3>各組名單</h3><span class="sp"></span>' + adjBadge() + '<p>點一位同學，再點另一位，兩人互換（座位與組別一起換）</p></div>';
+        h += '<div class="status' + (pick ? '' : ' idle') + '" role="status">' + (pick ? '已選 <b>' + esc(pick) + '</b>（第 ' + (S.selS.g + 1) + ' 組）。再點另一位同學就互換。<button class="btn btn-sm" type="button" data-a="cancel" style="margin-left:8px">取消選取</button>' : '目前沒有選取任何人') + '</div>';
+        h += S.groups.map((m, g) => '<div class="mrow ' + gc(g) + '"><span class="gnum">' + (g + 1) + '</span><div class="mnames">' + m.map((id, k) => { const ad = S.origG[id] !== g, se = S.selS && S.selS.g === g && S.selS.k === k; return '<button type="button" class="mn' + (se ? ' sel' : '') + '" data-s="' + g + ',' + k + '">' + esc(nameC(id)) + (ad ? '<i class="adj-dot" aria-label="已手動調整"></i>' : '') + '</button>'; }).join('') + '</div></div>').join('');
+        const back = S.hi, fwd = S.hist.length - 1 - S.hi;
+        h += '<div class="rest"><button class="btn btn-sm" type="button" data-a="undo"' + (back > 0 ? '' : ' aria-disabled="true"') + '>' + ic('rot') + '復原' + (back > 0 ? '（' + back + ' 步）' : '') + '</button><button class="btn btn-sm" type="button" data-a="redo"' + (fwd > 0 ? '' : ' aria-disabled="true"') + '><span class="flipx">' + ic('rot') + '</span>重做' + (fwd > 0 ? '（' + fwd + ' 步）' : '') + '</button><span class="hint">最多保留 50 步</span></div>';
+        h += '<ol class="ghist hlist" aria-label="調整紀錄">' + S.hist.map((_, i) => i).reverse().map(i => '<li' + (i === S.hi ? ' class="cur"' : '') + '><button type="button" class="hbtn" data-a="jump" data-v="' + i + '"><b class="hn">' + (i === 0 ? '起點' : '第 ' + i + ' 步') + '</b><span>' + esc(S.hist[i].d) + '</span>' + (i === S.hi ? '<span class="badge info">目前</span>' : '') + '</button></li>').join('') + '</ol>';
+        h += '<div class="rest">' + (S.confirming ? '<div class="confirm"><span>確定要把 ' + n + ' 人還原成分組結果嗎？這一步也能再復原。</span><button class="btn btn-sm btn-danger" type="button" data-a="restoreyes">確定還原</button><button class="btn btn-sm" type="button" data-a="restoreno">取消</button></div>' : '<button class="btn" type="button" data-a="restore"' + (n ? '' : ' aria-disabled="true"') + '>還原人工調整的分組</button><span class="hint">' + (n ? '一次回到分組結果的原樣' : '還沒有手動調整') + '</span>') + '</div>';
+        return h;
+    }
+    function statBars() {
+        const a = S.groups.map(avgOf).map(v => v == null ? 0 : v), mn = Math.min.apply(0, a), mx = Math.max.apply(0, a);
+        return '<div class="bars">' + a.map((v, g) => '<div class="gbar ' + gc(g) + '"><span class="gnum" style="width:22px;height:22px;font-size:11px">' + (g + 1) + '</span><div class="t"><i style="width:' + clamp(v, 0, 100) + '%"></i></div><span class="v">' + v.toFixed(1) + '</span></div>').join('') + '</div><p class="hint" style="margin-top:8px">最高與最低相差 <b>' + (mx - mn).toFixed(1) + '</b> 分</p>';
+    }
+    function sameCard() {
+        const si = sameInfo();
+        let b, body;
+        if (si.none) { b = '<span class="badge">第一次分組</span>'; body = '<p class="hint">還沒有更早的分組可以比對。</p>'; }
+        else if (!si.rep.pairCount) { b = '<span class="badge ok">' + ic('check') + '沒有重複</span>'; body = '<p class="hint">與 ' + fmtTs(si.prev.ts) + ' 的分組比對，沒有任何兩人再度同組。</p>'; }
+        else {
+            const notice = GL.avoidNotice(si.rep, 1);
+            b = '<span class="badge warn">' + ic('warn') + si.rep.pairCount + ' 對再度同組</span>';
+            body = '<p class="hint">與 ' + fmtTs(si.prev.ts) + ' 的分組比對：' + esc(notice) + '。</p>' + '<p class="hint" style="margin-top:6px">' + si.rep.pairs.slice(0, 6).map(p => esc(nameOf(p[0]) + '＆' + nameOf(p[1]))).join('、') + (si.rep.pairs.length > 6 ? '…' : '') + '</p>';
+        }
+        return '<div class="card"><div class="card-h"><h3>與上次同組</h3><span class="sp"></span>' + b + '</div>' + body + '</div>';
+    }
+    function histCard() {
+        return '<div class="card"><div class="card-h"><h3>分組紀錄</h3><span class="sp"></span><span class="hint">自動保留最近 10 筆</span></div><ul class="ghist">' + S.recs.map(r => '<li' + (r.id === S.recId ? ' class="cur"' : '') + '><span>' + esc(recLabel(r)) + '</span>' + (r.id === S.recId ? '<b>目前</b>' : '<button class="btn btn-sm" type="button" data-a="rec" data-v="' + r.id + '">載入</button>') + '</li>').join('') + '</ul></div>';
+    }
+    function tabs3() {
+        return '<div class="grow" style="justify-content:space-between"><div class="gseg" role="tablist">' + [['result', '分組結果'], ['seat', '座位安排']].map(x => '<button type="button" role="tab" data-a="res" data-v="' + x[0] + '" aria-selected="' + (S.res === x[0]) + '">' + x[1] + '</button>').join('') + '</div>' + saved() + '</div>';
+    }
+    function resultHTML() {
+        const u = S.used || {}, sc = hasSc();
+        const notice = u.notice || '';
+        return '<div class="body grid2"><div class="col">' + tabs3() +
+            '<div class="card" id="gvResult"><div class="card-h"><h3>' + esc(GL.METHOD_LABELS[u.method] || '分組') + '結果</h3><span class="badge info">' + (u.method === 'random' ? '隨機' : '按成績') + '・' + S.groups.length + ' 組・' + esc(GL.sizeText(S.groups)) + '</span><span data-adj>' + adjBadge() + '</span><span class="sp"></span>' +
+            (sc ? '<label class="grow" style="gap:8px;font-size:13px;font-weight:700">顯示成績 ' + gsw(S.showScore, 'showsc', '顯示成績') + '</label>' : '') + '</div>' +
+            (u.skipped ? '<div class="alert info" style="margin-bottom:12px">' + ic('check') + '<div>有 ' + u.skipped + ' 位沒有成績的同學已略過，沒有放進分組。</div></div>' : '') +
+            (u.clamped ? '<div class="alert info" style="margin-bottom:12px">' + ic('check') + '<div>組數大於人數，已改成每人一組。</div></div>' : '') +
+            (notice ? '<div class="alert" style="margin-bottom:12px">' + ic('warn') + '<div>' + esc(notice) + '</div></div>' : '') +
+            '<div class="gcards" data-gcards>' + gcardsInner() + '</div><p class="hint" style="margin-top:10px">點一位同學再點另一位可以互換；座位畫面的調整也會同步到這裡。</p></div>' +
+            '<div class="btn-row" style="justify-content:space-between"><button class="btn" type="button" data-a="regroup">' + ic('shuffle') + '重新分組</button><button class="btn btn-primary" type="button" data-a="next2">下一步：安排座位</button></div></div>' +
+            '<aside class="col">' + (sc ? '<div class="card"><div class="card-h"><h3>各組平均</h3></div>' + statBars() + '</div>' : '') + sameCard() + dlCard('group') + histCard() + '</aside></div>';
+    }
+
+    /* ── ④ 傳統座位 ── */
+    function seatGrid(map) {
+        const T = S.trad, SC = T.cols, SD = T.depth, gap = T.aisleOn && T.aisleAt < SC;
+        const col = c => 2 + (c - 1) + (gap && c > T.aisleAt ? 1 : 0), grow = d => 2 + (SD - d);
+        const tpl = ['26px']; for (let c = 1; c <= SC; c++) { tpl.push('minmax(0,1fr)'); if (gap && c === T.aisleAt) tpl.push('14px'); }
+        let h = '<div class="room"><div class="seatgrid" style="grid-template-columns:' + tpl.join(' ') + '">';
+        h += '<div class="lbl" style="grid-column:1;grid-row:1">位置</div>';
+        for (let c = 1; c <= SC; c++) h += '<div class="lbl" style="grid-column:' + col(c) + ';grid-row:' + (SD + 2) + '">第' + c + '排</div>';
+        for (let d = 1; d <= SD; d++) h += '<div class="lbl" style="grid-column:1;grid-row:' + grow(d) + '">' + d + '</div>';
+        for (let d = 1; d <= SD; d++) for (let c = 1; c <= SC; c++) {
+            const key = c + ',' + d, pos = 'grid-column:' + col(c) + ';grid-row:' + grow(d), co = '<span class="co">' + c + '-' + d + '</span>';
+            if (T.off[key]) { h += '<div class="gcell off" role="button" tabindex="0" data-o="' + key + '" style="' + pos + '" aria-label="不排的座位 ' + c + '-' + d + '">' + co + '</div>'; continue; }
+            const it = map.cells[key];
+            if (!it || it.id == null) { h += '<div class="gcell empty" data-o="' + key + '" style="' + pos + '">' + co + '</div>'; continue; }
+            const se = S.selS && S.selS.g === it.g && S.selS.k === it.k, ad = S.origG[it.id] !== it.g;
+            h += '<div class="gcell ' + gc(it.g) + (se ? ' sel' : '') + '" role="button" tabindex="0" data-o="' + key + '" data-s="' + it.g + ',' + it.k + '" style="' + pos + '" aria-label="第' + (it.g + 1) + '組 ' + esc(nameOf(it.id)) + '"><span class="gn">' + (it.g + 1) + '</span>' + co + '<span class="gnm">' + esc(nameC(it.id)) + '</span>' + (ad ? '<i class="adj-dot" aria-label="已手動調整"></i>' : '') + '</div>';
+        }
+        h += '</div><div class="board">講台（前方）</div></div>' +
+            '<div class="glegend">' + S.groups.map((_, g) => '<span class="gchip ' + gc(g) + '"><span class="gnum">' + (g + 1) + '</span>第 ' + (g + 1) + ' 組</span>').join('') + '<span class="gchip" style="background:var(--sunken);color:var(--text-2);border-color:var(--line-2)"><i class="adj-dot" style="position:static"></i>手動調整過</span></div>' +
+            '<p class="hint" style="margin-top:8px">從講台往教室看：左到右是第 1 排到第 ' + SC + ' 排，由前往後是第 1 到第 ' + SD + ' 個位置。每個座位右上角的「排-位置」是座標，例如 3-2＝第 3 排第 2 個位置。</p>';
+        return h;
+    }
+    function tradPanel(map) {
+        const T = S.trad, offN = Object.keys(T.off).length, lack = map.lack, avail = map.available;
+        return '<div class="gcfg" data-roompanel><div class="cfg-i"><span class="label">排數</span>' + gstep(T.cols, 'tcols') + '</div><div class="cfg-i"><span class="label">每排位置數</span>' + gstep(T.depth, 'tdepth') + '</div>' +
+            '<div class="cfg-i"><span class="label">走道</span><div class="grow" style="gap:8px">' + gsw(T.aisleOn, 'aisleon', '走道') + (T.aisleOn ? '<span class="hint">第</span>' + gstep(T.aisleAt, 'taisle') + '<span class="hint">排之後</span>' : '') + '</div></div>' +
+            '<div class="cfg-i"><span class="label">同組怎麼坐</span><div class="gseg" role="tablist">' + ['block', 'row', 'col'].map(k => '<button type="button" role="tab" data-a="lay" data-v="' + k + '" aria-selected="' + (k === T.layout) + '" title="' + LAY_TIP[k] + '">' + LAYS[k] + '</button>').join('') + '</div></div>' +
+            '<div class="cfg-i"><span class="label">點座位時</span><div class="gseg" role="tablist"><button type="button" role="tab" data-a="tool" data-v="swap" aria-selected="' + (S.tool === 'swap') + '">換人</button><button type="button" role="tab" data-a="tool" data-v="off" aria-selected="' + (S.tool === 'off') + '">設為不排</button></div></div>' +
+            '<div class="cfg-i cfg-sum"><span class="badge ' + (lack > 0 ? 'warn' : 'ok') + '">' + (lack > 0 ? ic('warn') + '座位 ' + avail + '，還缺 ' + lack + ' 個' : ic('check') + '座位 ' + avail + '／人數 ' + peopleN()) + '</span>' + (offN ? '<span class="hint">不排 ' + offN + ' 個</span>' : '') + '</div>' +
+            '<p class="hint cfg-tip">' + LAY_TIP[T.layout] + '。' + (S.tool === 'off' ? '現在點座位會把它設成不排（再點一次取消）。' : '現在點兩位同學會互換。') + '</p></div>';
+    }
+
+    /* ── ⑤ 桌子畫布 ── */
+    const SW = 46, SH = 28, TGAP = 6;
+    function tbox(t) {
+        if (t.shape === 'round') { const rt = 22 + t.n * 2, d = Math.max(rt + 22, t.n * 8); return { w: 2 * (d + 26), h: 2 * (d + 26), rt, d }; }
+        if (t.shape === 'hex') { const rh = 32, dh = Math.max(rh * 0.866 + 28, t.n * 8); return { w: 2 * (dh + 26), h: 2 * (dh + 26), rt: rh, d: dh }; }
+        const a = t.one ? t.n : Math.ceil(t.n / 2), b = t.one ? 0 : t.n - a;
+        if (!t.vert) return { w: a * (SW + TGAP) + TGAP, h: SH + 4 + 34 + (b ? 4 + SH : 0), a, b };
+        return { w: SW + 4 + 34 + (b ? 4 + SW : 0), h: a * (SH + TGAP) + TGAP, a, b };
+    }
+    function canvasLayout() {
+        const rows = [], T = S.tbl.tables;
+        T.forEach((t, i) => { const r = Math.floor(i / S.tbl.cols); (rows[r] = rows[r] || []).push({ i, t, b: tbox(t) }); });
+        const GX = 28, GY = 22, PAD = 16, rowW = [], rowH = [];
+        rows.forEach((r, ri) => { rowW[ri] = r.reduce((a, x) => a + x.b.w, 0) + GX * (r.length - 1); rowH[ri] = Math.max.apply(0, r.map(x => x.b.h)); });
+        const W = Math.max(560, Math.max.apply(0, rowW) + 2 * PAD), body = rowH.reduce((a, h) => a + h, 0) + GY * (rows.length - 1), H = PAD + body + GY + 20 + PAD;
+        let y = H - PAD - 20 - GY; const items = [];
+        rows.forEach((r, ri) => { const top = y - rowH[ri]; let x = (W - rowW[ri]) / 2; r.forEach(it => { items.push({ i: it.i, t: it.t, b: it.b, x, y: top + (rowH[ri] - it.b.h) / 2 }); x += it.b.w + GX; }); y = top - GY; });
+        return { items, W, H };
+    }
+    function seatNode(x, y, seat, exp) {
+        const lbl = (!exp || S.D.coord) ? seat.lbl : '';
+        const empty = seat.id == null;
+        if (exp) {
+            const col = S.D.color ? GL.GROUP_COLORS[seat.g % 8] : GL.GRAY;
+            const co = lbl ? '<text x="' + (x + SW - 3) + '" y="' + (y + 9) + '" font-size="8" font-weight="700" text-anchor="end" fill="#' + (empty ? '6F6858' : col.ink) + '">' + lbl + '</text>' : '';
+            if (empty) return '<rect x="' + x + '" y="' + y + '" width="' + SW + '" height="' + SH + '" rx="6" fill="#F1EDE3" stroke="#CFC7B2" stroke-dasharray="3 3"/>' + co;
+            const nm = nameC(seat.id);
+            return '<rect x="' + x + '" y="' + y + '" width="' + SW + '" height="' + SH + '" rx="6" fill="#' + col.soft + '" stroke="#' + col.line + '"/><text x="' + (x + SW / 2) + '" y="' + (y + SH / 2 + 4) + '" font-size="' + (nm.length >= 6 ? 8 : nm.length >= 4 ? 10 : 11) + '" font-weight="700" text-anchor="middle" fill="#' + col.ink + '">' + esc(nm) + '</text>' + co;
+        }
+        if (empty) return '<g><rect class="seat-e" x="' + x + '" y="' + y + '" width="' + SW + '" height="' + SH + '" rx="6"/><text class="co-t" x="' + (x + SW - 3) + '" y="' + (y + 8) + '">' + lbl + '</text></g>';
+        const se = S.selS && S.selS.g === seat.g && S.selS.k === seat.k, ad = S.origG[seat.id] !== seat.g, nm = nameC(seat.id);
+        return '<g class="' + gc(seat.g) + ' sg' + (se ? ' seat-sel' : '') + '" data-s="' + seat.g + ',' + seat.k + '" tabindex="0" role="button" aria-label="第' + (seat.g + 1) + '組 ' + esc(nm) + '"><rect class="seat" x="' + x + '" y="' + y + '" width="' + SW + '" height="' + SH + '" rx="6"/><text class="seat-t" x="' + (x + SW / 2) + '" y="' + (y + SH / 2 + 3) + '" style="font-size:' + (nm.length >= 6 ? 8 : nm.length >= 4 ? 10 : 11) + 'px">' + esc(nm) + '</text><text class="co-t" x="' + (x + SW - 3) + '" y="' + (y + 8) + '">' + lbl + '</text>' + (ad ? '<circle class="adj-c" cx="' + (x + 5) + '" cy="' + (y + 5) + '" r="4"/>' : '') + '</g>';
+    }
+    function canvasSVG(map, sel, exp) {
+        const L = canvasLayout(); let out = '', selBox = '';
+        L.items.forEach(it => {
+            const t = it.t, b = it.b, i = it.i, x = it.x, y = it.y, mt = map.tables[i];
+            let body = '', lx, ly;
+            const seq = mt.top.concat(mt.bot).filter(Boolean).sort((p, q) => p.seq - q.seq);
+            const tFill = exp ? ' fill="#F1EDE3" stroke="#CFC7B2"' : ' class="t-rect"';
+            if (t.shape === 'round' || t.shape === 'hex') {
+                const cx = x + b.w / 2, cy = y + b.h / 2; lx = cx; ly = cy;
+                if (t.shape === 'round') body += '<circle' + tFill + ' cx="' + cx + '" cy="' + cy + '" r="' + b.rt + '"/>';
+                else { const pts = []; for (let k = 0; k < 6; k++) { const ha = (-90 + k * 60) * Math.PI / 180; pts.push((cx + b.rt * Math.cos(ha)).toFixed(1) + ',' + (cy + b.rt * Math.sin(ha)).toFixed(1)); } body += '<polygon' + tFill + ' points="' + pts.join(' ') + '" stroke-linejoin="round"/>'; }
+                seq.forEach((s, k) => { const ang = (t.shape === 'hex' ? -90 + 360 / t.n * (k + 0.5) : -90 + k * 360 / t.n) * Math.PI / 180; body += seatNode(cx + b.d * Math.cos(ang) - SW / 2, cy + b.d * Math.sin(ang) - SH / 2, s, exp); });
+            } else if (!t.vert) {
+                const ty = y + SH + 4; lx = x + b.w / 2; ly = ty + 17;
+                body += '<rect' + tFill + ' x="' + x + '" y="' + ty + '" width="' + b.w + '" height="34" rx="6"/>';
+                for (let k = 0; k < b.a; k++) if (mt.top[k]) body += seatNode(x + TGAP + k * (SW + TGAP), y, mt.top[k], exp);
+                for (let k = 0; k < b.b; k++) if (mt.bot[k]) body += seatNode(x + TGAP + k * (SW + TGAP), ty + 34 + 4, mt.bot[k], exp);
+            } else {
+                const tx = x + SW + 4; lx = tx + 17; ly = y + b.h / 2;
+                body += '<rect' + tFill + ' x="' + tx + '" y="' + y + '" width="34" height="' + b.h + '" rx="6"/>';
+                for (let k = 0; k < b.a; k++) if (mt.top[k]) body += seatNode(x, y + TGAP + k * (SH + TGAP), mt.top[k], exp);
+                for (let k = 0; k < b.b; k++) if (mt.bot[k]) body += seatNode(tx + 34 + 4, y + TGAP + k * (SH + TGAP), mt.bot[k], exp);
+            }
+            const gl = mt.groups;
+            const lab = '桌 ' + (i + 1) + (gl.length && t.shape === 'rect' && !t.vert && b.w >= 160 ? '　第 ' + gl.map(g => g + 1).join('、') + ' 組' : '');
+            body += exp ? '<text x="' + lx + '" y="' + (ly + 4) + '" font-size="11" font-weight="700" text-anchor="middle" fill="#4F493D">' + lab + '</text>' : '<text class="t-lab" x="' + lx + '" y="' + (ly + 1) + '">' + lab + '</text>';
+            out += exp ? '<g>' + body + '</g>' : '<g class="tg" data-t="' + i + '"><rect x="' + x + '" y="' + y + '" width="' + b.w + '" height="' + b.h + '" fill="transparent"/>' + body + '</g>';
+            if (!exp && i === sel) selBox = '<rect class="sel-box" x="' + (x - 4) + '" y="' + (y - 4) + '" width="' + (b.w + 8) + '" height="' + (b.h + 8) + '" rx="10"/>';
+        });
+        const bd = exp ? '<rect x="' + ((L.W - 260) / 2) + '" y="' + (L.H - 36) + '" width="260" height="20" rx="4" fill="#22201B"/><text x="' + (L.W / 2) + '" y="' + (L.H - 22) + '" font-size="11" font-weight="700" text-anchor="middle" fill="#F5F2EA">講台（前方）</text>'
+            : '<rect class="board-s" x="' + ((L.W - 260) / 2) + '" y="' + (L.H - 36) + '" width="260" height="20" rx="4"/><text class="board-t" x="' + (L.W / 2) + '" y="' + (L.H - 25) + '">講台（前方）</text>';
+        if (exp) return { svg: '<svg xmlns="http://www.w3.org/2000/svg" width="' + L.W + '" height="' + L.H + '" viewBox="0 0 ' + L.W + ' ' + L.H + '" font-family="\'Microsoft JhengHei\',\'Noto Sans TC\',\'PingFang TC\',sans-serif"><rect width="' + L.W + '" height="' + L.H + '" fill="#FFFFFF"/>' + bd + out + '</svg>', W: L.W, H: L.H };
+        return '<svg viewBox="0 0 ' + L.W + ' ' + L.H + '" role="img" aria-label="桌子擺放畫布">' + bd + out + selBox + '</svg>';
+    }
+    const segC = (act, k, opts, cur) => '<div class="gseg">' + opts.map(o => '<button type="button" data-a="' + act + '" data-k="' + k + '" data-v="' + o[0] + '" aria-selected="' + (o[0] === cur) + '">' + o[1] + '</button>').join('') + '</div>';
+    function tileSVG(k) {
+        let o = '<svg viewBox="0 0 64 40" aria-hidden="true">';
+        const seat = (x, y) => '<rect class="st" x="' + x + '" y="' + y + '" width="11" height="6" rx="2"/>';
+        if (k === 'island') o += '<rect class="tb" x="14" y="14" width="36" height="12" rx="3"/>' + seat(16, 5) + seat(37, 5) + seat(16, 29) + seat(37, 29);
+        else if (k === 'long') { o += '<rect class="tb" x="4" y="14" width="56" height="12" rx="3"/>'; [6, 19, 32, 45].forEach(x => { o += seat(x, 5) + seat(x, 29); }); }
+        else { const pts = []; for (let i = 0; i < 6; i++) { const a = (-90 + i * 60) * Math.PI / 180; pts.push((32 + 10 * Math.cos(a)).toFixed(1) + ',' + (20 + 10 * Math.sin(a)).toFixed(1)); } o += '<polygon class="tb" points="' + pts.join(' ') + '"/>'; for (let j = 0; j < 6; j++) { const b = (-60 + j * 60) * Math.PI / 180; o += seat((32 + 18 * Math.cos(b) - 5.5).toFixed(1), (20 + 15 * Math.sin(b) - 3).toFixed(1)); } }
+        return o + '</svg>';
+    }
+    function gcfgInner() {
+        const T = S.tbl, rect = T.shape === 'rect', need = needSlots();
+        return '<div class="tiles">' + ['island', 'long', 'hex'].map(k => { const q = PRESETS[k]; return '<button type="button" class="tile" data-a="preset" data-v="' + k + '" aria-pressed="' + (T.preset === k) + '">' + tileSVG(k) + '<b>' + q.name + '</b><small>' + q.seats + ' 人 × ' + Math.max(1, Math.ceil(need / q.seats)) + ' 張</small></button>'; }).join('') + '</div>' +
+            '<div class="cfg2"><div class="cfg-i"><span class="label">桌子數量</span>' + gstep(T.tables.length, 'ct', ' data-k="count"') + '</div>' +
+            '<div class="cfg-i"><span class="label">每張桌座位數</span>' + gstep(T.seats, 'ct', ' data-k="seats"') + '</div>' +
+            '<div class="cfg-i"><span class="label">每列幾張桌</span>' + gstep(T.cols, 'ct', ' data-k="cols"') + '</div>' +
+            (rect ? '<div class="cfg-i"><span class="label">長桌擺放</span>' + segC('ct', 'vert', [['h', '橫放'], ['v', '直放']], T.vert ? 'v' : 'h') + '</div><div class="cfg-i"><span class="label">座位位置</span>' + segC('ct', 'side', [['two', '兩側'], ['one', '單側']], T.one ? 'one' : 'two') + '</div>' : '') +
+            (rect && !T.one ? '<div class="cfg-i"><span class="label">同組怎麼坐</span>' + segC('ct', 'ord', [['side', '同一邊'], ['face', '面對面']], T.ord) + '</div>' : '') +
+            (T.preset ? '' : '<span class="badge info" style="align-self:end">已自訂</span>') + '</div>' +
+            (rect && !T.one ? '<p class="hint" style="margin:0 0 8px">' + (T.ord === 'side' ? '同一邊：同組並排坐桌子同一側，兩組隔著桌子相對。' : '面對面：同組分坐桌子兩側，隔著桌子面對面。') + '</p>' : '');
+    }
+    function inspector(map) {
+        const T = S.tbl, sel = T.sel, t = T.tables[sel], rect = t.shape === 'rect', gs = tableGroups(map, sel);
+        return '<b class="cfg-t">桌 ' + (sel + 1) + '</b><span class="hint">' + (gs.length ? '坐第 ' + gs.map(g => g + 1).join('、') + ' 組' : '沒有人') + '</span>' +
+            '<div class="selbar-i"><span class="label">座位數</span>' + gstep(t.n, 'pt', ' data-k="n"') + '</div>' +
+            '<div class="btn-row"><button class="btn btn-sm" type="button" data-a="pt" data-k="copy">' + ic('copy') + '複製</button><button class="btn btn-sm btn-danger" type="button" data-a="pt" data-k="del"' + (T.tables.length < 2 ? ' aria-disabled="true"' : '') + '>' + ic('trash') + '刪除</button></div>' +
+            '<details class="adv adv2"' + (T.selOpen ? ' open' : '') + '><summary>這張桌子的更多設定</summary><div class="gcfg">' +
+            '<div class="cfg-i"><span class="label">桌型</span>' + segC('pt', 'shape', [['rect', '長桌'], ['round', '圓桌'], ['hex', '六邊形']], t.shape) + '</div>' +
+            (rect ? '<div class="cfg-i"><span class="label">同組怎麼坐</span>' + segC('pt', 'ord', [['side', '同一邊'], ['face', '面對面']], t.ord) + '</div><div class="cfg-i"><span class="label">擺放</span>' + segC('pt', 'vert', [['h', '橫放'], ['v', '直放']], t.vert ? 'v' : 'h') + '</div><div class="cfg-i"><span class="label">座位位置</span>' + segC('pt', 'side', [['two', '兩側'], ['one', '單側']], t.one ? 'one' : 'two') + '</div>' : '') +
+            '</div></details>';
+    }
+    function tblSummary(map) {
+        const sCount = map.available, lack = map.lack, ppl = peopleN();
+        return '<div class="sumbar"><span>桌子 <b>' + S.tbl.tables.length + '</b> 張</span><span>座位 <b>' + sCount + '</b></span><span>人數 <b>' + ppl + '</b></span><span class="badge ' + (lack > 0 ? 'warn' : 'ok') + '">' + (lack > 0 ? ic('warn') + '還缺 ' + lack + ' 個座位' : ic('check') + '座位足夠' + (sCount - map.needed > 0 ? '（多 ' + (sCount - map.needed) + ' 個）' : '')) + '</span></div>';
+    }
+
+    /* ── 座位頁（傳統／分組座位）── */
+    function seatHTML() {
+        const trad = S.smode === 'trad';
+        let main, map, kind;
+        if (trad) {
+            map = tradMap();
+            main = tradPanel(map) + '<div id="gvSeatArea">' + seatGrid(map) + '</div>';
+        } else {
+            ensureTbl();
+            map = tblMap();
+            S.tbl.sel = clamp(S.tbl.sel, 0, S.tbl.tables.length - 1);
+            main = '<div data-gcfg>' + gcfgInner() + '</div><div class="canvas" data-cv>' + canvasSVG(map, S.tbl.sel, false) + '</div><div class="selbar" data-ins>' + inspector(map) + '</div><div data-sum>' + tblSummary(map) + '</div>' +
+                '<p class="fab-note">桌子從講台前方（畫面下方）往後排。點桌子可單獨調整。同組坐在連續的座位，所以一張桌子坐兩組時，兩組各占一段。點兩位同學的座位可以互換，座位右上角是「桌-座」座標。</p>';
+        }
+        S._map = map;
+        return '<div class="body"><div class="grow" style="justify-content:space-between"><div class="gseg" role="tablist">' + [['result', '分組結果'], ['seat', '座位安排']].map(x => '<button type="button" role="tab" data-a="res" data-v="' + x[0] + '" aria-selected="' + (S.res === x[0]) + '">' + x[1] + '</button>').join('') + '</div>' + saved() + '</div>' +
+            '<div class="grid2 body" style="padding:0"><div class="col"><div class="card"><div class="card-h"><h3>座位配置</h3><span data-adj>' + adjBadge() + '</span><span class="sp"></span><div class="gseg" role="tablist">' + [['trad', '傳統座位'], ['tbl', '分組座位']].map(x => '<button type="button" role="tab" data-a="smode" data-v="' + x[0] + '" aria-selected="' + (S.smode === x[0]) + '">' + x[1] + '</button>').join('') + '</div></div>' + main + '</div>' +
+            '<div class="btn-row" style="justify-content:space-between"><button class="btn" type="button" data-a="reseat">' + ic('shuffle') + (trad ? '重排座位' : '依組別重新填入座位') + '</button></div></div>' +
+            '<aside class="col"><div class="card" data-members>' + membersInner() + '</div>' + dlCard('seat') + '</aside></div></div>';
+    }
+
+    /* ── 下載卡 ── */
+    function dlInfo(kind) {
+        const i = info(), isG = kind === 'group';
+        let lack = 0, dis = false, why = '';
+        if (isG) { if (i.hasScores && !S.D.pS && !S.D.pN) { dis = true; why = '<b>還沒選要下載哪一頁</b>請至少打開一頁（含成績或不含成績）。'; } }
+        else { const m = S.smode === 'trad' ? tradMap() : (ensureTbl(), tblMap()); lack = m.lack; if (lack > 0) { dis = true; why = '<b>座位還缺 ' + lack + ' 個</b>補齊座位後才能下載座位表。'; } }
+        return { dis, why, hasScores: i.hasScores };
+    }
+    function fbtn(kind, fmt, dis) {
+        const st = S.dlSt[kind + ':' + fmt], w = fmt === 'docx', nm = GL.fileName(kind, fmt, info(), new Date());
+        const sub = st === 'busy' ? '正在產生檔案…' : (st === 'done' ? '已下載　' + esc(nm) : esc(nm));
+        const right = st === 'busy' ? '<span class="spin" aria-hidden="true"></span>' : (st === 'done' ? ic('check') : ic('down'));
+        return '<button type="button" class="fbtn' + (st === 'done' ? ' done' : '') + '" data-a="dl" data-v="' + kind + ':' + fmt + '"' + (dis ? ' aria-disabled="true"' : '') + (st === 'busy' ? ' aria-busy="true"' : '') + '><span class="fi ' + (w ? 'w' : 'x') + '" aria-hidden="true">' + (w ? 'W' : 'X') + '</span><b>' + (st === 'done' ? '再下載一次' : '下載 ' + (w ? 'Word 文件' : 'Excel 活頁簿')) + '</b><span class="fgo">' + right + '</span><small>' + sub + '</small></button>';
+    }
+    function dlInner(kind) {
+        const isG = kind === 'group', d = dlInfo(kind), D = S.D, mode = S.smode;
+        let h = '<div class="card-h"><h3>下載</h3><span class="sp"></span><span class="hint">' + (isG ? '分組名單' : '座位表') + '</span></div>';
+        if (d.dis) h += '<div class="alert" style="margin-bottom:10px">' + ic('warn') + '<div>' + d.why + '</div></div>';
+        h += '<div class="dl">' + fbtn(kind, 'docx', d.dis) + fbtn(kind, 'xlsx', d.dis) + '</div>';
+        if (S.dlSt[kind + ':docx'] === 'done' || S.dlSt[kind + ':xlsx'] === 'done') h += '<p class="hint" role="status">已存到瀏覽器的「下載」資料夾。</p>';
+        const opt = (t, s, key, label) => '<div class="opt"><div><b>' + t + '</b>' + (s ? '<span class="hint">' + s + '</span>' : '') + '</div>' + gsw(D[key], 'dlopt', label, key) + '</div>';
+        if (isG) {
+            if (!d.hasScores) h += '<p class="hint" style="margin:6px 0">名單沒有成績，只會下載一頁（不含成績）。</p>';
+            else { h += opt('含成績頁', '老師自己看，有成績與組平均', 'pS', '含成績頁') + opt('不含成績頁', '可發給學生或張貼', 'pN', '不含成績頁'); if (D.pS) h += opt('含成績頁顯示各組平均', '', 'avg', '顯示各組平均'); }
+        } else {
+            h += opt('保留組別顏色', '關閉變成黑白灰底，適合黑白印表機', 'color', '保留組別顏色') + opt('顯示座標', '每個座位的「' + (mode === 'tbl' ? '桌-座' : '排-位置') + '」', 'coord', '顯示座標');
+        }
+        return h + '<p class="hint" style="margin-top:6px">檔案在你的電腦上產生，名單不會上傳。要 PDF：用 Word 開啟後另存。</p>';
+    }
+    const dlCard = kind => '<div class="card" data-dl="' + kind + '">' + dlInner(kind) + '</div>';
+    function renderDl() { document.querySelectorAll('#groupView [data-dl]').forEach(x => { x.innerHTML = dlInner(x.getAttribute('data-dl')); }); }
+
+    /* ═══ 下載 ═══ */
+    function svgToPng(svg, w, h, scale) {
+        return new Promise(resolve => {
+            setTimeout(() => resolve(null), 5000); // 轉不出圖就只下載名單，不卡住
+            try {
+                const img = new Image();
+                img.onload = () => {
+                    try {
+                        const c = document.createElement('canvas'); c.width = Math.round(w * scale); c.height = Math.round(h * scale);
+                        const x = c.getContext('2d'); x.fillStyle = '#FFFFFF'; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0, c.width, c.height);
+                        c.toBlob(b => { if (!b) return resolve(null); b.arrayBuffer().then(ab => resolve({ data: new Uint8Array(ab), width: w, height: h })).catch(() => resolve(null)); }, 'image/png');
+                    } catch (e) { resolve(null); }
+                };
+                img.onerror = () => resolve(null);
+                img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+            } catch (e) { resolve(null); }
+        });
+    }
+    async function buildCtx(kind) {
+        const D = S.D, ctx = {
+            roster: S.gRoster, groups: S.groups, method: (S.used && S.used.method) || 'random', date: new Date(),
+            appVersion: typeof APP_VERSION === 'string' ? APP_VERSION : '',
+            options: { withScore: D.pS, withoutScore: D.pN, showAvg: D.avg, color: D.color, coord: D.coord }
+        };
+        if (kind === 'seat') {
+            if (S.smode === 'trad') { ctx.seat = { mode: 'trad', cfg: tradCfg() }; ctx.layoutLabel = LAYS[S.trad.layout]; }
+            else {
+                ensureTbl();
+                const ex = canvasSVG(tblMap(), -1, true);
+                const image = await svgToPng(ex.svg, ex.W, ex.H, 2);
+                ctx.seat = { mode: 'table', tables: tblList(), perRow: S.tbl.cols };
+                if (image) ctx.seat.image = image;
+            }
+        }
+        return ctx;
+    }
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+    async function doDownload(v) {
+        const p = v.split(':'), kind = p[0], fmt = p[1], key = v;
+        if (S.dlSt[key] === 'busy' || !S.groups.length) return;
+        if (dlInfo(kind).dis) return;
+        S.dlSt[key] = 'busy'; renderDl();
+        const t0 = Date.now();
+        try {
+            const ctx = await buildCtx(kind);
+            const r = GL.buildDownload(kind, fmt, ctx);
+            await sleep(Math.max(0, 500 - (Date.now() - t0)));
+            downloadBlob(new Blob([r.bytes], { type: r.mime }), r.fileName);
+            S.dlSt[key] = 'done';
+        } catch (e) {
+            S.dlSt[key] = '';
+            if (typeof showToast === 'function') showToast('產生檔案失敗：' + (e && e.message ? e.message : e), true);
+        }
+        renderDl();
+    }
+
+    /* ═══ 匯入檔案 ═══ */
+    function importFile(file) {
+        if (!file) return;
+        if (typeof XLSX === 'undefined') { if (typeof showToast === 'function') showToast('讀檔元件尚未載入，請連上網路後重新整理，或改用貼上名單', true); return; }
+        const fr = new FileReader();
+        fr.onload = () => {
+            try {
+                const wb = XLSX.read(fr.result, { type: 'array' });
+                const ws = wb.Sheets[wb.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', raw: false });
+                S.paste = rows.filter(r => r.some(c => String(c).trim() !== '')).map(r => r.map(c => String(c).replace(/[\t\r\n]+/g, ' ').trim()).join('\t')).join('\n');
+                S.colMap = null; S.src = 'paste'; parseList(); render();
+            } catch (e) { if (typeof showToast === 'function') showToast('讀不懂這個檔案：' + (e && e.message ? e.message : e), true); }
+        };
+        fr.onerror = () => { if (typeof showToast === 'function') showToast('讀取檔案失敗', true); };
+        fr.readAsArrayBuffer(file);
+    }
+
+    /* ═══ 畫面更新 ═══ */
+    function bodyHTML() {
+        if (S.step === 1) return namesHTML();
+        if (S.step === 2) return methodHTML();
+        return S.res === 'result' ? resultHTML() : seatHTML();
+    }
+    function sigOf(el) {
+        if (!el || !el.getAttribute || !el.closest || !el.closest('#groupView')) return null;
+        const a = ['data-a', 'data-v', 'data-k', 'data-s', 'data-o', 'data-t', 'data-in', 'data-i', 'data-f'].map(n => [n, el.getAttribute(n)]).filter(x => x[1] != null);
+        return a.length ? a : null;
+    }
+    function render() {
+        const root = $('groupView');
+        if (!root) return;
+        if (S.step === 3 && !S.groups.length) S.step = 1;
+        if (S.step === 2 && S.roster.length < 2) S.step = 1;
+        const sig = sigOf(document.activeElement);
+        root.innerHTML = stepsHTML() + bodyHTML();
+        if (sig) {
+            const sel = '[' + sig.map(x => x[0] + '="' + String(x[1]).replace(/"/g, '\\"') + '"]').join('[');
+            const el = root.querySelector(sel);
+            if (el && !(el.tagName === 'TEXTAREA')) { try { el.focus({ preventScroll: true }); } catch (e) { /* 略過 */ } }
+        }
+    }
+    function updatePreview() {
+        const pv = $('gvPreview');
+        if (pv) pv.innerHTML = previewHTML();
+        const st = document.querySelector('#groupView .gsteps');
+        if (st) st.outerHTML = stepsHTML();
+        const hb = $('gvHdrBadge');
+        if (hb) hb.textContent = S.parsed && S.parsed.hdr ? '自動判斷：有標題' : '自動判斷：沒有標題';
+    }
+    function updateMiss() {
+        const m = methInfo(), a = $('gvMiss');
+        if (a) {
+            const ok = m.missIdx.length === 0 || S.skip, all = m.origMiss.length === S.roster.length;
+            a.classList.toggle('ok', ok);
+            a.querySelector('b').textContent = ok ? (S.skip ? '已略過沒有成績的同學' : '成績都齊全了') : (all ? '名單沒有成績' : '有 ' + m.origMiss.length + ' 位同學還沒有成績');
+            const u = a.querySelector('use'); if (u) u.setAttribute('href', ok ? '#gi-check' : '#gi-warn');
+            const note = a.querySelector('.gmiss-note'); if (note) note.hidden = ok;
+        }
+        const sh = $('gvSizeHint'); if (sh) sh.textContent = sizeHint(m.rc, m.n) + (m.rc.clamped ? '（組數大於人數，已改為每人一組）' : '');
+        const sa = $('gvStart'); if (sa) sa.innerHTML = startAreaHTML();
+    }
+
+    /* ═══ 事件 ═══ */
+    function act(a, v, k, el) {
+        switch (a) {
+            case 'step': { const n = +v; if ((n === 2 && S.roster.length < 2) || (n === 3 && !S.groups.length)) return; S.step = n; S.confirmClear = false; if (n === 3) S.res = 'result'; break; }
+            case 'src': S.src = v; parseList(); break;
+            case 'clear': S.confirmClear = true; break;
+            case 'clearno': S.confirmClear = false; break;
+            case 'clearyes': S.paste = ''; S.hand = [{ no: '', name: '', score: '' }, { no: '', name: '', score: '' }, { no: '', name: '', score: '' }]; S.colMap = null; S.confirmClear = false; S.fix = {}; parseList(); save(); break;
+            case 'pickfile': { const f = $('gvFile'); if (f) f.click(); return; }
+            case 'handadd': S.hand.push({ no: '', name: '', score: '' }); break;
+            case 'handdel': S.hand.splice(+v, 1); if (!S.hand.length) S.hand.push({ no: '', name: '', score: '' }); parseList(); save(); break;
+            case 'next1': if (S.roster.length < 2) return; if (!S.numTouched) S.num = clamp(Math.round(S.roster.length / 4), 2, S.roster.length); S.step = 2; break;
+            case 'meth': S.meth = v; break;
+            case 'by': S.by = v; break;
+            case 'num': { S.numTouched = true; S.num = clamp(S.num + (+v), 1, Math.max(1, S.roster.length)); save(); updateMiss(); const o = el && el.parentNode && el.parentNode.querySelector('output'); if (o) o.textContent = S.num; return; }
+            case 'cmp': S.cmp = +v; break;
+            case 'past': S.viewPast = S.viewPast === v ? null : v; break;
+            case 'start': { if (el && el.getAttribute('aria-disabled') === 'true') return; if (!methInfo().canStart) return; if (!newGrouping()) return; break; }
+            case 'res': S.res = v; S.selS = null; if (v === 'seat') S.smode = S.smode || 'trad'; break;
+            case 'regroup': { if (!methInfo().canStart || !newGrouping()) { S.step = 2; } break; }
+            case 'next2': S.res = 'seat'; S.selS = null; break;
+            case 'cancel': S.selS = null; break;
+            case 'undo': if (S.hi > 0) gotoHist(S.hi - 1); break;
+            case 'redo': if (S.hi < S.hist.length - 1) gotoHist(S.hi + 1); break;
+            case 'jump': gotoHist(+v); break;
+            case 'restore': if (adjList().length) S.confirming = true; break;
+            case 'restoreno': S.confirming = false; break;
+            case 'restoreyes': S.groups = cp(S.orig); commit('還原成分組結果'); break;
+            case 'rec': { const r = S.recs.find(x => x.id === v); if (!r) return; setCurrent(r); S.step = 3; S.res = 'result'; save(); break; }
+            case 'smode': S.smode = v; S.selS = null; if (v === 'tbl') ensureTbl(); break;
+            case 'tcols': { const T = S.trad; T.cols = clamp(T.cols + (+v), 2, 12); T.aisleAt = clamp(T.aisleAt, 1, Math.max(1, T.cols - 1)); Object.keys(T.off).forEach(key => { const q = key.split(','); if (+q[0] > T.cols || +q[1] > T.depth) delete T.off[key]; }); save(); S.dlSt = {}; break; }
+            case 'tdepth': { const T = S.trad; T.depth = clamp(T.depth + (+v), 2, 8); Object.keys(T.off).forEach(key => { const q = key.split(','); if (+q[0] > T.cols || +q[1] > T.depth) delete T.off[key]; }); save(); S.dlSt = {}; break; }
+            case 'taisle': { const T = S.trad; T.aisleAt = clamp(T.aisleAt + (+v), 1, Math.max(1, T.cols - 1)); save(); S.dlSt = {}; break; }
+            case 'lay': S.trad.layout = v; S.selS = null; S.dlSt = {}; save(); break;
+            case 'tool': S.tool = v; S.selS = null; break;
+            case 'reseat': {
+                const pos = {}; S.orig.forEach(m => m.forEach((id, i) => { pos[id] = i; }));
+                const next = S.groups.map(m => m.slice().sort((p, q) => (S.origG[p] - S.origG[q]) || (pos[p] - pos[q])));
+                if (JSON.stringify(next) === JSON.stringify(S.groups)) { if (typeof showToast === 'function') showToast('座位已經是原本的排法'); return; }
+                S.groups = next; commit('依組別重新填入座位'); break;
+            }
+            case 'preset': applyPreset(v); S.dlSt = {}; break;
+            case 'ct': {
+                const T = S.tbl, key = k, d = +v || 0;
+                if (key === 'count') setTblCount(clamp(T.tables.length + d, 1, 16));
+                else if (key === 'seats') { T.seats = clamp(T.seats + d, 2, 16); T.tables.forEach(x => { x.n = T.seats; }); }
+                else if (key === 'cols') T.cols = clamp(T.cols + d, 1, 6);
+                else if (key === 'vert') { T.vert = v === 'v'; T.tables.forEach(x => { x.vert = T.vert; }); }
+                else if (key === 'side') { T.one = v === 'one'; T.tables.forEach(x => { x.one = T.one; }); }
+                else if (key === 'ord') { T.ord = v; T.tables.forEach(x => { x.ord = v; }); }
+                if (key !== 'ord') T.preset = '';
+                T.sel = Math.min(T.sel, T.tables.length - 1); S.dlSt = {}; break;
+            }
+            case 'pt': {
+                const T = S.tbl, t = T.tables[T.sel], d = +v || 0;
+                if (k === 'n') t.n = clamp(t.n + d, 2, 16);
+                else if (k === 'shape') t.shape = v;
+                else if (k === 'vert') t.vert = v === 'v';
+                else if (k === 'side') t.one = v === 'one';
+                else if (k === 'ord') t.ord = v;
+                else if (k === 'copy') { T.tables.splice(T.sel + 1, 0, Object.assign({}, t)); T.sel++; T.preset = ''; }
+                else if (k === 'del') { if (T.tables.length < 2 || (el && el.getAttribute('aria-disabled') === 'true')) return; T.tables.splice(T.sel, 1); T.sel = Math.min(T.sel, T.tables.length - 1); T.preset = ''; }
+                S.dlSt = {}; break;
+            }
+            case 'dl': if (el && el.getAttribute('aria-disabled') === 'true') return; doDownload(v); return;
+            default: return;
+        }
+        render();
+    }
+    function onClick(e) {
+        const root = $('groupView');
+        const el = e.target.closest('[data-a],[data-s],[data-o],[data-t]');
+        if (!el || !root.contains(el)) return;
+        const a = el.getAttribute('data-a');
+        if (a) { if (el.type === 'checkbox' || el.type === 'radio') return; e.preventDefault && 0; act(a, el.getAttribute('data-v'), el.getAttribute('data-k'), el); return; }
+        const o = el.getAttribute('data-o');
+        if (o && S.tool === 'off' && S.smode === 'trad') { if (S.trad.off[o]) delete S.trad.off[o]; else S.trad.off[o] = true; S.selS = null; S.dlSt = {}; save(); render(); return; }
+        const s = el.getAttribute('data-s');
+        if (s) { const p = s.split(','); pickSeat(+p[0], +p[1]); render(); return; }
+        const t = el.getAttribute('data-t');
+        if (t != null) { S.tbl.sel = +t; render(); }
+    }
+    function onChange(e) {
+        const el = e.target;
+        if (el.id === 'gvFile') { importFile(el.files && el.files[0]); el.value = ''; return; }
+        if (el.getAttribute('data-in') === 'col') {
+            const i = +el.getAttribute('data-i'), p = S.parsed;
+            const t = p.types.slice(); t[i] = el.value;
+            // 同一種欄位只能有一欄（略過除外）：其他欄若原本是同種，改成略過
+            if (el.value !== 'skip') t.forEach((x, j) => { if (j !== i && x === el.value) t[j] = 'skip'; });
+            S.colMap = t; S.colN = p.ncol; parseList(); updatePreview(); return;
+        }
+        const a = el.getAttribute('data-a');
+        if (!a || !(el.type === 'checkbox' || el.type === 'radio')) return;
+        const v = el.getAttribute('data-v');
+        if (a === 'autono') { S.autoNo = el.checked; parseList(); save(); render(); }
+        else if (a === 'avoid') { S.avoid = el.checked; save(); render(); }
+        else if (a === 'skip') { S.skip = el.checked; render(); }
+        else if (a === 'mode2') { S.mode2 = v; save(); }
+        else if (a === 'showsc') { S.showScore = el.checked; save(); render(); }
+        else if (a === 'aisleon') { S.trad.aisleOn = el.checked; S.dlSt = {}; save(); render(); }
+        else if (a === 'dlopt') { S.D[v] = el.checked; S.dlSt = {}; save(); renderDl(); }
+    }
+    function onInput(e) {
+        const el = e.target, k = el.getAttribute && el.getAttribute('data-in');
+        if (!k) return;
+        if (k === 'paste') { S.paste = el.value; if (e.inputType === 'insertFromPaste') S.colMap = null; parseList(); save(); updatePreview(); }
+        else if (k === 'hand') { S.hand[+el.getAttribute('data-i')][el.getAttribute('data-f')] = el.value; parseList(); save(); updatePreview(); }
+        else if (k === 'fix') { S.fix[el.getAttribute('data-i')] = el.value; updateMiss(); }
+    }
+    function onKey(e) {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const el = e.target;
+        if (el && el.getAttribute && el.tagName !== 'BUTTON' && (el.hasAttribute('data-s') || el.hasAttribute('data-o'))) { e.preventDefault(); el.dispatchEvent(new MouseEvent('click', { bubbles: true })); }
+    }
+
+    /* ═══ 切換「排座位／分組」═══ */
+    function setMode(m) {
+        S.mode = m === 'group' ? 'group' : 'seat';
+        document.body.setAttribute('data-mode', S.mode);
+        const a = $('modeTabSeat'), b = $('modeTabGroup');
+        if (a) a.setAttribute('aria-selected', String(S.mode === 'seat'));
+        if (b) b.setAttribute('aria-selected', String(S.mode === 'group'));
+        if (S.mode === 'group') { parseList(); render(); }
+        try { window.scrollTo(0, 0); } catch (e) { /* 略過 */ }
+    }
+
+    function init() {
+        const root = $('groupView');
+        if (!root) return;
+        document.body.insertAdjacentHTML('beforeend', SPRITE);
+        load(); parseList();
+        root.addEventListener('click', onClick);
+        root.addEventListener('change', onChange);
+        root.addEventListener('input', onInput);
+        root.addEventListener('keydown', onKey);
+        root.addEventListener('toggle', e => { if (e.target.classList && e.target.classList.contains('adv2')) S.tbl.selOpen = e.target.open; }, true);
+        root.addEventListener('dragover', e => { if (e.target.closest && e.target.closest('[data-drop]')) e.preventDefault(); });
+        root.addEventListener('drop', e => { const z = e.target.closest && e.target.closest('[data-drop]'); if (z) { e.preventDefault(); importFile(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]); } });
+        if (/^#group/.test(location.hash)) setMode('group');
+    }
+    window.GroupUI = { setMode, render, state: S, parseList, newGrouping, init };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
+    </script>
     <script>
-        const APP_VERSION = "v3.4.3";
+        const APP_VERSION = "v3.5.0";
         /* 版號只寫在 APP_VERSION；<title> 與頁首徽章由程式產生，不要在 HTML 靜態文字寫版號 */
         document.title = `座位小幫手 ${APP_VERSION}`;
 
