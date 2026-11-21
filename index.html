@@ -3486,7 +3486,7 @@ Authorization inquiries: derliang@gmail.com
 })();
     </script>
     <script>
-        const APP_VERSION = "v3.5.2";
+        const APP_VERSION = "v3.5.3";
         /* 版號只寫在 APP_VERSION；<title> 與頁首徽章由程式產生，不要在 HTML 靜態文字寫版號 */
         document.title = `座位小幫手 ${APP_VERSION}`;
 
@@ -5370,8 +5370,8 @@ Authorization inquiries: derliang@gmail.com
             bar.innerHTML = `
                 <div class="bb-row">
                     <span class="bb-title"><i data-lucide="stamp"></i>標示筆刷</span>
-                    <button type="button" class="brush" onclick="setBrush('both')" aria-pressed="${brush.type === 'both'}">${attSampleHtml('both')}<span>沒上第八節</span></button>
-                    <button type="button" class="brush" onclick="setBrush('nine')" aria-pressed="${brush.type === 'nine'}">${attSampleHtml('nine')}<span>每天不上第九節</span></button>
+                    <button type="button" class="brush" onclick="setBrush('both')" aria-pressed="${brush.type === 'both'}">${attSampleHtml('both')}<span>沒上八九節</span></button>
+                    <button type="button" class="brush" onclick="setBrush('nine')" aria-pressed="${brush.type === 'nine'}">${attSampleHtml('nine')}<span>沒上第九節</span></button>
                     <span class="brush-days${brush.type === 'days' ? ' is-on' : ''}"><button type="button" class="brush" onclick="setBrush('days')" aria-pressed="${brush.type === 'days'}">${attSampleHtml('part')}<span>指定星期</span></button>${dayChips}</span>
                     <button type="button" class="brush" onclick="setBrush('erase')" aria-pressed="${brush.type === 'erase'}"><i data-lucide="eraser"></i><span>清除標示</span></button>
                     <button type="button" class="btn btn-primary btn-sm" onclick="toggleMarkMode()" style="margin-left:auto"><i data-lucide="check"></i>完成標示</button>
