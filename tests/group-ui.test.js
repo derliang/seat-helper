@@ -430,3 +430,75 @@ test('兩份 HTML 相同，且分組畫面沒有寫死色碼', { skip: false }, 
     assert.equal(/#[0-9A-Fa-f]{6}\b|#[0-9A-Fa-f]{3}\b(?![\w-])/.test(rest.replace(/#groupView/g, '')), false, '樣式區（token 以外）不寫死色碼');
     assert.equal(/oklch\(|color-mix\(/.test(css), false);
 });
+
+/* ── v3.5.2：對照修正 ── */
+// 四個人分兩組，過去三次剛好把 6 對全部同組過 → 不管怎麼分都有 2 對無法避開
+async function stuckApp(cmp) {
+    const a = await loadApp();
+    group(a, '甲\n乙\n丙\n丁');
+    a.act('next1'); a.act('start');
+    const base = a.S.recs[0];
+    const mk = (i, gs) => Object.assign(JSON.parse(JSON.stringify(base)), { id: 'p' + i, ts: base.ts - (i + 1) * 1000, groups: gs, orig: gs });
+    const idx = n => a.S.gRoster.findIndex(s => s.name === n);
+    const [A, B, C, D] = ['甲', '乙', '丙', '丁'].map(idx);
+    a.S.recs = [mk(0, [[A, B], [C, D]]), mk(1, [[A, C], [B, D]]), mk(2, [[A, D], [B, C]])];
+    a.S.avoid = true; a.S.cmp = cmp;
+    a.act('regroup');
+    return a;
+}
+
+test('D1 避免同組做不到：提示列名字，右欄卡片口徑一致（最近 3 次）', { skip }, async () => {
+    const a = await stuckApp(3);
+    const alert = a.q('#gvResult .alert').textContent.trim();
+    assert.match(alert, /^有 2 對同學無法避開最近 3 次的同組：[甲乙丙丁]＆[甲乙丙丁]、[甲乙丙丁]＆[甲乙丙丁]$/);
+    const card = a.qa('aside .card').find(c => /同組/.test(c.querySelector('h3').textContent));
+    assert.equal(card.querySelector('h3').textContent, '與最近 3 次同組');
+    assert.ok(card.textContent.includes(alert), '卡片與提示條是同一句話');
+    assert.ok(!/沒有重複/.test(card.textContent), '不會同時出現黃色提示與「沒有重複」');
+    assert.ok(card.querySelector('.badge.warn'));
+    assert.deepEqual(a.errors, []);
+});
+
+test('D1 比對範圍是 1 次：卡片維持「與上次同組」；不開避免同組時沒有提示條', { skip }, async () => {
+    const a = await stuckApp(1);
+    const card = a.qa('aside .card').find(c => /同組/.test(c.querySelector('h3').textContent));
+    assert.equal(card.querySelector('h3').textContent, '與上次同組');
+    const alert = a.q('#gvResult .alert');
+    if (alert) assert.match(alert.textContent, /無法避開上次的同組/);
+    a.S.avoid = false; a.act('regroup');
+    assert.equal(a.q('#gvResult .alert'), null, '沒開避免同組就不顯示提示條');
+    assert.equal(a.qa('aside .card').find(c => /同組/.test(c.querySelector('h3').textContent)).querySelector('h3').textContent, '與上次同組');
+});
+
+test('D2 手機窄版：可點元素 44px 的樣式集中在 ≤768 的媒體查詢，且不寫死色碼', { skip }, async () => {
+    const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+    const m = html.match(/@media \(max-width:768px\)\{([\s\S]*?)\n        \}/);
+    assert.ok(m, '有 ≤768 的 D2 區塊');
+    const css = m[1];
+    ['.gsi', '.gseg button', '.btn', '.btn-sm', '.sel', '.input', 'details.adv>summary'].forEach(sel => {
+        assert.ok(new RegExp('#groupView ' + sel.replace(/[.>]/g, '\$&') + '[^{]*\{[^}]*min-height:44px').test(css), sel + ' 至少 44px');
+    });
+    assert.match(css, /#groupView \.gstep button\{width:44px;height:44px\}/);
+    assert.doesNotMatch(css, /#[0-9a-fA-F]{3,8}\b|rgb\(/, '用 tokens，不寫死色碼');
+});
+
+test('D2 手機寬度：開關整列都可以點（點說明文字也會切換）；桌機寬度不會', { skip }, async () => {
+    const a = await loadApp();
+    group(a, pasteFull);
+    a.act('next1');
+    const on = S => S.avoid;
+    const row = () => a.q('.opt:has(> .gsw [data-a="avoid"]) > div:first-child');
+    assert.ok(row());
+    const was = on(a.S);
+    a.click(row());
+    assert.equal(on(a.S), was, '桌機寬度：點說明文字不切換');
+    a.w.matchMedia = () => ({ matches: true, addListener() {}, removeListener() {}, addEventListener() {}, removeEventListener() {} });
+    a.click(row());
+    assert.equal(on(a.S), !was, '手機寬度：點整列切換');
+    a.click(row());
+    assert.equal(on(a.S), was);
+    // 按鈕、下拉等互動元素在列上時照常運作，不被當成整列點擊
+    const seg = a.q('.opt .gseg button');
+    if (seg) { const before = on(a.S); a.click(seg); assert.equal(on(a.S), before); }
+    assert.deepEqual(a.errors, []);
+});
