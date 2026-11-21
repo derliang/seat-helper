@@ -2576,6 +2576,707 @@ Authorization inquiries: derliang@gmail.com
             };
         })(typeof window !== 'undefined' ? window : globalThis);
     </script>
+    <script id="score-import">
+/* ═══ 成績檔智慧匯入：純邏輯層（ScoreImport）═══
+ * 規格：docs/dispatch/成績匯入研究.md 第 4、6、7.5 節；畫面：docs/design/DESIGN.md 10.1a。
+ * 只吃「中立格式」：sheet = { name, rows:[[cell…]…], merges:[{r1,c1,r2,c2}], hiddenRows:Set, hiddenCols:Set, hidden, pct:Set<"r,c"> }，
+ * cell = null | number | string | { err:'#VALUE!' } | { formulaNoValue:true }。
+ * 不碰 DOM、不依賴 SheetJS（只有 fromSheetJS 由呼叫端把 XLSX 傳進來）；analyze 不保存狀態，錯誤寫進 report.warnings，不丟例外。 */
+(function (root) {
+'use strict';
+/* 門檻常數（理由見研究報告 7.5.5；調整時要改測試） */
+const C = Object.freeze({ HEADER_SCAN_ROWS: 15, NAME_RATIO: 0.8, SCORE_NUMERIC_RATIO: 0.5, FILL_RATE_MIN: 0.3, DUP_SHEET_OVERLAP: 0.8, MIN_PEOPLE_FOR_DUP: 3, MAX_ROWS: 5000, MAX_COLS: 200, PREVIEW_ROWS: 7 });
+const RX = {
+    name: /^(姓名|學生姓名|學生|名字|名|name|student|student name)$/i,
+    no: /^(座號|號碼|座位|座位號|座位號碼|座次|編號|號|no\.?|number|seat)$/i,
+    sid: /^(學號|學生編號|student ?id|id)$/i,
+    cls: /^(班級|班別|班|年班|class)$/i,
+    group: /^(組別|分組|組|小組|組號|組名|group|team|第.?組)$/i,
+    skip: /(備註|說明|加扣分|加分|扣分|性別|電話|生日|地址|身分證|email|家長)/i,
+    score: /(成績|平均|總分|分數|小計|合計|總計|結算|最終|score|段考|期中|期末|考試|作業|測驗|小考|報告|平時|學習單|實驗|表現|等第|評量)/i,
+    strong: /(學期成績|總成績|學期總成績|總平均|總分|結算|最終成績|學年成績)/,
+    medium: /^(成績|平均|原始成績|合計|小計|分數|平均分數|總計|平均成績)$/,
+    stat: /^(平均|平均分數|平均成績|最高|最高分|最低|最低分|合計|總計|總和|人數|標準差|班平均|全班平均|中位數|及格率|及格人數)$/,
+    weightLabel: /^(比重|權重|配分|比例|佔分|占分|百分比)$/,
+    grade: /^([A-E][+-]?|[甲乙丙丁戊]|優|良|可)$/,
+    absent: /^(缺|缺考|曠|曠課|曠考|未考|未到|請假|假|公假|病假|事假|喪假|免|免修|免試|補考|待補|未交|-|－|—|--|\/|N\/A|NA)$/i
+};
+const DEFAULT_GRADES = Object.freeze({ A: 95, B: 85, C: 75, D: 65, E: 55, 甲: 95, 乙: 85, 丙: 75, 丁: 65, 戊: 55, 優: 95, 良: 85, 可: 75 });
+const ROLE_LABEL = { cls: '班級', no: '座號', name: '姓名', score: '成績', group: '上次分組', skip: '略過' };
+const ERR_CODES = { 0: '#NULL!', 7: '#DIV/0!', 15: '#VALUE!', 23: '#REF!', 29: '#NAME?', 36: '#NUM!', 42: '#N/A' };
+const q = s => '「' + s + '」';
+
+/* ── 文字 ── */
+function norm(s) { return s == null ? '' : String(s).normalize('NFKC').replace(/[　 ]/g, ' ').replace(/\s+/g, ' ').trim(); }
+const isErr = c => c != null && typeof c === 'object' && c.err != null;
+const isFnv = c => c != null && typeof c === 'object' && !!c.formulaNoValue;
+function cellText(c) {
+    if (c == null) return '';
+    if (typeof c === 'number') return isFinite(c) ? String(Math.round(c * 1e6) / 1e6) : '';
+    if (isErr(c)) return String(c.err);
+    if (typeof c === 'object') return '';
+    return norm(c);
+}
+const isBlank = c => c == null || (typeof c !== 'object' && cellText(c) === '');
+const NOTE_RX = /([(][^)]*[)]|[*★☆※#]+)/g;
+function cleanName(s) {
+    let t = norm(isErr(s) || isFnv(s) ? '' : s);
+    const notes = t.match(NOTE_RX);
+    if (/[㐀-鿿]/.test(t)) t = t.replace(/\s+/g, '');
+    return { name: t, note: notes ? notes.join('') : '' };
+}
+const HEAD_WORD = /^(姓名|學生|名字|座號|號碼|座位|編號|學號|班級|班別|年班|組別|分組|小組|組號|成績|平均|總分|分數|小計|合計|總計|結算|備註|說明|加扣分|加分|扣分|性別|期中|期末|段考|作業|測驗|小考|報告|平時|原始成績|學期成績|總成績|總平均|等第|比重|權重|配分|比例)$/;
+function nameLike(raw) {
+    if (raw == null || typeof raw === 'number' || typeof raw === 'object') return false;
+    const core = cleanName(raw).name.replace(NOTE_RX, '').trim();
+    if (!core || HEAD_WORD.test(core) || RX.stat.test(core) || /(成績|段考|總分|分數|小計)$/.test(core)) return false;
+    if (/^[㐀-鿿豈-﫿·・.]{2,5}$/.test(core)) return (core.match(/[㐀-鿿豈-﫿]/g) || []).length >= 2;
+    return /^[A-Za-z][A-Za-z'.\- ]{1,40}$/.test(core) && /[A-Za-z]{2}/.test(core) && !/^[A-E][+-]?$/i.test(core);
+}
+function parseNum(v) {
+    if (typeof v === 'number') return isFinite(v) ? v : null;
+    if (v == null || typeof v === 'object') return null;
+    const t = norm(v).replace(/\s+/g, '').replace(/分$/, '').replace(/%$/, '');
+    return /^[-+]?\d+(\.\d+)?$/.test(t) ? +t : null;
+}
+const valKey = t => norm(t).toUpperCase().replace(/^([甲乙丙丁戊優])等$/, '$1');
+function normCls(c) { return cellText(c).replace(/\s+/g, '').replace(/[a-z]/g, ch => ch.toUpperCase()); }
+function labelHint(label) {
+    const full = norm(label), t = full.split('｜').pop();
+    if (!t) return '';
+    if (RX.name.test(t)) return 'name';
+    if (RX.sid.test(t)) return 'sid';
+    if (RX.no.test(t)) return 'no';
+    if (RX.cls.test(t)) return 'cls';
+    if (RX.group.test(t) || (/組/.test(t) && !RX.score.test(t) && t.length <= 4)) return 'group';
+    if (RX.skip.test(t)) return 'skip';
+    if (RX.score.test(full)) return 'score';
+    return '';
+}
+
+/* ── 讀入 ── */
+function mkSheet(name, rows) { return { name: name, rows: rows || [], merges: [], hiddenRows: new Set(), hiddenCols: new Set(), hidden: false, pct: new Set() }; }
+function decodeCsv(bytes) {
+    let u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes);
+    if (u8.length >= 3 && u8[0] === 0xEF && u8[1] === 0xBB && u8[2] === 0xBF) u8 = u8.subarray(3);
+    try { return new TextDecoder('utf-8', { fatal: true }).decode(u8); }
+    catch (e) { return new TextDecoder('big5').decode(u8); }
+}
+function parseCsv(s) {
+    const rows = []; let row = [], cur = '', inQ = false;
+    for (let i = 0; i < s.length; i++) {
+        const ch = s[i];
+        if (inQ) { if (ch === '"') { if (s[i + 1] === '"') { cur += '"'; i++; } else inQ = false; } else cur += ch; }
+        else if (ch === '"' && cur === '') inQ = true;
+        else if (ch === ',') { row.push(cur); cur = ''; }
+        else if (ch === '\n') { row.push(cur); rows.push(row); row = []; cur = ''; }
+        else cur += ch;
+    }
+    if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
+    return rows;
+}
+function fromRows(text, name) {
+    const s = String(text == null ? '' : text).replace(/^﻿/, '').replace(/\r\n?/g, '\n');
+    const lines = s.split('\n'), has = re => lines.some(l => re.test(l));
+    let rows;
+    if (has(/\t/)) rows = lines.map(l => l.split('\t'));
+    else if (has(/,/)) rows = parseCsv(s);
+    else if (has(/，/)) rows = lines.map(l => l.split('，'));
+    else if (has(/\S {2,}\S/)) rows = lines.map(l => l.trim().split(/ {2,}/));
+    else rows = lines.map(l => l.trim().split(/[\s、]+/));
+    return mkSheet(name || '貼上的名單', rows.map(r => r.map(c => { const t = String(c).trim(); return t === '' ? null : t; })));
+}
+function fromCell(cell) {
+    if (!cell) return null;
+    if (cell.t === 'e') return { err: cell.w || ERR_CODES[cell.v] || '#錯誤' };
+    if (cell.f != null && (cell.v === undefined || cell.v === null || cell.t === 'z')) return { formulaNoValue: true };
+    if (cell.v == null) return null;
+    if (cell.t === 'n') return typeof cell.v === 'number' ? cell.v : null;
+    if (cell.t === 'd') return cell.w || String(cell.v);
+    return typeof cell.v === 'string' ? cell.v : String(cell.v);
+}
+function fromSheetJS(wb, X) {
+    const meta = (wb.Workbook && wb.Workbook.Sheets) || [];
+    return (wb.SheetNames || []).map((nm, i) => {
+        const ws = wb.Sheets[nm] || {}, sh = mkSheet(nm, []);
+        sh.hidden = !!(meta[i] && meta[i].Hidden);
+        if (!ws['!ref']) return sh;
+        const R = X.utils.decode_range(ws['!ref']);
+        const r2 = Math.min(R.e.r, C.MAX_ROWS - 1), c2 = Math.min(R.e.c, C.MAX_COLS - 1);
+        for (let r = 0; r <= r2; r++) {
+            const row = [];
+            for (let c = 0; c <= c2; c++) {
+                const cell = ws[X.utils.encode_cell({ r: r, c: c })];
+                row.push(fromCell(cell));
+                if (cell && typeof cell.v === 'number' && cell.z && /%/.test(String(cell.z))) sh.pct.add(r + ',' + c);
+            }
+            sh.rows.push(row);
+        }
+        (ws['!merges'] || []).forEach(m => sh.merges.push({ r1: m.s.r, c1: m.s.c, r2: m.e.r, c2: m.e.c }));
+        (ws['!rows'] || []).forEach((x, r) => { if (x && x.hidden) sh.hiddenRows.add(r); });
+        (ws['!cols'] || []).forEach((x, c) => { if (x && x.hidden) sh.hiddenCols.add(c); });
+        return sh;
+    });
+}
+
+/* ── 表格 ── */
+function trimSheet(sh) {
+    let last = sh.rows.length - 1;
+    while (last >= 0 && (sh.rows[last] || []).every(isBlank)) last--;
+    const rows = sh.rows.slice(0, last + 1).map(r => r || []);
+    let w = 0;
+    rows.forEach(r => { for (let c = r.length - 1; c >= w; c--) if (!isBlank(r[c])) { w = c + 1; break; } });
+    return Object.assign({}, sh, { rows: rows.map(r => { const a = r.slice(0, w); while (a.length < w) a.push(null); return a; }), merges: sh.merges || [], hiddenRows: sh.hiddenRows || new Set(), hiddenCols: sh.hiddenCols || new Set(), pct: sh.pct || new Set() });
+}
+function pctVal(c) {
+    if (typeof c === 'number') return c > 0 && c < 1 ? c : null;
+    const m = /^(\d+(?:\.\d+)?)%$/.exec(cellText(c).replace(/\s/g, ''));
+    return m ? +m[1] / 100 : null;
+}
+function weightsOf(row) {
+    if (!row || row.some(nameLike)) return null;
+    let k = 0, other = 0;
+    const w = row.map(c => { if (isBlank(c)) return null; const v = pctVal(c); if (v != null) { k++; return v; } if (!RX.weightLabel.test(cellText(c))) other++; return null; });
+    return k >= 2 && other === 0 ? w : null;
+}
+function headerScore(row) {
+    let s = 0, txt = 0, name = false;
+    (row || []).forEach(c => {
+        if (typeof c !== 'string') return;
+        const t = cellText(c);
+        if (!t || parseNum(t) != null) return;
+        txt++;
+        const h = labelHint(t.replace(/\s*\(?\d+(\.\d+)?%\)?$/, ''));
+        if (h) s++;
+        if (h === 'name') name = true;
+    });
+    return { s, txt, name };
+}
+function completeHeader(sh, row, auto) {
+    const hdr = { row: row, weightRow: -1, upperRow: -1, auto: auto };
+    if (row < 0) return hdr;
+    const hm = sh.merges.filter(m => m.r1 === row && m.r2 === row && m.c2 > m.c1);
+    if (auto && hm.length && row + 1 < sh.rows.length) {
+        const nx = sh.rows[row + 1]; let k = 0;
+        hm.forEach(m => { for (let c = m.c1; c <= m.c2; c++) if (typeof nx[c] === 'string' && cellText(nx[c]) && parseNum(nx[c]) == null) k++; });
+        if (k >= 2) { hdr.upperRow = row; hdr.row = row + 1; }
+    }
+    if (hdr.upperRow < 0 && hdr.row > 0 && sh.merges.some(m => m.r1 === hdr.row - 1 && m.r2 === hdr.row - 1 && m.c2 > m.c1) && !weightsOf(sh.rows[hdr.row - 1])) hdr.upperRow = hdr.row - 1;
+    const above = (hdr.upperRow >= 0 ? hdr.upperRow : hdr.row) - 1;
+    if (above >= 0 && weightsOf(sh.rows[above])) hdr.weightRow = above;
+    else if (hdr.row + 1 < sh.rows.length && weightsOf(sh.rows[hdr.row + 1])) hdr.weightRow = hdr.row + 1;
+    return hdr;
+}
+function findHeader(sh) {
+    const n = Math.min(C.HEADER_SCAN_ROWS, sh.rows.length);
+    let best = -1, bs = 0, firstFilled = -1;
+    for (let r = 0; r < n; r++) {
+        if (firstFilled < 0 && !sh.rows[r].every(isBlank)) firstFilled = r;
+        const h = headerScore(sh.rows[r]);
+        const ok = (h.txt >= 2 && h.s >= 2) || (h.name && r === firstFilled);
+        if (ok && h.s > bs) { best = r; bs = h.s; }
+    }
+    return completeHeader(sh, best, true);
+}
+function fillMerged(sh, r) {
+    const row = (sh.rows[r] || []).map(cellText);
+    sh.merges.forEach(m => { if (m.r1 <= r && r <= m.r2) { const v = cellText((sh.rows[m.r1] || [])[m.c1]); for (let c = m.c1; c <= m.c2; c++) row[c] = v; } });
+    return row;
+}
+function flattenHeader(sh, hdr) {
+    const w = sh.rows.reduce((m, r) => Math.max(m, r.length), 0), out = [];
+    const H = hdr.row >= 0 ? sh.rows[hdr.row] : [], U = hdr.upperRow >= 0 ? fillMerged(sh, hdr.upperRow) : null;
+    const W = hdr.weightRow >= 0 ? (weightsOf(sh.rows[hdr.weightRow]) || []) : [];
+    for (let c = 0; c < w; c++) {
+        const base = cellText(H[c]), up = U ? U[c] : '';
+        let label = up && base && up !== base ? up + '｜' + base : (base || up), weight = W[c] != null ? W[c] : null;
+        const m = /^(.*?)[\s(]*(\d+(?:\.\d+)?)\s*%\)?$/.exec(label);
+        if (m && m[1]) { label = m[1].trim(); if (weight == null) weight = +m[2] / 100; }
+        out.push({ label: label, weight: weight });
+    }
+    return out;
+}
+function splitBlocks(sh, hdr, labels) {
+    const w = labels.length;
+    if (!w) return [];
+    const from = Math.max(0, hdr.row), used = [];
+    for (let c = 0; c < w; c++) used.push(sh.rows.slice(from).some(r => !isBlank(r[c])));
+    const segs = []; let cur = null;
+    for (let c = 0; c < w; c++) { if (used[c]) { if (!cur) { cur = { c1: c, c2: c }; segs.push(cur); } else cur.c2 = c; } else cur = null; }
+    if (!segs.length) return [];
+    if (hdr.row < 0) return [{ c1: segs[0].c1, c2: segs[segs.length - 1].c2 }];
+    const isName = c => labelHint(labels[c].label) === 'name', blocks = [];
+    segs.forEach(sg => {
+        const names = [];
+        for (let c = sg.c1; c <= sg.c2; c++) if (isName(c)) names.push(c);
+        if (!names.length) { if (blocks.length) blocks[blocks.length - 1].c2 = sg.c2; else blocks.push({ c1: sg.c1, c2: sg.c2, noName: true }); return; }
+        let s = sg.c1;
+        if (blocks.length && blocks[blocks.length - 1].noName) s = blocks.pop().c1;
+        for (let k = 1; k < names.length; k++) {
+            const first = labels[s].label; let cut = -1;
+            for (let c = names[k - 1] + 1; c <= names[k]; c++) if (first && labels[c].label === first) { cut = c; break; }
+            if (cut < 0) cut = Math.max(names[k - 1] + 1, names[k] - (names[k - 1] - s));
+            blocks.push({ c1: s, c2: cut - 1 }); s = cut;
+        }
+        blocks.push({ c1: s, c2: sg.c2 });
+    });
+    return blocks.map(b => ({ c1: b.c1, c2: b.c2 }));
+}
+function dataRows(sh, hdr) {
+    const out = [];
+    for (let r = hdr.row + 1; r < sh.rows.length; r++) if (r !== hdr.weightRow) out.push(r);
+    return out;
+}
+
+/* ── 欄位 ── */
+function colStats(sh, c, rows) {
+    const st = { n: rows.length, filled: 0, num: 0, ints: 0, longInt: 0, maxInt: 0, err: 0, errCode: '', fnv: 0, grade: 0, absent: 0, text: 0, names: 0, pct: 0, distinct: 0, unique: false, fill: 0 };
+    const vals = new Map();
+    rows.forEach(r => {
+        const v = sh.rows[r][c];
+        if (isBlank(v)) return;
+        st.filled++;
+        if (isErr(v)) { st.err++; st.errCode = st.errCode || String(v.err); return; }
+        if (isFnv(v)) { st.fnv++; return; }
+        const t = cellText(v);
+        vals.set(t, (vals.get(t) || 0) + 1);
+        if (sh.pct.has(r + ',' + c)) st.pct++;
+        const n = parseNum(v);
+        if (n != null) { st.num++; if (Number.isInteger(n) && n >= 0) { st.ints++; if (n >= 10000) st.longInt++; if (n > st.maxInt) st.maxInt = n; } return; }
+        const k = valKey(t);
+        if (RX.grade.test(k)) st.grade++;
+        else if (RX.absent.test(k)) st.absent++;
+        else { st.text++; if (nameLike(v)) st.names++; }
+    });
+    st.distinct = vals.size;
+    st.unique = st.distinct > 0 && st.distinct === st.filled - st.err - st.fnv;
+    st.fill = st.n ? st.filled / st.n : 0;
+    return st;
+}
+const WHY = {
+    nameLab: '欄名是「姓名」', nameCnt: '內容大多是人名', nameWeak: '只有這欄像人名，請確認', empty: '空白欄', skipLab: '欄名像備註或加扣分，不是成績',
+    sid: '看起來是學號（5 位以上的數字），預設略過', cls: '欄名是「班級」', clsCnt: '內容是少數幾種短字，像班級', group: '欄名是「組別」，當作上次分組',
+    groupUniq: '欄名是「組別」，但每個值都不同，請確認', no: '欄名是「座號」', noDup: '欄名是「座號」，但有重複，請確認', noCnt: '內容是 1、2、3… 不重複的小數字，像座號',
+    allErr: '整欄都是公式錯誤', fnv: '公式沒有計算結果', lowFill: '大多數是空白（例如加扣分），不當成績', notNum: '欄名像成績，但內容不是數字', other: '不是名單需要的欄位',
+    cand: '內容是分數', best: '老師算好的總成績', bestOnly: '唯一的成績欄', bestRight: '有多個成績欄，先用最右邊的', rightOfBest: '在總成績右邊的成績欄，已略過', override: '你在表頭選的'
+};
+function classifyColumns(sh, block, hdr, labels) {
+    const all = dataRows(sh, hdr), hasHdr = hdr.row >= 0, cols = [];
+    for (let c = block.c1; c <= block.c2; c++) {
+        const L = labels[c] || { label: '', weight: null };
+        cols.push({ col: c, label: L.label, weight: L.weight, hint: labelHint(L.label), role: 'skip', confidence: 'high', why: '', cand: false, flag: '' });
+    }
+    cols.forEach(x => { x.st = colStats(sh, x.col, all); x.nameRatio = x.st.filled ? x.st.names / x.st.filled : 0; });
+    let nameX = cols.find(x => x.hint === 'name') || null;
+    if (nameX) { nameX.confidence = nameX.nameRatio >= C.NAME_RATIO ? 'high' : 'mid'; nameX.why = nameX.confidence === 'high' ? WHY.nameLab : WHY.nameWeak; }
+    else {
+        let best = 0;
+        cols.forEach(x => { if (x.nameRatio > best && x.st.distinct >= x.st.filled * 0.5) { best = x.nameRatio; nameX = x; } });
+        if (nameX) { nameX.confidence = best >= C.NAME_RATIO ? (hasHdr ? 'mid' : 'high') : 'low'; nameX.why = best >= C.NAME_RATIO ? WHY.nameCnt : WHY.nameWeak; }
+    }
+    if (nameX) nameX.role = 'name';
+    const rows = nameX ? all.filter(r => nameLike(sh.rows[r][nameX.col])) : all;
+    const set = (x, role, conf, why) => { x.role = role; x.confidence = conf; x.why = why; };
+    const soft = hasHdr ? 'mid' : 'high';
+    cols.forEach(x => {
+        if (x === nameX) return;
+        const s = x.st = colStats(sh, x.col, rows), h = x.hint, left = nameX ? x.col < nameX.col : true;
+        const numish = s.num + s.grade + s.absent, rate = s.filled ? numish / s.filled : 0;
+        if (!s.filled) return set(x, 'skip', 'high', WHY.empty);
+        if (h === 'skip') return set(x, 'skip', 'high', WHY.skipLab);
+        if (h === 'sid' || (s.num && s.longInt >= s.num * 0.8)) return set(x, 'skip', 'high', WHY.sid);
+        if (h === 'cls') return set(x, 'cls', 'high', WHY.cls);
+        if (h === 'group') return set(x, 'group', s.unique && s.filled > 3 ? 'mid' : 'high', s.unique && s.filled > 3 ? WHY.groupUniq : WHY.group);
+        if (h === 'no') return set(x, 'no', s.unique || s.filled < 2 ? 'high' : 'mid', s.unique || s.filled < 2 ? WHY.no : WHY.noDup);
+        if (s.err && s.err === s.filled) { x.flag = 'err'; return set(x, 'skip', 'high', WHY.allErr); }
+        if (s.fnv >= s.filled * 0.5) { x.flag = 'fnv'; return set(x, 'skip', 'high', WHY.fnv); }
+        if (h === 'score' && rate < C.SCORE_NUMERIC_RATIO) return set(x, 'skip', 'mid', WHY.notNum);
+        if (left && !h) {
+            if (s.text >= s.filled * 0.8 && s.distinct <= Math.max(3, s.filled / 4)) return set(x, 'cls', soft, WHY.clsCnt);
+            if (s.num === s.filled && s.unique && s.ints === s.num && s.maxInt <= s.filled + 10) return set(x, 'no', soft, WHY.noCnt);
+            if (s.num === s.filled && s.distinct <= Math.max(2, s.filled / 5)) return set(x, 'cls', soft, WHY.clsCnt);
+        }
+        if (rate >= C.SCORE_NUMERIC_RATIO) {
+            if (s.fill < C.FILL_RATE_MIN) return set(x, 'skip', 'high', WHY.lowFill);
+            x.cand = true; return set(x, 'skip', 'high', WHY.cand);
+        }
+        return set(x, 'skip', 'high', WHY.other);
+    });
+    ['cls', 'no', 'group'].forEach(role => { cols.filter(x => x.role === role).slice(1).forEach(x => set(x, 'skip', 'mid', WHY.other)); });
+    return cols;
+}
+function strengthOf(label) {
+    const t = norm(label).split('｜').pop();
+    if (RX.strong.test(norm(label))) return 3;
+    if (RX.medium.test(t)) return 2;
+    return 1;
+}
+function rankScoreColumns(cols) {
+    return cols.filter(x => x.cand).map(x => {
+        let s = strengthOf(x.label);
+        if (x.st.err > x.st.filled * 0.5) s -= 2;
+        x.strength = s;
+        return x;
+    }).sort((a, b) => b.strength - a.strength || b.col - a.col);
+}
+
+/* ── 列 ── */
+function pickRows(sh, block, cols, hdr, opts) {
+    const nameX = cols.find(x => x.role === 'name'), out = { rows: [], skipped: [], hidden: 0 };
+    if (!nameX) return out;
+    const hdrTexts = new Set();
+    if (hdr.row >= 0) for (let c = block.c1; c <= block.c2; c++) { const t = cellText(sh.rows[hdr.row][c]); if (t) hdrTexts.add(t); }
+    let stopped = false;
+    dataRows(sh, hdr).forEach(r => {
+        const row = sh.rows[r], cells = row.slice(block.c1, block.c2 + 1);
+        if (cells.every(isBlank)) return;
+        const nm = row[nameX.col], texts = cells.map(cellText).filter(Boolean), nl = nameLike(nm);
+        if (stopped) { if (nl) out.skipped.push({ row: r, why: 'afterStat', text: cellText(nm) }); return; }
+        const statW = texts.find(t => RX.stat.test(t));
+        if (statW && !nl) { out.skipped.push({ row: r, why: 'stat', text: statW }); stopped = true; return; }
+        if (sh.hiddenRows.has(r) && !(opts && opts.includeHidden)) { if (!isBlank(nm)) { out.hidden++; out.skipped.push({ row: r, why: 'hidden', text: cellText(nm) }); } return; }
+        if (hdrTexts.size >= 2 && texts.filter(t => hdrTexts.has(t)).length >= 2) { out.skipped.push({ row: r, why: 'repeatHeader', text: '' }); return; }
+        if (isBlank(nm)) { out.skipped.push({ row: r, why: 'noName', text: texts[0] || '' }); return; }
+        if (!nl) { out.skipped.push({ row: r, why: 'notName', text: cellText(nm) }); return; }
+        out.rows.push(r);
+    });
+    return out;
+}
+
+/* ── 值 ── */
+function gradeValue(k, grades) {
+    if (Object.prototype.hasOwnProperty.call(grades, k)) return grades[k];
+    const m = /^([A-E])([+-])$/.exec(k);
+    if (m && grades[m[1]] != null) return grades[m[1]] + (m[2] === '+' ? 3 : -3);
+    return null;
+}
+function absentCat(k) { return /假/.test(k) ? '請假' : (/^(缺|缺考|曠|曠課|曠考|未考|未到)$/.test(k) ? '缺考' : '其他'); }
+function toScore(cell, ctx) {
+    ctx = ctx || {};
+    if (isErr(cell)) return { miss: 'err', raw: String(cell.err), kind: 'err' };
+    if (isFnv(cell)) return { miss: 'fnv', raw: '', kind: 'fnv' };
+    if (isBlank(cell)) return { miss: 'blank', raw: '', kind: 'blank' };
+    const round = v => Math.round(v * 100) / 100;
+    if (typeof cell === 'number') return { v: round(ctx.pct && cell <= 1.5 ? cell * 100 : cell), raw: cellText(cell), kind: 'num' };
+    const n = parseNum(cell), raw = cellText(cell);
+    if (n != null) return { v: round(n), raw: raw, kind: 'num' };
+    const k = valKey(raw);
+    if (RX.absent.test(k)) {
+        const a = ctx.absent && Object.prototype.hasOwnProperty.call(ctx.absent, k) ? ctx.absent[k] : null;
+        return a == null ? { miss: 'absent', raw: k, kind: 'absent' } : { v: round(+a), raw: k, kind: 'absent', conv: true };
+    }
+    if (RX.grade.test(k)) {
+        const g = gradeValue(k, ctx.grades || DEFAULT_GRADES);
+        return g == null ? { miss: 'grade', raw: k, kind: 'grade' } : { v: round(+g), raw: k, kind: 'grade', conv: true };
+    }
+    return { miss: 'text', raw: raw, kind: 'text' };
+}
+function mergeScores(parts, mode, weights) {
+    if (!parts.length) return { miss: 'none', raw: '' };
+    if (mode !== 'mean' && mode !== 'weighted') return parts[parts.length - 1];
+    const has = parts.map((p, i) => ({ p: p, w: weights ? weights[i] : null })).filter(x => x.p.v != null);
+    if (!has.length) return { miss: 'blank', raw: '' };
+    const partial = has.length < parts.length;
+    let v;
+    if (mode === 'weighted' && has.every(x => x.w != null && x.w > 0)) { const sw = has.reduce((t, x) => t + x.w, 0); v = has.reduce((t, x) => t + x.w * x.p.v, 0) / sw; }
+    else v = has.reduce((t, x) => t + x.p.v, 0) / has.length;
+    return { v: Math.round(v * 100) / 100, raw: '', partial: partial };
+}
+
+/* ── 工作表 ── */
+function analyzeSheet(sh, ov, si) {
+    const hr = ov.headerRow && ov.headerRow[sh.name] != null ? +ov.headerRow[sh.name] : null;
+    const hdr = hr != null ? completeHeader(sh, hr - 1, false) : findHeader(sh);
+    const labels = flattenHeader(sh, hdr), roles = ov.roles || {};
+    const blocks = splitBlocks(sh, hdr, labels).map((b, bi) => {
+        const cols = classifyColumns(sh, b, hdr, labels);
+        cols.forEach(x => { x.key = sh.name + '#' + bi + '#' + x.col; x.auto = x.role; });
+        const ranked = rankScoreColumns(cols), best = ranked[0];
+        let scoreConf = 'high';
+        if (best) {
+            scoreConf = best.strength >= 3 || ranked.length === 1 ? 'high' : 'low';
+            ranked.forEach(x => {
+                if (x === best || x.col < best.col) { x.role = 'score'; x.why = x === best ? (best.strength >= 3 ? WHY.best : ranked.length === 1 ? WHY.bestOnly : WHY.bestRight) : WHY.cand; x.confidence = x === best ? scoreConf : 'high'; }
+                else { x.role = 'skip'; x.why = WHY.rightOfBest; }
+                x.auto = x.role;
+            });
+        }
+        let touched = false;
+        cols.forEach(x => {
+            const o = roles[x.key];
+            if (!o || o === x.role) return;
+            touched = touched || o === 'score' || x.role === 'score';
+            if (o !== 'skip' && o !== 'score') cols.forEach(y => { if (y !== x && y.role === o) { y.role = 'skip'; y.why = WHY.override; } });
+            x.role = o; x.confidence = 'high'; x.why = WHY.override;
+        });
+        if (touched) scoreConf = 'high';
+        const pick = pickRows(sh, b, cols, hdr, { includeHidden: !!ov.includeHidden });
+        return { c1: b.c1, c2: b.c2, cols: cols, ranked: ranked, scoreConf: scoreConf, pick: pick };
+    });
+    return { name: sh.name, index: si, sheet: sh, hdr: hdr, labels: labels, blocks: blocks };
+}
+function sheetSummary(a) {
+    const names = new Set(), classes = new Set();
+    let people = 0, scoreCols = 0, usable = 0, grade = 0, err = 0, cells = 0, hasCls = false;
+    a.blocks.forEach(b => {
+        const nm = b.cols.find(x => x.role === 'name'), cl = b.cols.find(x => x.role === 'cls');
+        if (cl) hasCls = true;
+        b.pick.rows.forEach(r => { people++; names.add(cleanName(a.sheet.rows[r][nm.col]).name); if (cl) classes.add(normCls(a.sheet.rows[r][cl.col])); });
+        let sc = 0, us = 0, gr = 0;
+        b.cols.forEach(x => {
+            if (x.cand || x.role === 'score') { sc++; if (x.st.num > 0) us++; if (x.st.grade > x.st.num) gr++; }
+            err += x.st.err; cells += x.st.filled;
+        });
+        scoreCols = Math.max(scoreCols, sc); usable = Math.max(usable, us); grade = Math.max(grade, gr);
+    });
+    return { name: a.name, hidden: !!a.sheet.hidden, people: people, names: names, classes: classes.size, blocks: a.blocks.length, scoreCols: scoreCols, usable: usable, gradeOnly: scoreCols > 0 && usable === 0 && grade > 0, cells: a.sheet.rows.length, errRate: cells ? err / cells : 0, hasClassCol: hasCls };
+}
+function overlap(A, B) {
+    if (!A.size || !B.size) return 0;
+    const s = A.size <= B.size ? A : B, l = s === A ? B : A;
+    let k = 0; s.forEach(x => { if (l.has(x)) k++; });
+    return k / s.size;
+}
+function chooseSheets(sums) {
+    const res = sums.map(s => ({ name: s.name, selected: false, why: s.hidden ? 'hidden' : (!s.people ? 'empty' : ''), dupOf: null }));
+    const order = sums.map((s, i) => i).filter(i => !sums[i].hidden && sums[i].people > 0).sort((a, b) => {
+        const A = sums[a], B = sums[b];
+        return ((B.usable > 0) - (A.usable > 0)) || (B.people - A.people) || (B.usable - A.usable) || (A.errRate - B.errRate) || ((B.hasClassCol ? 1 : 0) - (A.hasClassCol ? 1 : 0)) || (a - b);
+    });
+    const chosen = [];
+    order.forEach(i => {
+        const s = sums[i];
+        const d = s.people >= C.MIN_PEOPLE_FOR_DUP ? chosen.find(j => overlap(sums[j].names, s.names) >= C.DUP_SHEET_OVERLAP) : undefined;
+        if (d !== undefined) { res[i].why = 'dup'; res[i].dupOf = sums[d].name; }
+        else { res[i].selected = true; res[i].why = 'list'; chosen.push(i); }
+    });
+    if (!chosen.length) { const i = sums.findIndex(s => !s.hidden && s.cells > 0); if (i >= 0) { res[i].selected = true; res[i].why = 'list'; } }
+    return res;
+}
+
+/* ── 給老師看的話（不出現程式術語；錯誤值照 Excel 原文） ── */
+const MSG = {
+    sheetLine: s => s.why === 'hidden' ? '隱藏的工作表，沒有選' : s.why === 'empty' ? '沒有名單，沒有選' : s.why === 'dup' && !s.selected ? '與' + q(s.dupOf) + '的人重複，沒有選' :
+        s.people + ' 人' + (s.classes > 1 ? '、' + s.classes + ' 個班級' : '') + (s.gradeOnly ? '、成績是 A／B／C 等第，會依換算表換成分數' : (s.scoreCols ? '、成績欄 ' + s.scoreCols + ' 個' : '、沒有成績欄')),
+    sheetsFound: (n, names, people, dup) => '找到 ' + n + ' 個工作表，已選' + names.map(q).join('、') + '（' + people + ' 人）。' + (dup ? '另 ' + dup + ' 個工作表的人和它重複，沒有選。' : ''),
+    hiddenSheets: n => '有 ' + n + ' 個隱藏的工作表，沒有列入。',
+    clsFromSheet: () => '名單沒有班級欄，已用工作表名稱當作班級。',
+    weightRow: (row, sample, multi) => '第 ' + row + ' 列是各項成績的比重（' + sample + '…），已略過' + (multi ? '；成績欄也可以選「依比重加權」。' : '。'),
+    skipped: parts => '略過 ' + parts.n + ' 列：' + parts.list.join('；') + '。',
+    hiddenRows: n => '有 ' + n + ' 列被隱藏，已略過（可能是已轉出的同學）。要納入，打開「納入被隱藏的列」。',
+    hiddenIn: n => '已納入 ' + n + ' 列被隱藏的列。',
+    oneScore: l => '成績欄用' + q(l) + '（老師算好的總成績）。',
+    multiScore: (ls, l) => ls.map(q).join('') + '都像總成績，已選最右邊的' + q(l) + '。不對請在表頭改。',
+    noTotal: l => '沒有找到「學期成績」「總成績」這類欄位，先用最右邊的' + q(l) + '，請確認用哪一欄。',
+    noScore: () => '這份檔案沒有找到成績欄，之後只能用隨機分組。',
+    nonNumeric: (n, sample) => '成績欄裡有 ' + n + ' 個不是數字的格子（' + sample + '），目前當作沒有成績。要換算成分數嗎？',
+    gradeConv: (n, table) => '成績欄有 ' + n + ' 格是等第，已依換算表換成分數（' + table + '）。不對可以在下面改。',
+    missing: n => '這份名單有 ' + n + ' 位沒有成績（缺考、請假或空白）。要用「按成績分組」時，可以補輸入或略過他們。',
+    errCells: (n, code) => '成績欄有 ' + n + ' 格是公式錯誤（' + code + '），當作沒有成績。',
+    allErr: code => '成績欄都是公式錯誤（' + code + '），讀不到成績。如果成績是 A／B／C 等第，請在表頭把有等第的那一欄選成「成績」。',
+    fnv: () => '這個檔案的公式沒有存計算結果，讀不到成績。請用 Excel 或 Google 試算表開啟後另存新檔，再匯入。',
+    noName: () => '找不到姓名欄。請在表頭把「姓名」那一欄選出來。',
+    noSheet: () => '沒有選任何工作表。請在上面勾選要匯入的工作表。',
+    noPeople: () => '沒有讀到任何學生。請確認標題列與姓名欄。',
+    dupName: (name, nos) => '有 ' + nos.length + ' 位同名' + q(name) + '（座號 ' + nos.map(n => n || '空白').join('、') + '），都保留了。',
+    dupRow: n => '有 ' + n + ' 列完全重複（班級、座號、姓名、成績都一樣），只保留一筆。',
+    dupNo: (cls, no, n) => (cls ? cls + ' ' : '') + '座號 ' + no + ' 出現 ' + n + ' 次，請確認。',
+    range: n => '有 ' + n + ' 個成績不在 0～100 之間，請確認。',
+    note: n => '有 ' + n + ' 位的姓名帶有註記（例如「(轉出)」「*」），已照原文保留。',
+    partial: n => '有 ' + n + ' 位只有部分成績欄有分數，只用有分數的欄計算。',
+    unsure: n => '有 ' + n + ' 個欄位程式不太確定，表頭有黃點的請確認。'
+};
+const SKIP_TXT = { stat: (r, t) => '第 ' + r + ' 列是統計列' + q(t), noName: r => '第 ' + r + ' 列沒有姓名', notName: (r, t) => '第 ' + r + ' 列的' + q(t) + '不像姓名', repeatHeader: r => '第 ' + r + ' 列是重複的標題列', afterStat: r => '統計列之後的第 ' + r + ' 列' };
+
+/* ── 全管線 ── */
+function analyze(sheets, opts) {
+    if (!Array.isArray(sheets)) throw new TypeError('ScoreImport.analyze：sheets 必須是陣列');
+    opts = opts || {};
+    const ov = opts.override || {}, W = [];
+    const warn = (level, code, text, act) => W.push({ level: level, code: code, text: text, act: act || '' });
+    const per = sheets.map((s, i) => analyzeSheet(trimSheet(s), ov, i)), sums = per.map(sheetSummary), choice = chooseSheets(sums);
+    if (Array.isArray(ov.sheets)) choice.forEach(c => { c.selected = ov.sheets.indexOf(c.name) >= 0; });
+    const sel = per.filter((a, i) => choice[i].selected), multiSheet = sel.length > 1;
+    const grades = Object.assign({}, DEFAULT_GRADES, ov.grades || {}), absent = Object.assign({}, ov.absent || {}), mode = ov.scoreMerge || 'right';
+    const roster = [], labels = [], detail = [], seen = new Map(), vals = new Map();
+    let dupRows = 0, errN = 0, errCode = '', fnvN = 0, textN = 0, gradeN = 0, partialN = 0, clsFromSheet = false, noName = false;
+    sel.forEach(a => a.blocks.forEach((b, bi) => {
+        const find = role => b.cols.find(x => x.role === role);
+        const nameX = find('name'), clsX = find('cls'), noX = find('no'), grpX = find('group'), scs = b.cols.filter(x => x.role === 'score');
+        if (!nameX) { noName = true; return; }
+        const used = mode === 'right' ? scs.slice(-1) : scs;
+        const ctxs = used.map(x => ({ grades: grades, absent: absent, pct: x.st.pct > 0 && x.st.pct >= x.st.num * 0.5 }));
+        b.pick.rows.forEach(r => {
+            const row = a.sheet.rows[r], nm = cleanName(row[nameX.col]);
+            let cls = clsX ? normCls(row[clsX.col]) : '';
+            if (!clsX && multiSheet) { cls = normCls(a.name); clsFromSheet = true; }
+            const nn = noX ? parseNum(row[noX.col]) : null, no = nn != null && Number.isInteger(nn) ? String(nn) : '';
+            const parts = used.map((x, i) => toScore(row[x.col], ctxs[i]));
+            parts.forEach(p => {
+                if (p.kind === 'absent' || p.kind === 'grade') { const k = p.kind + '|' + p.raw; vals.set(k, (vals.get(k) || 0) + 1); if (p.kind === 'grade') gradeN++; }
+                else if (p.kind === 'err') { errN++; errCode = errCode || p.raw; } else if (p.kind === 'fnv') fnvN++; else if (p.kind === 'text') textN++;
+            });
+            const sc = mergeScores(parts, mode, used.map(x => x.weight));
+            if (sc.partial) partialN++;
+            const rec = { cls: cls, no: no, name: nm.name, score: sc.v != null ? sc.v : '' };
+            const dk = [rec.cls, rec.no, rec.name, rec.score].join('|');
+            if (seen.has(dk)) { dupRows++; return; }
+            seen.set(dk, true);
+            roster.push(rec);
+            const g = grpX ? cellText(row[grpX.col]) : '';
+            labels.push(g ? cls + '#' + g : null);
+            detail.push({ sheet: a.name, block: bi, row: r + 1, note: nm.note, miss: sc.miss || '', raw: sc.raw || '' });
+        });
+    }));
+    if (opts.autoNo) { const cnt = {}; roster.forEach(x => { cnt[x.cls] = (cnt[x.cls] || 0) + 1; if (!x.no) x.no = String(cnt[x.cls]); }); }
+
+    /* 報告：工作表、標題列、欄位、預覽 */
+    const first = sel.find(a => a.blocks.length) || null, fb = first ? first.blocks[0] : null;
+    const scs0 = fb ? fb.cols.filter(x => x.role === 'score') : [];
+    const report = {
+        sheets: per.map((a, i) => { const s = Object.assign({}, sums[i], choice[i]); delete s.names; s.text = MSG.sheetLine(s); return s; }),
+        header: sel.map(a => ({ sheet: a.name, row: a.hdr.row + 1, weightRow: a.hdr.weightRow + 1, upperRow: a.hdr.upperRow + 1, auto: a.hdr.auto, rows: Math.min(C.HEADER_SCAN_ROWS, a.sheet.rows.length) })),
+        columns: [], skipped: [], hidden: 0, warnings: W, confirm: 0,
+        score: { cols: scs0.map(x => x.label || ('第 ' + (x.col + 1) + ' 欄')), mode: mode, multi: scs0.length >= 2, weights: scs0.filter(x => x.weight != null).length >= 2, confidence: fb ? fb.scoreConf : 'high', label: '' },
+        values: [], group: null, preview: null,
+        people: roster.length, classes: new Set(roster.map(x => x.cls)).size, withScore: roster.filter(x => x.score !== '').length, missing: 0
+    };
+    report.missing = report.people - report.withScore;
+    report.score.label = !scs0.length ? '' : (mode === 'mean' ? '平均（' + scs0.length + ' 欄）' : mode === 'weighted' ? '依比重加權（' + scs0.length + ' 欄）' : report.score.cols[report.score.cols.length - 1]);
+    sel.forEach(a => a.blocks.forEach((b, bi) => {
+        b.cols.forEach(x => report.columns.push({ key: x.key, sheet: a.name, block: bi, col: x.col, offset: x.col - b.c1, label: x.label, role: x.role, auto: x.auto, confidence: x.confidence, why: x.why, weight: x.weight, empty: !x.st.filled }));
+        b.pick.skipped.forEach(s => report.skipped.push({ sheet: a.name, row: s.row + 1, why: s.why, text: s.text }));
+        report.hidden += b.pick.hidden;
+    }));
+    vals.forEach((n, k) => {
+        const i = k.indexOf('|'), type = k.slice(0, i), raw = k.slice(i + 1);
+        const value = type === 'grade' ? gradeValue(raw, grades) : (Object.prototype.hasOwnProperty.call(absent, raw) ? absent[raw] : null);
+        report.values.push({ type: type, raw: raw, count: n, cat: type === 'grade' ? '等第' : absentCat(raw), value: value == null ? null : +value });
+    });
+    report.values.sort((x, y) => (x.type === y.type ? 0 : x.type === 'absent' ? -1 : 1) || (x.type === 'grade' ? x.raw.localeCompare(y.raw) : y.count - x.count));
+    if (fb) {
+        const show = fb.cols.filter(x => x.st.filled || x.role !== 'skip');
+        const grpX = fb.cols.find(x => x.role === 'group');
+        const sc = fb.cols.filter(x => x.role === 'score'), used = mode === 'right' ? sc.slice(-1) : sc;
+        const rows = fb.pick.rows.slice(0, C.PREVIEW_ROWS).map(r => ({ row: r + 1, cells: show.map(x => {
+            const v = first.sheet.rows[r][x.col];
+            if (x.role !== 'score') return { t: isErr(v) ? '公式錯誤' : cellText(v), k: isErr(v) ? 'err' : '' };
+            const p = toScore(v, { grades: grades, absent: absent, pct: x.st.pct > 0 && x.st.pct >= x.st.num * 0.5 });
+            const u = used.indexOf(x) >= 0;
+            return { t: p.kind === 'err' ? '公式錯誤' : p.kind === 'fnv' ? '沒有結果' : (p.raw || ''), k: p.miss ? p.kind : (p.conv ? 'conv' : ''), v: p.v != null ? p.v : null, used: u };
+        }) }));
+        report.preview = { sheet: first.name, block: 0, cols: show.map(x => ({ key: x.key, label: x.label, role: x.role, confidence: x.confidence, why: x.why })), rows: rows, more: Math.max(0, roster.length - rows.length) };
+        if (grpX) {
+            const gs = new Set(labels.filter(Boolean));
+            report.group = { label: grpX.label || '組別', groups: gs.size, people: labels.filter(Boolean).length };
+        }
+    }
+
+    /* 提醒：資訊（info）／請確認（warn）／無法使用（error） */
+    const nSheets = per.length;
+    if (!sel.length) warn('error', 'noSheet', MSG.noSheet(), 'sheets');
+    else {
+        if (nSheets > 1) warn('info', 'sheets', MSG.sheetsFound(nSheets, sel.map(a => a.name), roster.length, choice.filter(c => !c.selected && c.why === 'dup').length), 'sheets');
+        const hid = sums.filter(s => s.hidden).length;
+        if (hid) warn('info', 'hiddenSheets', MSG.hiddenSheets(hid));
+        if (clsFromSheet) warn('info', 'clsFromSheet', MSG.clsFromSheet());
+        if (noName) warn('error', 'noName', MSG.noName());
+        else if (!roster.length) warn('error', 'noPeople', MSG.noPeople(), 'hdr');
+        const wr = sel.find(a => a.hdr.weightRow >= 0);
+        if (wr) { const ws = (weightsOf(wr.sheet.rows[wr.hdr.weightRow]) || []).filter(v => v != null).slice(0, 3).map(v => Math.round(v * 1000) / 10 + '%'); warn('info', 'weightRow', MSG.weightRow(wr.hdr.weightRow + 1, ws.join('、'), report.score.multi)); }
+        const sk = report.skipped.filter(s => s.why !== 'hidden');
+        if (sk.length) { const list = sk.slice(0, 3).map(s => SKIP_TXT[s.why](s.row, s.text)); if (sk.length > 3) list.push('等'); warn('info', 'skipped', MSG.skipped({ n: sk.length, list: list })); }
+        if (report.hidden) warn('info', 'hiddenRows', MSG.hiddenRows(report.hidden), 'hidden');
+        else if (ov.includeHidden && sel.some(a => a.sheet.hiddenRows.size)) warn('info', 'hiddenIn', MSG.hiddenIn(sel.reduce((t, a) => t + a.sheet.hiddenRows.size, 0)), 'hidden');
+        if (fb && roster.length) {
+            const errCols = fb.cols.filter(x => x.flag === 'err'), fnvCols = fb.cols.filter(x => x.flag === 'fnv');
+            if (!scs0.length) {
+                if (fnvCols.length) warn('error', 'fnv', MSG.fnv());
+                else if (errCols.length) warn('error', 'allErr', MSG.allErr(errCols[0].st.errCode || '#VALUE!'), 'score');
+                else warn('info', 'noScore', MSG.noScore());
+            } else if (!Object.keys(ov.roles || {}).length && mode === 'right') {
+                const strongish = fb.ranked.filter(x => x.strength >= 2), best = fb.ranked[0];
+                if (fb.scoreConf === 'low') warn('warn', 'noTotal', MSG.noTotal(best.label || ('第 ' + (best.col + 1) + ' 欄')), 'score');
+                else if (strongish.length >= 2) warn('warn', 'multiScore', MSG.multiScore(strongish.slice().sort((x, y) => x.col - y.col).map(x => x.label), best.label), 'score');
+                else if (fb.ranked.length >= 2 && best.strength >= 3) warn('info', 'oneScore', MSG.oneScore(best.label));
+            }
+            if (fnvN && scs0.length) warn('error', 'fnv', MSG.fnv());
+            if (errN) warn('warn', 'errCells', MSG.errCells(errN, errCode));
+            const absentMiss = report.values.filter(v => v.type === 'absent' && v.value == null), gradeMiss = report.values.filter(v => v.type === 'grade' && v.value == null);
+            const nn = absentMiss.concat(gradeMiss).reduce((t, v) => t + v.count, 0) + textN;
+            if (nn) warn('warn', 'nonNumeric', MSG.nonNumeric(nn, absentMiss.concat(gradeMiss).map(v => v.raw).slice(0, 4).join('、') || '文字'), 'panel');
+            if (gradeN && report.values.some(v => v.type === 'grade' && v.value != null)) warn('info', 'gradeConv', MSG.gradeConv(gradeN, report.values.filter(v => v.type === 'grade' && v.value != null).map(v => v.raw + '=' + v.value).join('、')), 'panel');
+            if (report.missing && report.withScore) warn('warn', 'missing', MSG.missing(report.missing));
+            if (partialN) warn('warn', 'partial', MSG.partial(partialN));
+        }
+        if (dupRows) warn('info', 'dupRow', MSG.dupRow(dupRows));
+        const byName = new Map(), byNo = new Map();
+        roster.forEach(x => { const k = x.cls + '|' + x.name; if (!byName.has(k)) byName.set(k, []); byName.get(k).push(x.no); if (x.no) { const n = x.cls + '|' + x.no; byNo.set(n, (byNo.get(n) || 0) + 1); } });
+        byName.forEach((nos, k) => { if (nos.length > 1) warn('warn', 'dupName', MSG.dupName(k.slice(k.indexOf('|') + 1), nos)); });
+        byNo.forEach((n, k) => { if (n > 1) { const i = k.indexOf('|'); warn('warn', 'dupNo', MSG.dupNo(k.slice(0, i), k.slice(i + 1), n)); } });
+        const out = roster.filter(x => x.score !== '' && (x.score < 0 || x.score > 100)).length;
+        if (out) warn('warn', 'range', MSG.range(out));
+        const notes = detail.filter(d => d.note).length;
+        if (notes) warn('warn', 'note', MSG.note(notes));
+        const unsure = report.columns.filter(c => c.confidence !== 'high' && c.role !== 'score').length;
+        if (unsure) warn('warn', 'unsure', MSG.unsure(unsure));
+    }
+    const lv = { error: 0, warn: 1, info: 2 };
+    W.sort((a, b) => lv[a.level] - lv[b.level]);
+    report.confirm = W.filter(w => w.level !== 'info').length;
+    return { roster: roster, prevGroupLabels: labels, detail: detail, report: report };
+}
+/* 介面改某一欄的角色時，其他區塊、其他工作表同位置、同欄名的欄也一起改 */
+function sameColumnKeys(report, key) {
+    const c = report.columns.find(x => x.key === key);
+    if (!c) return [];
+    return report.columns.filter(x => x.offset === c.offset && x.label === c.label).map(x => x.key);
+}
+
+/* ── 上次分組、跨檔對應 ── */
+function keyOf(st) { return root.GroupLogic && root.GroupLogic.studentKey ? root.GroupLogic.studentKey(st) : [st.cls || '', st.no || '', st.name || ''].join('|'); }
+function toAvoidGrouping(roster, labels) {
+    const m = new Map();
+    roster.forEach((st, i) => { const l = labels && labels[i]; if (l == null) return; if (!m.has(l)) m.set(l, []); m.get(l).push(keyOf(st)); });
+    return Array.from(m.values()).filter(g => g.length >= 2);
+}
+function matchStudents(A, B) {
+    const nk = st => cleanName(st.name).name;
+    const classesA = new Set(A.map(x => normCls(x.cls))), classesB = new Set(B.map(x => normCls(x.cls))), classMap = {};
+    classesA.forEach(ca => {
+        if (classesB.has(ca)) return;
+        const na = new Set(A.filter(x => normCls(x.cls) === ca).map(nk));
+        let best = null, bo = 0;
+        classesB.forEach(cb => { if (classesA.has(cb)) return; const o = overlap(na, new Set(B.filter(x => normCls(x.cls) === cb).map(nk))); if (o > bo) { bo = o; best = cb; } });
+        if (best != null && bo >= C.DUP_SHEET_OVERLAP) classMap[ca] = { to: best, overlap: Math.round(bo * 100) };
+    });
+    const clsA = x => { const c = normCls(x.cls); return classMap[c] ? classMap[c].to : c; };
+    const idx = new Map();
+    B.forEach((x, j) => { const k = normCls(x.cls) + '|' + nk(x); if (!idx.has(k)) idx.set(k, []); idx.get(k).push(j); });
+    const usedB = new Set(), matched = [], ambiguous = [], onlyA = [];
+    A.forEach((x, i) => {
+        const cand = (idx.get(clsA(x) + '|' + nk(x)) || []).filter(j => !usedB.has(j));
+        let j = -1;
+        if (cand.length === 1) j = cand[0];
+        else if (cand.length > 1) { const s = cand.filter(k => String(B[k].no) === String(x.no)); if (s.length === 1) j = s[0]; else { ambiguous.push(i); return; } }
+        if (j < 0) { onlyA.push(i); return; }
+        usedB.add(j); matched.push([i, j]);
+    });
+    const onlyB = B.map((_, j) => j).filter(j => !usedB.has(j));
+    const seatSame = [];
+    onlyA.forEach(i => { const x = A[i]; if (!x.no) return; const j = onlyB.find(k => normCls(B[k].cls) === clsA(x) && String(B[k].no) === String(x.no)); if (j !== undefined) seatSame.push([i, j]); });
+    return { matched: matched, onlyA: onlyA, onlyB: onlyB, ambiguous: ambiguous, classMap: classMap, seatSame: seatSame };
+}
+
+root.ScoreImport = {
+    C: C, MSG: MSG, DEFAULT_GRADES: DEFAULT_GRADES, ROLE_LABEL: ROLE_LABEL,
+    norm: norm, cleanName: cleanName, nameLike: nameLike, parseNum: parseNum, decodeCsv: decodeCsv, fromRows: fromRows, fromSheetJS: fromSheetJS,
+    trimSheet: trimSheet, findHeader: findHeader, flattenHeader: flattenHeader, splitBlocks: splitBlocks, classifyColumns: classifyColumns, rankScoreColumns: rankScoreColumns,
+    pickRows: pickRows, toScore: toScore, mergeScores: mergeScores, analyzeSheet: analyzeSheet, sheetSummary: sheetSummary, chooseSheets: chooseSheets,
+    analyze: analyze, sameColumnKeys: sameColumnKeys, matchStudents: matchStudents, toAvoidGrouping: toAvoidGrouping
+};
+})(typeof window !== 'undefined' ? window : globalThis);
+    </script>
     <script id="group-ui">
 /* ═══ 分組功能：介面層（GroupUI）═══
  * 規格：docs/design/DESIGN.md 第 10 節、docs/design/mockups/分組功能.html；邏輯在上一段 GroupLogic。
