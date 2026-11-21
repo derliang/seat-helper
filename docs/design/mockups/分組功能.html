@@ -1,0 +1,1220 @@
+<!doctype html>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>分組功能改版稿</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Noto+Serif+TC:wght@700&display=swap">
+<style>
+/* 版面概念：頁首＋六張原始畫面（桌機兩欄、手機單欄）。畫面內用座位小幫手既有 tokens，組別另用 8 色＋組號 */
+:root{
+  --page:#E9E4D6; --bg:#F5F2EA; --surface:#FFFDF8; --sunken:#F1EDE3; --line:#E4DECF; --line-2:#CFC7B2;
+  --text:#22201B; --text-2:#4F493D; --text-3:#6F6858;
+  --accent:#274690; --accent-h:#1F3877; --on-accent:#FFFFFF; --accent-soft:#E8EDF8; --accent-ink:#1F3877; --accent-line:#B9C6E6;
+  --danger-soft:#FFF1F3; --danger-ink:#BE123C; --danger-line:#FECDD6;
+  --ok-soft:#E4F5EC; --ok-ink:#065F46; --ok-line:#A9DDBF;
+  --warn-soft:#FFFBEB; --warn-ink:#92400E; --warn-line:#FDE68A;
+  --g1-bar:#3B6FD4; --g1-soft:#E6EEFB; --g1-line:#B7CBF0; --g1-ink:#1D3F8F;
+  --g2-bar:#1FA36A; --g2-soft:#E4F5EC; --g2-line:#A9DDBF; --g2-ink:#0B5B3A;
+  --g3-bar:#D98E0B; --g3-soft:#FDF1D8; --g3-line:#F2D08A; --g3-ink:#7A4A06;
+  --g4-bar:#E0446A; --g4-soft:#FCE7EC; --g4-line:#F4B6C4; --g4-ink:#9A1B3D;
+  --g5-bar:#7C5CD6; --g5-soft:#EEE9FB; --g5-line:#CBBDF1; --g5-ink:#4B2A9E;
+  --g6-bar:#1B98A3; --g6-soft:#DDF3F4; --g6-line:#9FD8DC; --g6-ink:#0E5961;
+  --g7-bar:#E0702A; --g7-soft:#FDE9DC; --g7-line:#F4BE9B; --g7-ink:#8A3A0B;
+  --g8-bar:#5F7088; --g8-soft:#E9EDF2; --g8-line:#C3CCD8; --g8-ink:#2F3C4F;
+  --shadow-1:0 1px 2px rgba(34,32,27,.07); --shadow-2:0 6px 18px rgba(34,32,27,.09);
+  --r-sm:8px; --r-md:12px; --r-lg:16px;
+  --font:"Noto Sans TC",system-ui,-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;
+  --font-display:"Noto Serif TC","Noto Sans TC","PingFang TC","Microsoft JhengHei",serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --page:#0A0907; --bg:#13120E; --surface:#1C1A15; --sunken:#17150F; --line:#302D24; --line-2:#433F33;
+  --text:#F1EDE2; --text-2:#CFC8B6; --text-3:#A0987F;
+  --accent:#3F63C4; --accent-h:#4C73D8; --accent-soft:#1B2540; --accent-ink:#AFC2F5; --accent-line:#33467E;
+  --danger-soft:#3A1522; --danger-ink:#FDA4AF; --danger-line:#6B2438;
+  --ok-soft:#0F2A20; --ok-ink:#6EE7B7; --ok-line:#1E6A49;
+  --warn-soft:#33240A; --warn-ink:#FCD34D; --warn-line:#8A5A12;
+  --g1-bar:#5B8BEA; --g1-soft:#17233F; --g1-line:#2E4580; --g1-ink:#BCD0FA;
+  --g2-bar:#34C48A; --g2-soft:#0F2A20; --g2-line:#1E6A49; --g2-ink:#B2EBCD;
+  --g3-bar:#F0AE2B; --g3-soft:#33240A; --g3-line:#8A5A12; --g3-ink:#FDE3A6;
+  --g4-bar:#F0698A; --g4-soft:#3A1522; --g4-line:#7D2A44; --g4-ink:#FBC2D0;
+  --g5-bar:#9B80F0; --g5-soft:#231A45; --g5-line:#54409A; --g5-ink:#DCD2FB;
+  --g6-bar:#3CBAC6; --g6-soft:#0C2C30; --g6-line:#1F6A72; --g6-ink:#B5E8EC;
+  --g7-bar:#F28A4A; --g7-soft:#38200E; --g7-line:#8A4A1E; --g7-ink:#FAD2B4;
+  --g8-bar:#8497B2; --g8-soft:#1E2530; --g8-line:#46536A; --g8-ink:#D5DCE7;
+  --shadow-1:0 1px 2px rgba(0,0,0,.4); --shadow-2:0 6px 18px rgba(0,0,0,.4); color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --page:#0A0907; --bg:#13120E; --surface:#1C1A15; --sunken:#17150F; --line:#302D24; --line-2:#433F33;
+  --text:#F1EDE2; --text-2:#CFC8B6; --text-3:#A0987F;
+  --accent:#3F63C4; --accent-h:#4C73D8; --accent-soft:#1B2540; --accent-ink:#AFC2F5; --accent-line:#33467E;
+  --danger-soft:#3A1522; --danger-ink:#FDA4AF; --danger-line:#6B2438;
+  --ok-soft:#0F2A20; --ok-ink:#6EE7B7; --ok-line:#1E6A49;
+  --warn-soft:#33240A; --warn-ink:#FCD34D; --warn-line:#8A5A12;
+  --g1-bar:#5B8BEA; --g1-soft:#17233F; --g1-line:#2E4580; --g1-ink:#BCD0FA;
+  --g2-bar:#34C48A; --g2-soft:#0F2A20; --g2-line:#1E6A49; --g2-ink:#B2EBCD;
+  --g3-bar:#F0AE2B; --g3-soft:#33240A; --g3-line:#8A5A12; --g3-ink:#FDE3A6;
+  --g4-bar:#F0698A; --g4-soft:#3A1522; --g4-line:#7D2A44; --g4-ink:#FBC2D0;
+  --g5-bar:#9B80F0; --g5-soft:#231A45; --g5-line:#54409A; --g5-ink:#DCD2FB;
+  --g6-bar:#3CBAC6; --g6-soft:#0C2C30; --g6-line:#1F6A72; --g6-ink:#B5E8EC;
+  --g7-bar:#F28A4A; --g7-soft:#38200E; --g7-line:#8A4A1E; --g7-ink:#FAD2B4;
+  --g8-bar:#8497B2; --g8-soft:#1E2530; --g8-line:#46536A; --g8-ink:#D5DCE7;
+  --shadow-1:0 1px 2px rgba(0,0,0,.4); --shadow-2:0 6px 18px rgba(0,0,0,.4); color-scheme:dark;}
+
+*{box-sizing:border-box}
+body{background:var(--page);color:var(--text);font:14px/1.6 var(--font);padding-block:0 64px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--page)}
+h1,h2,h3,h4,p{margin:0}
+button{font:inherit;color:inherit}
+.ic{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ── 預覽頁外框 ── */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--page);border-bottom:1px solid var(--line-2);
+  margin-inline:calc(-1*max(16px,env(safe-area-inset-left,0px)));padding:10px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));
+  display:flex;gap:12px 20px;align-items:center;flex-wrap:wrap}
+.top h1{font:700 18px var(--font-display)}
+.top nav{display:flex;gap:6px;overflow-x:auto;flex:1;min-width:0}
+.top nav a{white-space:nowrap;padding:6px 10px;border-radius:var(--r-sm);color:var(--text-2);text-decoration:none;font-weight:700;font-size:13px;border:1px solid transparent}
+.top nav a:hover{background:var(--surface);border-color:var(--line-2);color:var(--accent-ink)}
+.wrap{max-width:1260px;margin:0 auto}
+.intro{display:grid;gap:16px;margin:24px 0 8px;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr))}
+.intro .card h2{font:700 16px var(--font-display);margin-bottom:8px}
+.intro ul{margin:0;padding-left:18px;display:grid;gap:6px;color:var(--text-2)}
+.intro li b{color:var(--text)}
+.sec{margin-top:40px;scroll-margin-top:72px}
+.sec-h{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;margin-bottom:12px}
+.sec-h h2{font:700 20px var(--font-display)}
+.sec-h span{color:var(--text-3);font-size:13px}
+.note{color:var(--text-2);font-size:13px;margin:0 0 12px}
+.pair{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start}
+.pair>.frame{flex:1 1 0}
+.pair>.frame.m{flex:0 0 390px;max-width:100%}
+
+/* ── 畫面框 ── */
+.frame{container-type:inline-size;background:var(--bg);border:1px solid var(--line-2);border-radius:var(--r-lg);box-shadow:var(--shadow-2);overflow:hidden;min-width:0}
+.frame.m{width:390px}
+.hdr{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:12px 20px;background:var(--surface);border-bottom:1px solid var(--line)}
+.brand{font:700 18px var(--font-display);display:flex;align-items:center;gap:8px}
+.brand small{font:500 11px var(--font);color:var(--text-3);border:1px solid var(--line-2);border-radius:99px;padding:0 8px}
+.logo{width:22px;height:22px;border-radius:6px;background:var(--accent);display:inline-block;position:relative}
+.logo::after{content:"";position:absolute;inset:6px;border-radius:2px;background:var(--on-accent)}
+.tabs{display:inline-flex;background:var(--sunken);border:1px solid var(--line-2);border-radius:var(--r-md);padding:3px;margin-inline:auto}
+.tab{min-height:38px;padding:0 22px;border:0;background:none;border-radius:9px;font-weight:700;color:var(--text-2);cursor:pointer}
+.tab[aria-selected=true]{background:var(--accent);color:var(--on-accent)}
+.tab:not([aria-selected=true]):hover{background:var(--surface);color:var(--text)}
+.hdr-r{display:flex;gap:8px;margin-left:auto}
+.frame.m .tabs,.frame.m .hdr-r{margin-inline:0}
+@container (max-width:640px){.hdr{padding:10px 12px}.tabs{order:3;width:100%;display:flex}.tab{flex:1;padding:0 8px}.hdr-r{margin-left:auto}}
+.steps{display:flex;gap:8px;padding:12px 20px;background:var(--bg);border-bottom:1px solid var(--line);overflow-x:auto}
+.st{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:99px;border:1px solid var(--line-2);background:var(--surface);color:var(--text-2);font-weight:700;white-space:nowrap}
+.st .n{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:var(--sunken);border:1px solid var(--line-2);font-size:12px}
+.st.on{border-color:var(--accent);color:var(--accent-ink);background:var(--accent-soft)}
+.st.on .n{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.st.done .n{background:var(--ok-soft);border-color:var(--ok-line);color:var(--ok-ink)}
+.st .ic{width:14px;height:14px}
+@container (max-width:640px){.steps{padding:10px 12px}}
+.body{padding:20px;display:grid;gap:16px}
+@container (min-width:900px){.grid2{grid-template-columns:minmax(0,1fr) 340px;align-items:start}}
+@container (max-width:640px){.body{padding:12px}}
+.col{display:grid;gap:16px;min-width:0}
+
+/* ── 元件 ── */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow-1);padding:16px;min-width:0}
+.card-h{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:14px}
+.card-h .num{width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font-weight:700;font-size:13px}
+.card-h h3{font:700 17px var(--font-display)}
+.card-h p{color:var(--text-3);font-size:12px;width:100%;margin-top:-6px;padding-left:40px}
+.card-h .sp{margin-left:auto}
+.btn{min-height:40px;padding:0 14px;border:1px solid var(--line-2);background:var(--surface);color:var(--text);border-radius:var(--r-sm);font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer}
+.btn:hover{background:var(--sunken);border-color:var(--text-3)}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn-primary:hover{background:var(--accent-h);border-color:var(--accent-h)}
+.btn-danger{background:var(--danger-soft);border-color:var(--danger-line);color:var(--danger-ink)}
+.btn-danger:hover{background:var(--danger-soft);border-color:var(--danger-ink)}
+.btn-sm{min-height:32px;padding:0 10px;font-size:13px}
+.btn[aria-disabled=true]{background:var(--sunken);border-color:var(--line);color:var(--text-3);cursor:not-allowed}
+.btn-row{display:flex;flex-wrap:wrap;gap:8px}
+.seg{display:inline-flex;background:var(--sunken);border:1px solid var(--line);border-radius:var(--r-sm);padding:3px;max-width:100%}
+.seg button{min-height:34px;padding:0 14px;border:0;background:none;border-radius:6px;font-weight:700;color:var(--text-2);cursor:pointer;white-space:nowrap}
+.seg button[aria-selected=true]{background:var(--surface);color:var(--accent-ink);box-shadow:var(--shadow-1)}
+.seg.full{display:flex}.seg.full button{flex:1}
+.label{display:block;font-size:12px;font-weight:700;color:var(--text-2);margin-bottom:6px}
+.input,textarea{width:100%;min-height:40px;border:1px solid var(--line-2);border-radius:var(--r-sm);background:var(--sunken);color:var(--text);padding:8px 12px;font:inherit}
+.input.sm{width:84px;text-align:center;font-variant-numeric:tabular-nums}
+textarea{min-height:min(60vh,484px);resize:vertical;font:13px/1.7 ui-monospace,"Cascadia Mono","Microsoft JhengHei",monospace;tab-size:6;white-space:pre}
+.hint{color:var(--text-3);font-size:12px}
+.row{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center}
+.opt{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--line)}
+.opt:first-of-type{border-top:0}
+.opt{flex-wrap:wrap;align-items:center}
+.opt>div:first-child{flex:1 1 220px;min-width:0}
+.opt>.seg,.opt>.stepper,.opt>.sw,.opt>.badge,.opt>.btn{flex:none}
+.opt b{display:block}
+.sw{position:relative;flex:none;width:44px;height:26px}
+.sw input{appearance:none;position:absolute;inset:0;margin:0;border-radius:99px;background:var(--line-2);cursor:pointer;border:1px solid var(--text-3);transition:background .15s}
+.sw input::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:var(--surface);box-shadow:var(--shadow-1);transition:transform .15s}
+.sw input:checked{background:var(--accent);border-color:var(--accent)}
+.sw input:checked::after{transform:translateX(18px)}
+.stepper{display:inline-flex;align-items:center;border:1px solid var(--line-2);border-radius:var(--r-sm);background:var(--surface);overflow:hidden}
+.stepper button{width:40px;height:40px;border:0;background:var(--sunken);cursor:pointer;display:grid;place-items:center;color:var(--text)}
+.stepper button:hover{background:var(--accent-soft);color:var(--accent-ink)}
+.stepper output{min-width:48px;text-align:center;font:700 16px var(--font);font-variant-numeric:tabular-nums}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:99px;font-size:12px;font-weight:700;border:1px solid var(--line-2);background:var(--sunken);color:var(--text-2)}
+.badge.ok{background:var(--ok-soft);border-color:var(--ok-line);color:var(--ok-ink)}
+.badge.warn{background:var(--warn-soft);border-color:var(--warn-line);color:var(--warn-ink)}
+.badge.info{background:var(--accent-soft);border-color:var(--accent-line);color:var(--accent-ink)}
+.badge .ic{width:14px;height:14px}
+.alert{display:flex;gap:10px;padding:12px;border-radius:var(--r-md);border:1px solid var(--warn-line);background:var(--warn-soft);color:var(--warn-ink)}
+.alert.ok{border-color:var(--ok-line);background:var(--ok-soft);color:var(--ok-ink)}
+.alert.info{border-color:var(--accent-line);background:var(--accent-soft);color:var(--accent-ink)}
+.alert b{display:block}
+.alert>div{min-width:0;flex:1}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r-md)}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{background:var(--sunken);font-size:12px;color:var(--text-2)}
+tr:last-child td{border-bottom:0}
+td.miss{background:var(--warn-soft);color:var(--warn-ink);font-weight:700}
+.sel{min-height:32px;border:1px solid var(--line-2);border-radius:6px;background:var(--surface);color:var(--text);font:700 12px var(--font);padding:0 8px;width:100%}
+.dz{border:2px dashed var(--line-2);border-radius:var(--r-md);background:var(--sunken);padding:56px 16px;min-height:280px;align-content:center;text-align:center;color:var(--text-2);display:grid;gap:10px;justify-items:center}
+.dz b{font-size:17px;color:var(--text)}
+.codes{display:grid;gap:10px}
+.codes div{display:grid;gap:2px}
+.codes b{font-size:12px;color:var(--text-2)}
+.codes code{display:block;background:var(--sunken);border:1px solid var(--line);border-radius:6px;padding:4px 10px;font:12px/1.6 ui-monospace,"Cascadia Mono",monospace;white-space:pre;overflow-x:auto}
+hr{border:0;border-top:1px solid var(--line);margin:12px 0;width:100%}
+
+/* 組別顏色 */
+.g1{--gb:var(--g1-bar);--gs:var(--g1-soft);--gl:var(--g1-line);--gi:var(--g1-ink)}
+.g2{--gb:var(--g2-bar);--gs:var(--g2-soft);--gl:var(--g2-line);--gi:var(--g2-ink)}
+.g3{--gb:var(--g3-bar);--gs:var(--g3-soft);--gl:var(--g3-line);--gi:var(--g3-ink)}
+.g4{--gb:var(--g4-bar);--gs:var(--g4-soft);--gl:var(--g4-line);--gi:var(--g4-ink)}
+.g5{--gb:var(--g5-bar);--gs:var(--g5-soft);--gl:var(--g5-line);--gi:var(--g5-ink)}
+.g6{--gb:var(--g6-bar);--gs:var(--g6-soft);--gl:var(--g6-line);--gi:var(--g6-ink)}
+.g7{--gb:var(--g7-bar);--gs:var(--g7-soft);--gl:var(--g7-line);--gi:var(--g7-ink)}
+.g8{--gb:var(--g8-bar);--gs:var(--g8-soft);--gl:var(--g8-line);--gi:var(--g8-ink)}
+.gnum{width:26px;height:26px;border-radius:50%;background:var(--gi);color:var(--gs);display:inline-grid;place-items:center;font:700 13px var(--font);flex:none}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:2px 10px 2px 2px;border-radius:99px;background:var(--gs);color:var(--gi);border:1px solid var(--gl);font-weight:700;font-size:12px}
+.chip .gnum{width:20px;height:20px;font-size:11px}
+
+/* 分組方式 */
+.modes{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr))}
+.deal{width:100%;max-width:300px;height:auto;justify-self:center;display:block}
+.arrow{stroke:var(--text-2);stroke-width:1.6}
+.arrow.jump{stroke-dasharray:4 3}
+.mode{display:grid;gap:8px;align-content:start;padding:12px;border:1px solid var(--line-2);border-radius:var(--r-md);background:var(--surface);cursor:pointer;position:relative}
+.mode:hover{border-color:var(--text-3)}
+.mode:has(input:checked){border-color:var(--accent);box-shadow:0 0 0 1px var(--accent);background:var(--accent-soft)}
+.mode input{position:absolute;opacity:0}
+.mode:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+.mode b{display:flex;align-items:center;gap:8px}
+.mode b::before{content:"";width:16px;height:16px;border-radius:50%;border:2px solid var(--line-2);background:var(--surface);flex:none}
+.mode:has(input:checked) b::before{border-color:var(--accent);background:radial-gradient(var(--accent) 45%,var(--surface) 50%)}
+.mode p{font-size:12px;color:var(--text-2)}
+.mini{display:grid;gap:3px;font-variant-numeric:tabular-nums}
+.mini div{display:flex;gap:3px;align-items:center}
+.mini i{font-style:normal;width:22px;height:20px;border-radius:4px;background:var(--gs);border:1px solid var(--gl);color:var(--gi);font-size:11px;font-weight:700;display:grid;place-items:center}
+.mini em{font-style:normal;font-size:11px;color:var(--text-3);margin-left:4px}
+.fixrow{display:grid;grid-template-columns:1fr 100px;gap:8px;align-items:center}
+
+/* 分組結果 */
+.gcards{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(168px,1fr))}
+.gcard{border:1px solid var(--gl);border-radius:var(--r-md);background:var(--surface);overflow:hidden;min-width:0}
+.gh{display:flex;align-items:center;gap:8px;background:var(--gs);color:var(--gi);padding:8px 10px;border-bottom:1px solid var(--gl);font-weight:700}
+.gh .avg{margin-left:auto;font-size:12px;font-variant-numeric:tabular-nums}
+.gcard ul{list-style:none;margin:0;padding:4px 0}
+.gcard li{display:flex;gap:8px;padding:5px 10px;align-items:baseline;cursor:grab}
+.gcard li:hover{background:var(--sunken)}
+.gcard li .no{width:22px;color:var(--text-3);font-size:12px;font-variant-numeric:tabular-nums}
+.gcard li .nm{flex:1;font-weight:500}
+.gcard li .sc{color:var(--text-2);font-size:12px;font-variant-numeric:tabular-nums}
+.hide-sc .sc{display:none}
+.bars{display:grid;gap:6px}
+.bar{display:grid;grid-template-columns:26px 1fr 44px;gap:8px;align-items:center;font-size:12px;font-variant-numeric:tabular-nums}
+.bar .t{height:10px;border-radius:99px;background:var(--sunken);border:1px solid var(--line);overflow:hidden}
+.bar .t i{display:block;height:100%;background:var(--gb)}
+.bar .v{text-align:right;color:var(--text-2)}
+.exp{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.exp .btn{flex-direction:column;align-items:flex-start;min-height:56px;gap:0;justify-content:center;text-align:left}
+.exp small{font-weight:500;font-size:11px;color:var(--text-3)}
+.hist{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.hist li{display:flex;align-items:center;gap:8px;font-size:13px;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--sunken)}
+.hist li.cur{border-color:var(--accent-line);background:var(--accent-soft);color:var(--accent-ink)}
+.hist li span{flex:1;min-width:0}
+.saved{display:inline-flex;align-items:center;gap:6px}
+.tag-sub{margin-left:auto}
+
+/* 座位 */
+.room{background:var(--surface);border:1px solid var(--line-2);border-radius:var(--r-md);padding:12px;container-type:inline-size}
+.board{background:var(--text);color:var(--bg);text-align:center;border-radius:6px;padding:4px;font-size:12px;font-weight:700;margin-bottom:10px}
+.seatgrid{display:grid;grid-template-columns:repeat(4,1fr) 14px repeat(4,1fr);gap:6px}
+.cell{position:relative;min-height:54px;border-radius:8px;background:var(--gs);border:1px solid var(--gl);color:var(--gi);display:grid;place-items:center;padding:14px 2px 4px;text-align:center}
+.cell .gn{position:absolute;left:4px;top:3px;font-size:10px;font-weight:700;line-height:1.2;padding:0 5px;border-radius:99px;background:var(--gi);color:var(--gs)}
+.cfg{display:flex;flex-wrap:wrap;gap:10px 20px;align-items:flex-end;padding:12px;background:var(--sunken);border:1px solid var(--line);border-radius:var(--r-md);margin-bottom:12px}
+.cfg-i{display:grid;gap:4px;min-width:0}
+.cfg-i .label{margin:0}
+.cfg-i .seg,.cfg-i .stepper{justify-self:start}
+.seat-e{fill:var(--sunken);stroke:var(--line-2);stroke-dasharray:3 3}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:12px}
+.tile{display:grid;justify-items:center;gap:2px;padding:10px 8px;border:1px solid var(--line-2);border-radius:var(--r-md);background:var(--surface);cursor:pointer;color:var(--text)}
+.tile:hover{border-color:var(--text-3)}
+.tile[aria-pressed=true]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent);background:var(--accent-soft);color:var(--accent-ink)}
+.tile svg{width:72px;height:45px}
+.tile .tb{fill:var(--sunken);stroke:var(--line-2)}
+.tile .st{fill:var(--accent-soft);stroke:var(--accent-line)}
+.tile small{color:var(--text-3);font-size:12px}
+.tile[aria-pressed=true] small{color:var(--accent-ink)}
+.cfg2{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;margin-bottom:8px}
+details.adv>summary{cursor:pointer;font-weight:700;color:var(--accent-ink);min-height:40px;display:flex;align-items:center;gap:6px}
+details.adv[open]>summary{margin-bottom:8px}
+.selbar{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin-top:10px;padding:10px 12px;border:1px solid var(--accent-line);background:var(--accent-soft);border-radius:var(--r-md)}
+.selbar .hint{color:var(--accent-ink)}
+.selbar-i{display:flex;align-items:center;gap:8px}
+.selbar-i .label{margin:0;color:var(--accent-ink)}
+.adv2{width:100%}
+.adv2 .cfg{margin-bottom:0;background:var(--surface)}
+.cfg-cap{width:100%;font-size:12px;font-weight:700;color:var(--text-2)}
+.cfg-t{font:700 16px var(--font-display);min-height:40px;display:flex;align-items:center}
+.cfg-sum{margin-left:auto;align-content:end}
+.cfg-tip{width:100%;margin:0}
+.lbl{display:grid;place-items:center;font-size:11px;font-weight:700;color:var(--text-2);min-height:22px;white-space:nowrap}
+.co{position:absolute;right:4px;top:3px;font-size:10px;font-weight:700;line-height:1.3;font-variant-numeric:tabular-nums;color:var(--gi)}
+.cell.empty,.cell.off{background:var(--sunken);border:1px dashed var(--line-2);color:var(--text-3)}
+.cell.empty .co,.cell.off .co{color:var(--text-3)}
+.cell.off{background:repeating-linear-gradient(135deg,var(--sunken) 0 6px,var(--line) 6px 8px)}
+.cell .adj-dot{top:auto;bottom:4px}
+.board{margin:10px 0 0}
+.cell .nm{font-weight:700;font-size:clamp(10px,2.4cqw,14px);white-space:nowrap}
+.legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.lay{display:grid;gap:8px}
+.lay button{display:flex;gap:10px;align-items:center;text-align:left;padding:8px 10px;border:1px solid var(--line-2);border-radius:var(--r-md);background:var(--surface);cursor:pointer}
+.lay button:hover{border-color:var(--text-3)}
+.lay button[aria-pressed=true]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent);background:var(--accent-soft);color:var(--accent-ink)}
+.lay svg{width:48px;height:34px;flex:none}
+.lay small{display:block;color:var(--text-3);font-weight:500;font-size:12px}
+.lay button[aria-pressed=true] small{color:var(--accent-ink)}
+.lay-ic rect{fill:var(--gs);stroke:var(--gl)}
+.canvas{border:1px solid var(--line-2);border-radius:var(--r-md);background:var(--surface);
+  background-image:radial-gradient(var(--line-2) 1px,transparent 1.2px);background-size:20px 20px;overflow:hidden}
+.canvas svg{display:block;width:100%;height:auto}
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.tools .label{margin:0}
+.sumbar{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin-top:12px}
+.sumbar b{font-variant-numeric:tabular-nums}
+.ins h4{font:700 15px var(--font-display);margin-bottom:12px}
+.ins .f{display:grid;gap:6px;margin-bottom:14px}
+.t-rect{fill:var(--sunken);stroke:var(--line-2)}
+.t-half{fill:var(--gs);stroke:var(--gl)}
+.seat{fill:var(--gs);stroke:var(--gl)}
+.co-t{fill:var(--gi);font:700 8px var(--font);text-anchor:end;dominant-baseline:central}
+.seat-t{fill:var(--gi);font:700 11px var(--font);text-anchor:middle;dominant-baseline:central}
+.t-lab{fill:var(--text-2);font:700 11px var(--font);text-anchor:middle;dominant-baseline:central}
+.sel-box{fill:none;stroke:var(--accent);stroke-width:2;stroke-dasharray:6 4}
+.sel-h{fill:var(--surface);stroke:var(--accent);stroke-width:2}
+.board-s{fill:var(--text)}.board-t{fill:var(--bg);font:700 11px var(--font);text-anchor:middle;dominant-baseline:central}
+.tg{cursor:pointer}
+.tg:hover .t-rect,.tg:hover .t-half{stroke:var(--accent)}
+.sheet{margin-top:12px;border:1px solid var(--line-2);border-radius:var(--r-md);background:var(--surface);padding:12px}
+@container (max-width:640px){.exp{grid-template-columns:1fr 1fr}.cell{min-height:44px}}
+.fab-note{font-size:12px;color:var(--text-3);margin-top:8px}
+.cell,.gcard li,.sg{cursor:pointer}
+.cell:hover{border-color:var(--gi)}
+.cell.sel{outline:3px solid var(--accent);outline-offset:1px}
+.gcard li.sel{background:var(--accent-soft);outline:2px solid var(--accent);outline-offset:-2px}
+.seat-sel .seat{stroke:var(--accent);stroke-width:3}
+.sg:hover .seat{stroke:var(--gi)}
+.adj-dot{position:absolute;right:3px;top:3px;width:10px;height:10px;border-radius:50%;background:var(--accent);border:2px solid var(--surface);display:inline-block}
+.adj-c{fill:var(--accent);stroke:var(--surface);stroke-width:2}
+.adj-tx{font-size:11px;font-weight:700;color:var(--accent-ink);background:var(--accent-soft);border:1px solid var(--accent-line);border-radius:99px;padding:0 6px;white-space:nowrap}
+.status{padding:8px 12px;border-radius:var(--r-sm);background:var(--accent-soft);color:var(--accent-ink);font-size:13px;margin-bottom:8px;border:1px solid var(--accent-line)}
+.status.idle{background:var(--sunken);color:var(--text-2);border-color:var(--line)}
+.mrow{display:flex;gap:8px;align-items:flex-start;padding:6px 0;border-top:1px solid var(--line)}
+.mrow .gnum{margin-top:2px}
+.mnames{display:flex;flex-wrap:wrap;gap:4px;min-width:0}
+.mn{position:relative;min-height:30px;padding:0 10px;border-radius:6px;border:1px solid var(--gl);background:var(--gs);color:var(--gi);font-weight:700;font-size:13px;cursor:pointer}
+.mn:hover{border-color:var(--gi)}
+.mn.sel{outline:2px solid var(--accent);outline-offset:1px;background:var(--surface)}
+.mn .adj-dot{right:-3px;top:-3px}
+.hlist{max-height:176px;overflow:auto;margin-top:8px}
+.hlist li{padding:0}
+.hbtn{display:flex;gap:8px;align-items:center;width:100%;min-height:36px;padding:4px 10px;border:0;background:none;text-align:left;cursor:pointer;border-radius:var(--r-sm);color:inherit}
+.hbtn:hover{background:var(--surface)}
+.hbtn .hn{flex:none;min-width:48px;font-size:12px}
+.hbtn span:not(.badge){flex:1;min-width:0}
+@container (max-width:640px){.hbtn{min-height:44px}}
+.rest{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.confirm{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+@container (max-width:640px){.mn{min-height:44px}.status .btn{min-height:44px}}
+
+/* ── 下載 ── */
+.dl{display:grid;gap:8px;margin-bottom:6px}
+.fbtn{display:grid;grid-template-columns:44px minmax(0,1fr) auto;column-gap:12px;row-gap:0;align-items:center;text-align:left;width:100%;min-height:64px;padding:10px 12px;border:1px solid var(--line-2);border-radius:var(--r-md);background:var(--surface);cursor:pointer}
+.fbtn:hover{border-color:var(--text-3);background:var(--sunken)}
+.fbtn .fi{grid-column:1;grid-row:1/3}
+.fbtn b{grid-column:2;grid-row:1}
+.fbtn small{grid-column:2;grid-row:2;color:var(--text-3);font-size:12px;overflow-wrap:anywhere;line-height:1.4}
+.fbtn .fgo{grid-column:3;grid-row:1/3;color:var(--accent-ink)}
+.fbtn.done{border-color:var(--ok-line);background:var(--ok-soft)}
+.fbtn.done .fgo,.fbtn.done small{color:var(--ok-ink)}
+.fbtn[aria-busy=true]{border-color:var(--accent-line);background:var(--accent-soft);cursor:progress}
+.fbtn[aria-disabled=true]{background:var(--sunken);border-color:var(--line);color:var(--text-3);cursor:not-allowed}
+.fbtn[aria-disabled=true] .fi{opacity:.5}
+.fi{width:44px;height:44px;border-radius:10px;display:grid;place-items:center;font:700 18px var(--font-display);border:1px solid}
+.fi.w{background:var(--accent-soft);color:var(--accent-ink);border-color:var(--accent-line)}
+.fi.x{background:var(--ok-soft);color:var(--ok-ink);border-color:var(--ok-line)}
+.fi.sm{width:22px;height:22px;font-size:12px;border-radius:5px}
+.spin{width:18px;height:18px;border:2px solid var(--line-2);border-top-color:var(--accent);border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+.dl-states{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
+.dl-states .cap{display:flex;gap:8px;align-items:center;font-weight:700;margin-bottom:10px}
+@container (max-width:640px){.fbtn{min-height:56px}}
+
+/* ── 下載稿預覽（紙張與試算表一律淺色，不跟深色模式） ── */
+.light{--page:#E9E4D6; --bg:#F5F2EA; --surface:#FFFDF8; --sunken:#F1EDE3; --line:#E4DECF; --line-2:#CFC7B2; --text:#22201B; --text-2:#4F493D; --text-3:#6F6858; --accent:#274690; --accent-h:#1F3877; --on-accent:#FFFFFF; --accent-soft:#E8EDF8; --accent-ink:#1F3877; --accent-line:#B9C6E6; --danger-soft:#FFF1F3; --danger-ink:#BE123C; --danger-line:#FECDD6; --ok-soft:#E4F5EC; --ok-ink:#065F46; --ok-line:#A9DDBF; --warn-soft:#FFFBEB; --warn-ink:#92400E; --warn-line:#FDE68A; --g1-bar:#3B6FD4; --g1-soft:#E6EEFB; --g1-line:#B7CBF0; --g1-ink:#1D3F8F; --g2-bar:#1FA36A; --g2-soft:#E4F5EC; --g2-line:#A9DDBF; --g2-ink:#0B5B3A; --g3-bar:#D98E0B; --g3-soft:#FDF1D8; --g3-line:#F2D08A; --g3-ink:#7A4A06; --g4-bar:#E0446A; --g4-soft:#FCE7EC; --g4-line:#F4B6C4; --g4-ink:#9A1B3D; --g5-bar:#7C5CD6; --g5-soft:#EEE9FB; --g5-line:#CBBDF1; --g5-ink:#4B2A9E; --g6-bar:#1B98A3; --g6-soft:#DDF3F4; --g6-line:#9FD8DC; --g6-ink:#0E5961; --g7-bar:#E0702A; --g7-soft:#FDE9DC; --g7-line:#F4BE9B; --g7-ink:#8A3A0B; --g8-bar:#5F7088; --g8-soft:#E9EDF2; --g8-line:#C3CCD8; --g8-ink:#2F3C4F; --shadow-1:0 1px 2px rgba(34,32,27,.07); --shadow-2:0 6px 18px rgba(34,32,27,.09); --r-sm:8px; --r-md:12px; --r-lg:16px; --font:"Noto Sans TC",system-ui,-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif; --font-display:"Noto Serif TC","Noto Sans TC","PingFang TC","Microsoft JhengHei",serif; color-scheme:light;color:var(--text)}
+:root{--paper:#FFFFFF;--paper-ink:#1B1B1B;--paper-line:#BDBDBD}
+.p0{--ps:#F2F2F2;--pi:#262626}
+.p1{--ps:#E6EEFB;--pi:#1D3F8F}
+.p2{--ps:#E4F5EC;--pi:#0B5B3A}
+.p3{--ps:#FDF1D8;--pi:#7A4A06}
+.p4{--ps:#FCE7EC;--pi:#9A1B3D}
+.p5{--ps:#EEE9FB;--pi:#4B2A9E}
+.p6{--ps:#DDF3F4;--pi:#0E5961}
+.p7{--ps:#FDE9DC;--pi:#8A3A0B}
+.p8{--ps:#E9EDF2;--pi:#2F3C4F}
+.pvb{margin-top:28px}
+.pvb .sec-h h3{font:700 17px var(--font-display)}
+.pair>.pvw{flex:1 1 380px;min-width:0}
+.pair>.pv-note{flex:0 0 300px;max-width:100%}
+.pv-note ul{margin:0;padding-left:18px;display:grid;gap:6px;color:var(--text-2);font-size:13px}
+.pv-note li b{color:var(--text)}
+.win{border:1px solid var(--line-2);border-radius:var(--r-md);overflow:hidden;background:var(--surface);box-shadow:var(--shadow-2)}
+.wbar{display:flex;gap:8px;align-items:center;padding:8px 12px;background:var(--sunken);border-bottom:1px solid var(--line);font-size:13px}
+.wbar b{font-weight:700;overflow-wrap:anywhere}
+.wcanvas{background:var(--line);padding:16px;display:grid;justify-items:center;gap:16px}
+.pp-tag{margin-left:1.4cqw;font:700 1.5cqw var(--font);padding:.2cqw 1.1cqw;border-radius:99px;border:1px solid var(--paper-line);background:#F2F2F2;color:#333;vertical-align:middle}
+.pp-tag.on{background:#E6EEFB;color:#1D3F8F;border-color:#B7CBF0}
+.paper{background:var(--paper);color:var(--paper-ink);width:100%;container-type:inline-size;box-shadow:0 2px 10px rgba(0,0,0,.18);font-family:var(--font)}
+.paper.pt{max-width:520px;min-height:0}
+.paper.ls{max-width:760px}
+.paper{padding:0}
+.paper>.pg{padding:5.5cqw 6cqw}
+.pp-t{font:700 3.4cqw var(--font-display);margin:0}
+.pp-s{font-size:1.9cqw;color:#555;margin:.6cqw 0 2.4cqw}
+.pp-grid{display:grid;grid-template-columns:1fr 1fr;gap:2.4cqw 3cqw}
+.pp-n{font-size:1.8cqw;color:#555;margin-top:2.4cqw}
+.pp-f{font-size:1.5cqw;color:#777;text-align:center;margin-top:3cqw;padding-top:1.2cqw;border-top:1px solid #DDD}
+.ls .pp-t{font-size:2.6cqw}.ls .pp-s{font-size:1.5cqw}.ls .pp-n{font-size:1.4cqw}.ls .pp-f{font-size:1.2cqw}
+table.wt{border-collapse:collapse;width:100%;font-size:1.8cqw;font-variant-numeric:tabular-nums;table-layout:auto}
+table.wt th,table.wt td{border:1px solid var(--paper-line);padding:.55cqw 1.2cqw;text-align:left;white-space:nowrap;background:none;color:var(--paper-ink);font-weight:400;font-size:inherit}
+table.wt tr:last-child td{border-bottom:1px solid var(--paper-line)}
+table.wt .wh th{background:var(--ps);color:var(--pi);font-weight:700}
+table.wt .r{text-align:right}
+table.wt td.cc{width:5.5cqw;color:#444;text-align:center}
+.ccl{font-size:.78em;font-weight:400;color:#555}
+table.wt td.no{width:5cqw;color:#666;text-align:center}
+.ls table.wt{font-size:1.45cqw;table-layout:fixed}
+table.wt.sq th,table.wt.sq td{padding:.5cqw .4cqw;text-align:center;white-space:normal}
+table.wt.sq td.lab,table.wt.sq th.lab{background:#F2F2F2;color:#555;font-size:1.2cqw;width:4.6cqw}
+table.wt.sq td.gap{border:0;background:none;width:1.6cqw}
+table.wt.sq td.sc{background:var(--ps);color:var(--pi);height:5.6cqw;vertical-align:middle;padding:.4cqw .7cqw}
+table.wt.sq .cl{display:flex;justify-content:space-between;font-size:1.15cqw;font-weight:700;line-height:1.2;opacity:.85}
+table.wt.sq .cn{font-size:1.7cqw;font-weight:700;margin-top:.5cqw;color:var(--paper-ink)}
+table.wt.sq td.emp{height:5.6cqw;background:none;border-style:dashed}
+table.wt.sq td.off{height:5.6cqw;background:repeating-linear-gradient(135deg,#FFFFFF 0 6px,#E4E4E4 6px 8px)}
+table.wt.sq td.stg{background:#262626;color:#FFFFFF;font-weight:700;font-size:1.5cqw;padding:.7cqw}
+.pp-leg{display:flex;flex-wrap:wrap;gap:.8cqw 1.2cqw;margin-top:1.8cqw}
+.pp-leg span{display:inline-flex;align-items:center;gap:.5cqw;font-size:1.25cqw;padding:.2cqw 1cqw;border-radius:99px;background:var(--ps);color:var(--pi);font-weight:700;border:1px solid var(--paper-line)}
+.pp-pic{border:1px solid var(--paper-line);margin:0 0 1.8cqw;padding:.6cqw}
+.pp-pic svg{display:block;width:100%;height:auto;max-height:30cqw}
+.pp-tl{font-size:1.25cqw;border-collapse:collapse;width:100%}
+.pp-tl td{border:1px solid var(--paper-line);padding:.3cqw 1cqw;white-space:normal;background:none;color:var(--paper-ink)}
+.pp-tl tr:last-child td{border-bottom:1px solid var(--paper-line)}
+.pp-tl td:first-child{width:7cqw;font-weight:700;white-space:nowrap}
+.pp-tl td:nth-child(2){width:11cqw;white-space:nowrap}
+.xl-box{background:#FFFFFF;color:var(--paper-ink)}
+.xl-scroll{overflow:auto;max-height:440px}
+table.xl{border-collapse:separate;border-spacing:0;font:12px/1.4 var(--font);width:max-content;min-width:100%;font-variant-numeric:tabular-nums;table-layout:fixed}
+table.xl th{background:#EFEFEF;color:#555;font-weight:500;font-size:11px;border-right:1px solid #D0D0D0;border-bottom:1px solid #D0D0D0;padding:2px 6px;text-align:center;position:sticky;top:0;z-index:1}
+table.xl th.rh{position:sticky;left:0;top:auto;z-index:0;width:36px}
+table.xl th.xo{left:0;z-index:2}
+table.xl td.xc{border-right:1px solid #E1E1E1;border-bottom:1px solid #E1E1E1;padding:3px 8px;white-space:pre-line;background:#FFFFFF;color:var(--paper-ink);vertical-align:middle;overflow:hidden}
+table.xl tr:last-child td.xc{border-bottom:1px solid #E1E1E1}
+table.xl td.xh{background:#F7F7F7;font-weight:700;border-bottom:2px solid #8A8A8A}
+table.xl td.xr{text-align:right}
+table.xl td.xg{font-weight:700}
+table.xl td.xt{font:700 15px var(--font-display);border:0}
+table.xl td.xs{color:#666;border:0}
+table.xl td.xl{background:#F2F2F2;color:#555;text-align:center;font-weight:700}
+table.xl td.xb{background:#262626;color:#FFFFFF;text-align:center;font-weight:700}
+table.xl td.xtb{background:#F2F2F2;border:1px solid #BDBDBD;text-align:center;font-weight:700}
+table.xl td.xseat{background:var(--ps);color:var(--pi);height:46px;text-align:center;font-weight:700;border:1px solid #FFFFFF}
+table.xl td.xempty{height:46px;text-align:center;color:#999;border:1px dashed #D0D0D0}
+table.xl td.xoff{height:46px;background:repeating-linear-gradient(135deg,#FFFFFF 0 6px,#E4E4E4 6px 8px)}
+table.xl td.xp{background:var(--ps);color:var(--pi);font-weight:700}
+table.xl td.xgap{border:0}
+.xtabs{display:flex;gap:2px;padding:4px 8px 0;background:var(--sunken);border-top:1px solid var(--line-2)}
+.xt{min-height:32px;padding:0 16px;border:1px solid var(--line-2);border-bottom:0;border-radius:6px 6px 0 0;background:var(--sunken);color:var(--text-2);font-weight:700;font-size:13px;cursor:pointer}
+.xt.on{background:#FFFFFF;color:#1B1B1B;border-color:var(--line-2)}
+@container (max-width:640px){.xt{min-height:44px}}
+</style>
+</head><body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <marker id="arw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 10 5 0 10z" style="fill:var(--text-2)"/></marker>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></symbol>
+  <symbol id="i-shuffle" viewBox="0 0 24 24"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></symbol>
+  <symbol id="i-rot" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></symbol>
+  <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1"/></symbol>
+</svg>
+
+<header class="top">
+  <h1>分組功能改版稿</h1>
+  <nav aria-label="畫面目錄">
+    <a href="#s-names">① 名單</a><a href="#s-method">② 分組方式</a><a href="#s-result">③ 分組結果</a>
+    <a href="#s-seat">④ 座位（傳統）</a><a href="#s-canvas">⑤ 座位（桌子畫布）</a><a href="#s-mobile">⑥ 手機</a><a href="#s-dl">⑦ 下載介面</a><a href="#s-files">⑧ 下載稿</a>
+  </nav>
+  <button class="btn btn-sm" id="themeBtn" type="button">切換深色</button>
+</header>
+
+<div class="wrap">
+  <section class="intro" aria-label="稿說明">
+    <div class="card">
+      <h2>第 2 輪・2026-11-21　設計假設</h2>
+      <ul>
+        <li><b>兩大功能用標題列頁籤切換。</b>「排座位」畫面完全不變，「分組」是新的一套三步驟：名單 → 分組方式 → 結果與座位。</li>
+        <li><b>兩個功能各自一份名單</b>，互不影響（依你的選擇）。</li>
+        <li><b>成績只有一欄</b>。貼上時自動判斷「班級、座號、姓名、成績」，判斷錯了可在解析表上方改欄位。</li>
+        <li><b>組別用「顏色＋組號」</b>，黑白列印也分得出來。組別色與座位需求色是兩套，不會同時出現。</li>
+        <li><b>分組結果每次變動都自動存</b>，保留最近 10 筆，可載入舊的。</li>
+        <li><b>只改視覺與版面的既有規範不動</b>：tokens、按鈕、開關、步進器、對話框沿用 DESIGN.md。</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h2>第 2、3 輪改了什麼（依你的裁示）</h2>
+      <ul>
+        <li><b>「成績高到低」改成輪流發牌</b>：依成績由高到低，一人一組輪流發（②）。</li>
+        <li><b>避免與上次同組</b>：預設比對上一次，可改最近 3 次（已定案，②不變）。</li>
+        <li><b>座位畫面可直接調整組員</b>：點一位同學、再點另一位，兩人互換（座位與組別一起換）。傳統座位、桌子畫布、結果頁都能操作，三處即時同步（④⑤⑥）。</li>
+        <li><b>每個座位畫面都有「各組名單」</b>，隨時看得到每組有誰，也可以在名單上點名字來換人。</li>
+        <li><b>「還原人工調整的分組」按鈕</b>：回到分組原樣，按下去先確認再還原；有調整過的同學會標藍點。</li>
+        <li><b>第 3 輪：「匯出」改成「下載」</b>：只提供 Word 與 Excel 兩種，分組名單與座位表各一組，共四份檔案。下載按鈕在⑦，四份檔案的內容在⑧。</li>
+        <li>下面各畫面的按鈕、步進器是示意，只有標「可操作」的部分會動。</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="sec" id="s-names">
+    <div class="sec-h"><h2>① 分組：名單</h2><span>桌機 1280</span></div>
+    <p class="note">貼上、匯入檔案、逐筆輸入三選一（可操作）。貼上的內容立即解析，下方表格就是程式讀到的結果。</p>
+    <div id="f-names"></div>
+  </section>
+
+  <section class="sec" id="s-method">
+    <div class="sec-h"><h2>② 分組：方式</h2><span>桌機 1280</span></div>
+    <p class="note">可操作：切換「隨機分組／按成績分組」、選模式卡、在缺成績表填 3 個數字看警示變化。</p>
+    <div id="f-method"></div>
+  </section>
+
+  <section class="sec" id="s-result">
+    <div class="sec-h"><h2>③ 分組：結果</h2><span>桌機 1280</span></div>
+    <p class="note">這裡用 S 型分 8 組的結果示範。姓名可拖曳換組（示意）；右欄「下載」可下載分組名單的 Word 與 Excel（檔案內容看⑧）。</p>
+    <div id="f-result"></div>
+  </section>
+
+  <section class="sec" id="s-seat">
+    <div class="sec-h"><h2>④ 座位：傳統座位</h2><span>桌機 1280</span></div>
+    <p class="note">可操作：座位表上方的設定列（排數、位置數、走道、同組怎麼坐、點座位時）就在圖旁邊，不必上下捲動；點兩位同學互換座位與組別，右欄「各組名單」與其他畫面同步；按「還原人工調整的分組」回到原樣。</p>
+    <div id="f-seat"></div>
+  </section>
+
+  <section class="sec" id="s-canvas">
+    <div class="sec-h"><h2>⑤ 座位：分組座位（桌子畫布）</h2><span>桌機 1280</span></div>
+    <p class="note">可操作：換範本、長桌選「同一邊」或「面對面」，或自己改桌子數量、每張桌座位數、桌型、每列幾張桌、長桌橫放或直放、座位在一側或兩側；點桌子可只改那一張。畫面比照老師視角，講台在最下方。「8 人長桌」示範一張桌子坐兩組：桌面分成兩色，座位依組別著色。</p>
+    <div id="f-canvas"></div>
+  </section>
+
+  <section class="sec" id="s-mobile">
+    <div class="sec-h"><h2>⑥ 手機 390</h2><span>結果與桌子畫布</span></div>
+    <div class="pair"><div id="f-m1" class="frame m"></div><div id="f-m2" class="frame m"></div></div>
+  </section>
+
+  <section class="sec" id="s-dl">
+    <div class="sec-h"><h2>⑦ 下載：按鈕與狀態</h2><span>匯出改成「下載」</span></div>
+    <p class="note">「下載」卡片出現在：③分組結果右欄、④⑤座位畫面右欄、⑥手機。可操作：按任一「下載」按鈕，會看到「準備中 → 已下載」的變化（這個預覽頁不會真的存檔）；卡片裡的開關會同步改變下面⑧四份檔案的內容。</p>
+    <div id="dlstates"></div>
+  </section>
+
+  <section class="sec" id="s-files">
+    <div class="sec-h"><h2>⑧ 下載稿：四份檔案</h2><span>分組名單 Word／Excel、座位表 Word／Excel</span></div>
+    <p class="note">下面是檔案打開後的樣子，用目前畫面上的假資料即時畫出來：在④⑤換座位、在③換人、改上方的下載選項，這裡都會跟著變。紙張與試算表一律淺色（印出來與在 Office 裡就是淺色）。</p>
+    <div id="pv"></div>
+  </section>
+</div>
+
+<script>
+(function(){
+  var ic=function(n){return '<svg class="ic" aria-hidden="true"><use href="#i-'+n+'"/></svg>'};
+  /* ── 假資料（全部虛構） ── */
+  var names="王小明 李小華 張小美 陳大文 林小安 黃志豪 吳雅婷 劉冠宇 蔡佳穎 楊承恩 許婉如 鄭宇軒 謝語彤 郭柏翰 洪慧君 曾思穎 邱品睿 廖若涵 賴冠廷 徐子晴 周柏宇 葉芷瑄 蘇冠霖 莊雅涵 江承翰 呂欣怡 何宥辰 蕭語嫣 羅子豪 高苡安 潘柏廷 簡妤潔".split(" ");
+  var sc=names.map(function(_,i){return 50+((i*i*5+i*17+3)%49)});
+  var missing=[5,14,25];
+  var G=8;
+  function snake(){
+    var idx=names.map(function(_,i){return i}).sort(function(a,b){return sc[b]-sc[a]});
+    var gs=[];for(var g=0;g<G;g++)gs.push([]);
+    idx.forEach(function(s,k){var r=Math.floor(k/G),p=k%G;gs[r%2?G-1-p:p].push(s)});
+    return gs;
+  }
+  var groups=snake();
+  var orig=groups.map(function(a){return a.slice()});
+  var origG={};orig.forEach(function(m,g){m.forEach(function(s){origG[s]=g})});
+  var selS=null,confirming=false,curLay='block';
+  var cp=function(g){return g.map(function(a){return a.slice()})};
+  var hist=[{g:cp(groups),d:'分組結果（起點）'}],hi=0;
+  function pushHist(d){hist.length=hi+1;hist.push({g:cp(groups),d:d});if(hist.length>51)hist.shift();hi=hist.length-1}
+  function gotoHist(i){hi=Math.max(0,Math.min(hist.length-1,i));groups=cp(hist[hi].g);selS=null;confirming=false}
+  function adjList(){var l=[];groups.forEach(function(m,g){m.forEach(function(s){if(origG[s]!==g)l.push(s)})});return l}
+  var avg=function(a){return a.reduce(function(t,s){return t+sc[s]},0)/a.length};
+  var gc=function(g){return 'g'+(g%8+1)};
+  var seg=function(name,items,cls){return '<div class="seg '+(cls||'')+'" data-seg="'+name+'" role="tablist">'+items.map(function(it,i){return '<button type="button" role="tab" data-v="'+it[0]+'" aria-selected="'+(i===0)+'">'+it[1]+'</button>'}).join('')+'</div>'};
+  var stepper=function(v,key){var d=function(n){return key?' data-st="'+key+'" data-d="'+n+'"':''};return '<div class="stepper"><button type="button" aria-label="減少"'+d(-1)+'>'+ic('minus')+'</button><output>'+v+'</output><button type="button" aria-label="增加"'+d(1)+'>'+ic('plus')+'</button></div>'};
+  var sw=function(on,id,label){return '<span class="sw"><input type="checkbox" id="'+id+'" aria-label="'+label+'"'+(on?' checked':'')+'></span>'};
+
+  function hdr(tab,step,sub){
+    var steps=['名單','分組方式','結果與座位'];
+    return '<div class="hdr"><div class="brand"><span class="logo" aria-hidden="true"></span>座位小幫手<small>v3.5 稿</small></div>'+
+      '<div class="tabs" role="tablist"><button class="tab" role="tab" aria-selected="'+(tab==='seat')+'" type="button">排座位</button><button class="tab" role="tab" aria-selected="'+(tab==='group')+'" type="button">分組</button></div>'+
+      '<div class="hdr-r"><button class="btn btn-sm" type="button">'+ic('gear')+'設定</button></div></div>'+
+      '<div class="steps">'+steps.map(function(s,i){var c=i+1===step?'on':(i+1<step?'done':'');return '<div class="st '+c+'"><span class="n">'+(i+1<step?ic('check'):(i+1))+'</span>'+s+'</div>'}).join('')+'</div>';
+  }
+  var saved='<span class="badge ok saved">'+ic('check')+'已自動儲存　14:32</span>';
+
+
+  /* ── 下載（Word／Excel）：按鈕、狀態、四份檔案預覽 ── */
+  var D={pS:true,pN:true,avg:true,color:true,coord:true},R={sc:true,cls:'one'},dlSt={},pvSeat='trad',xTab={};
+  var CLS='3A',DATE='2026-11-21';
+  var clsOf=function(i){return i<16?'3A':'3B'},isMulti=function(){return R.cls==='multi'};
+  var CT=function(){return R.cls==='one'?CLS+' ':''};
+  var nmC=function(i,n){return (isMulti()?'<small class="ccl">'+clsOf(i)+'</small> ':'')+n};
+  var nmT=function(i,n){return (isMulti()?clsOf(i)+' ':'')+n};
+  var fname=function(kind,fmt){return (R.cls==='one'?CLS+'_':(isMulti()?'多班_':''))+(kind==='group'?'分組名單':'座位表')+'_'+DATE+(fmt==='w'?'.docx':'.xlsx')};
+  function seatLack(mode){return mode==='tbl'?32-TB.reduce(function(a,x){return a+x.n},0):32-(SC*SD-Object.keys(offSeats).length)}
+  var swd=function(k,label){return '<span class="sw"><input type="checkbox" data-dlopt="'+k+'" aria-label="'+label+'"'+(D[k]?' checked':'')+'></span>'};
+  function fbtn(kind,fmt,st,dis){
+    var w=fmt==='w',nm=fname(kind,fmt);
+    var sub=st==='busy'?'正在產生檔案…':(st==='done'?'已下載　'+nm:nm);
+    var right=st==='busy'?'<span class="spin" aria-hidden="true"></span>':(st==='done'?ic('check'):ic('down'));
+    return '<button type="button" class="fbtn'+(st==='done'?' done':'')+'" data-dlgo="'+kind+':'+fmt+'"'+(dis?' aria-disabled="true"':'')+(st==='busy'?' aria-busy="true"':'')+'><span class="fi '+(w?'w':'x')+'" aria-hidden="true">'+(w?'W':'X')+'</span><b>'+(st==='done'?'再下載一次':'下載 '+(w?'Word 文件':'Excel 活頁簿'))+'</b><span class="fgo">'+right+'</span><small>'+sub+'</small></button>'}
+  function dlInner(kind,mode,force){
+    var isG=kind==='group',lack=isG?0:seatLack(mode),dis=isG?(R.sc&&!D.pS&&!D.pN):lack>0,st=force||{w:dlSt[kind+':w'],x:dlSt[kind+':x']};
+    var h='<div class="card-h"><h3>下載</h3><span class="sp"></span><span class="hint">'+(isG?'分組名單':'座位表')+'</span></div>';
+    if(dis)h+='<div class="alert" style="margin-bottom:10px">'+ic('warn')+'<div>'+(isG?'<b>還沒選要下載哪一頁</b>請至少打開一頁（含成績或不含成績）。':'<b>座位還缺 '+lack+' 個</b>補齊座位後才能下載座位表。')+'</div></div>';
+    h+='<div class="dl">'+fbtn(kind,'w',st.w,dis)+fbtn(kind,'x',st.x,dis)+'</div>';
+    if(st.w==='done'||st.x==='done')h+='<p class="hint">已存到瀏覽器的「下載」資料夾。</p>';
+    if(isG){
+      if(!R.sc)h+='<p class="hint" style="margin:6px 0">名單沒有成績，只會下載一頁（不含成績）。</p>';
+      else{
+        h+='<div class="opt"><div><b>含成績頁</b><span class="hint">老師自己看，有成績與組平均</span></div>'+swd('pS','含成績頁')+'</div>';
+        h+='<div class="opt"><div><b>不含成績頁</b><span class="hint">可發給學生或張貼</span></div>'+swd('pN','不含成績頁')+'</div>';
+        if(D.pS)h+='<div class="opt"><div><b>含成績頁顯示各組平均</b></div>'+swd('avg','顯示各組平均')+'</div>';
+      }
+    }else{
+      h+='<div class="opt"><div><b>保留組別顏色</b><span class="hint">關閉變成黑白灰底，適合黑白印表機</span></div>'+swd('color','保留組別顏色')+'</div>';
+      h+='<div class="opt"><div><b>顯示座標</b><span class="hint">每個座位的「'+(mode==='tbl'?'桌-座':'排-位置')+'」</span></div>'+swd('coord','顯示座標')+'</div>';
+    }
+    h+='<p class="hint" style="margin-top:6px">檔案在你的電腦上產生，名單不會上傳。要 PDF：用 Word 開啟後另存。</p>';
+    return h}
+  var dlCard=function(kind,mode){return '<div class="card" data-dl="'+kind+':'+(mode||'')+'">'+dlInner(kind,mode)+'</div>'};
+  function renderDl(){document.querySelectorAll('[data-dl]').forEach(function(x){var p=x.getAttribute('data-dl').split(':');x.innerHTML=dlInner(p[0],p[1]||null)})}
+
+  /* 檔案內容資料 */
+  var pc=function(g){return D.color?'p'+(g%8+1):'p0'};
+  var sortedG=function(g){return groups[g].slice().sort(function(a,b){return a-b})};
+  function tradCells(){var info=seatInfo(curLay),m={};Object.keys(info.map).forEach(function(k){var it=info.map[k];m[k]=it?{g:it.g,s:groups[it.g][it.k],name:names[groups[it.g][it.k]]}:null});return m}
+  function tblSeats(){
+    var idx=0,out=[];
+    TB.forEach(function(t,i){
+      var n=t.n,a=t.shape==='rect'&&t.one?n:Math.ceil(n/2),b=n-a,A=[],B=[],order=[],k;
+      if(t.shape==='rect'&&t.ord==='face'){for(k=0;k<Math.max(a,b);k++){if(k<a)order.push(['A',k]);if(k<b)order.push(['B',k])}}
+      else{for(k=0;k<a;k++)order.push(['A',k]);for(k=0;k<b;k++)order.push(['B',k])}
+      order.forEach(function(o,s){var id=idx++,g=id<32?Math.floor(id/4):-1,st=id<32?groups[g][id%4]:-1,seat={lbl:(i+1)+'-'+(s+1),seq:s,g:g,s:st,name:st>=0?names[st]:''};(o[0]==='A'?A:B)[o[1]]=seat});
+      out.push({i:i,t:t,top:A,bot:B})});
+    return out}
+  function rangeTxt(){var a=groups.map(avg);return (Math.max.apply(0,a)-Math.min.apply(0,a)).toFixed(1)}
+
+  /* Excel 格子 */
+  var colL=function(i){return String.fromCharCode(65+i)};
+  function xlGrid(rows,cw){
+    var W=0;rows.forEach(function(r){var w=r.reduce(function(a,c){return a+(c.cs||1)},0);if(w>W)W=w});
+    var h='<div class="xl-scroll"><table class="xl"><colgroup><col style="width:36px">';
+    for(var i=0;i<W;i++)h+='<col style="width:'+((cw&&cw[i])||90)+'px">';
+    h+='</colgroup><thead><tr><th class="xo"></th>';
+    for(var j=0;j<W;j++)h+='<th>'+colL(j)+'</th>';
+    h+='</tr></thead><tbody>';
+    rows.forEach(function(r,ri){
+      var w=0;h+='<tr><th class="rh">'+(ri+1)+'</th>';
+      r.forEach(function(c){w+=c.cs||1;h+='<td class="xc '+(c.cls||'')+'"'+((c.cs||1)>1?' colspan="'+c.cs+'"':'')+'>'+(c.t==null?'':c.t)+'</td>'});
+      for(;w<W;w++)h+='<td class="xc"></td>';
+      h+='</tr>'});
+    return h+'</tbody></table></div>'}
+  function xlWin(file,sheets,key){
+    var cur=Math.min(xTab[key]||0,sheets.length-1);
+    return '<div class="win"><div class="wbar"><span class="fi x sm" aria-hidden="true">X</span><b>'+file+'</b></div><div class="light xl-box">'+sheets[cur].html+'</div><div class="xtabs" role="tablist">'+sheets.map(function(s,i){return '<button type="button" role="tab" class="xt'+(i===cur?' on':'')+'" aria-selected="'+(i===cur)+'" data-xt="'+key+':'+i+'">'+s.n+'</button>'}).join('')+'</div></div>'}
+  function wdWin(file,inner,ls){var arr=Array.isArray(inner)?inner:[inner];return '<div class="win"><div class="wbar"><span class="fi w sm" aria-hidden="true">W</span><b>'+file+'</b></div><div class="wcanvas">'+arr.map(function(x){return '<div class="light paper '+(ls?'ls':'pt')+'"><div class="pg">'+x+'</div></div>'}).join('')+'</div></div>'}
+
+  /* 1 分組名單 Word：含成績、不含成績各一頁（沒有成績就只有一頁） */
+  function gPageHtml(withSc,pn,pt){
+    var h='<h4 class="pp-t">'+CT()+'分組名單'+(R.sc?'<span class="pp-tag'+(withSc?' on':'')+'">'+(withSc?'含成績・老師用':'不含成績・可發給學生')+'</span>':'')+'</h4><p class="pp-s">S 型分組・8 組・每組 4 人　'+DATE+' 14:32</p><div class="pp-grid">';
+    groups.forEach(function(m,g){
+      h+='<table class="wt '+pc(g)+'"><tr class="wh"><th colspan="'+(isMulti()?3:2)+'">第 '+(g+1)+' 組</th>'+(withSc?'<th class="r">'+(D.avg?'平均 '+avg(m).toFixed(1):'')+'</th>':'')+'</tr>';
+      sortedG(g).forEach(function(s){h+='<tr>'+(isMulti()?'<td class="cc">'+clsOf(s)+'</td>':'')+'<td class="no">'+(s+1)+'</td><td>'+names[s]+'</td>'+(withSc?'<td class="r">'+sc[s]+'</td>':'')+'</tr>'});
+      h+='</table>'});
+    return h+'</div><p class="pp-n">共 32 人'+(withSc&&D.avg?'　各組平均最高與最低相差 '+rangeTxt()+' 分':'')+'</p><div class="pp-f">座位小幫手 v3.5　第 '+pn+' 頁／共 '+pt+' 頁</div>'}
+  function gPages(){
+    var p=[];if(!R.sc)p.push(false);else{if(D.pS)p.push(true);if(D.pN)p.push(false)}
+    if(!p.length)return ['<p class="pp-s">沒有選要下載的頁面。請在下載選項至少打開一頁。</p>'];
+    return p.map(function(w,i){return gPageHtml(w,i+1,p.length)})}
+  /* 2 分組名單 Excel：含成績＝一人一列＋各組平均小表；不含成績＝每組一欄，只有姓名 */
+  function xGroupList(){
+    var H=[{t:'組別 ▾',cls:'xh'}];if(isMulti())H.push({t:'班級 ▾',cls:'xh'});H.push({t:'座號 ▾',cls:'xh'},{t:'姓名 ▾',cls:'xh'},{t:'成績 ▾',cls:'xh'});
+    var rows=[H],cw=[78].concat(isMulti()?[56]:[]).concat([56,92,64]);
+    groups.forEach(function(m,g){sortedG(g).forEach(function(s){var r=[{t:'第 '+(g+1)+' 組',cls:'xp xg '+pc(g)}];if(isMulti())r.push({t:clsOf(s)});r.push({t:String(s+1),cls:'xr'},{t:names[s]},{t:String(sc[s]),cls:'xr'});rows.push(r)})});
+    if(D.avg){
+      cw.push(24,78,64);
+      rows.forEach(function(r,i){if(i>8)return;r.push({t:'',cls:'xgap'});if(i===0)r.push({t:'組別',cls:'xh'},{t:'平均',cls:'xh'});else r.push({t:'第 '+i+' 組',cls:'xp xg '+pc(i-1)},{t:avg(groups[i-1]).toFixed(1),cls:'xr'})})}
+    return xlGrid(rows,cw)}
+  function xGroupMatrix(){
+    var rows=[groups.map(function(_,g){return {t:'第 '+(g+1)+' 組',cls:'xp xg '+pc(g)}})];
+    for(var k=0;k<4;k++)rows.push(groups.map(function(m,g){return {t:nmT(sortedG(g)[k],names[sortedG(g)[k]])}}));
+    return xlGrid(rows,groups.map(function(){return 104}))}
+  function gSheets(){
+    var o=[];
+    if(!R.sc)o.push({n:'分組名單',html:xGroupMatrix()});
+    else{if(D.pS)o.push({n:'含成績',html:xGroupList()});if(D.pN)o.push({n:'不含成績',html:xGroupMatrix()})}
+    if(!o.length)o.push({n:'（未選）',html:'<p class="hint" style="padding:24px">沒有選要下載的工作表。請在下載選項至少打開一頁。</p>'});
+    return o}
+
+  /* 3 座位表 Word */
+  function wSeatTrad(){
+    var m=tradCells(),gap=aisleOn&&aisleAt<SC,h='<h4 class="pp-t">'+CT()+'座位表</h4><p class="pp-s">傳統座位・'+SC+' 排 × '+SD+' 個位置・'+lays[curLay]+'　'+DATE+'</p><table class="wt sq">',c,d;
+    for(d=SD;d>=1;d--){
+      h+='<tr><td class="lab">位置 '+d+'</td>';
+      for(c=1;c<=SC;c++){
+        var key=c+','+d,it=m[key];
+        if(offSeats[key])h+='<td class="off"></td>';
+        else if(!it)h+='<td class="emp"></td>';
+        else h+='<td class="sc '+pc(it.g)+'"><div class="cl"><span>第'+(it.g+1)+'組</span>'+(D.coord?'<span>'+c+'-'+d+'</span>':'')+'</div><div class="cn">'+nmC(it.s,it.name)+'</div></td>';
+        if(gap&&c===aisleAt)h+='<td class="gap"></td>'}
+      h+='</tr>'}
+    h+='<tr><td class="lab"></td>';
+    for(c=1;c<=SC;c++){h+='<td class="lab">第 '+c+' 排</td>';if(gap&&c===aisleAt)h+='<td class="gap"></td>'}
+    h+='</tr><tr><td class="lab"></td><td class="stg" colspan="'+(SC+(gap?1:0))+'">講台（前方）</td></tr></table>';
+    h+='<div class="pp-leg">'+groups.map(function(_,g){return '<span class="'+pc(g)+'">第 '+(g+1)+' 組</span>'}).join('')+'</div>';
+    return h+'<p class="pp-n">從講台往教室看：左到右是第 1 排到第 '+SC+' 排，由前往後是第 1 到第 '+SD+' 個位置。'+(D.coord?'座位右上角是「排-位置」座標。':'')+'</p><div class="pp-f">座位小幫手 v3.5　第 1 頁／共 1 頁</div>'}
+  function wSeatTbl(){
+    var svg=canvasSVG(-1).replace(/ data-s="[^"]*"| data-t="\d+"| tabindex="0"| role="button"/g,'');
+    var h='<h4 class="pp-t">'+CT()+'座位表</h4><p class="pp-s">分組座位・'+TB.length+' 張桌子　'+DATE+'</p><div class="pp-pic">'+svg+'</div><table class="pp-tl">';
+    tblSeats().forEach(function(x){
+      var all=x.top.concat(x.bot).filter(Boolean).sort(function(a,b){return a.seq-b.seq}),gs={};
+      all.forEach(function(s){if(s.g>=0)gs[s.g+1]=1});
+      h+='<tr><td>桌 '+(x.i+1)+'</td><td>'+(Object.keys(gs).length?'第 '+Object.keys(gs).join('、')+' 組':'空桌')+'</td><td>'+all.filter(function(s){return s.g>=0}).map(function(s){return '<span style="white-space:nowrap">'+nmT(s.s,names[s.s])+(D.coord?'（'+s.lbl+'）':'')+'</span>'}).join('、')+'</td></tr>'});
+    return h+'</table><div class="pp-f">座位小幫手 v3.5　第 1 頁／共 1 頁</div>'}
+
+  /* 4 座位表 Excel */
+  function xSeatTrad(){
+    var m=tradCells(),gap=aisleOn&&aisleAt<SC,W=1+SC+(gap?1:0),rows=[],c,d,cw=[64];
+    rows.push([{t:CT()+'座位表（傳統座位）',cls:'xt',cs:W}]);
+    rows.push([{t:'從講台往教室看：左到右是第 1 排到第 '+SC+' 排，下方是前面',cls:'xs',cs:W}]);
+    for(d=SD;d>=1;d--){
+      var r=[{t:'位置 '+d,cls:'xl'}];
+      for(c=1;c<=SC;c++){
+        var key=c+','+d,it=m[key];
+        if(offSeats[key])r.push({t:'',cls:'xoff'});
+        else if(!it)r.push({t:D.coord?c+'-'+d:'',cls:'xempty'});
+        else r.push({t:'第 '+(it.g+1)+' 組'+(D.coord?'　'+c+'-'+d:'')+'\n'+nmT(it.s,it.name),cls:'xseat '+pc(it.g)});
+        if(gap&&c===aisleAt)r.push({t:'',cls:'xgap'})}
+      rows.push(r)}
+    var lab=[{t:'',cls:'xl'}];
+    for(c=1;c<=SC;c++){lab.push({t:'第 '+c+' 排',cls:'xl'});if(gap&&c===aisleAt)lab.push({t:'',cls:'xgap'})}
+    rows.push(lab);rows.push([{t:'',cls:'xl'},{t:'講台（前方）',cls:'xb',cs:W-1}]);
+    for(c=1;c<=SC;c++){cw.push(92);if(gap&&c===aisleAt)cw.push(18)}
+    return xlGrid(rows,cw)}
+  function xSeatListTrad(){
+    var m=tradCells(),rows=[[{t:'座位（排-位置） ▾',cls:'xh'},{t:'組別 ▾',cls:'xh'},{t:'座號 ▾',cls:'xh'}].concat(isMulti()?[{t:'班級 ▾',cls:'xh'}]:[]).concat([{t:'姓名 ▾',cls:'xh'}])],c,d;
+    for(c=1;c<=SC;c++)for(d=1;d<=SD;d++){var it=m[c+','+d];if(!it)continue;rows.push([{t:c+'-'+d,cls:'xr'},{t:'第 '+(it.g+1)+' 組',cls:'xp xg '+pc(it.g)},{t:String(it.s+1),cls:'xr'}].concat(isMulti()?[{t:clsOf(it.s)}]:[]).concat([{t:it.name}]))}
+    return xlGrid(rows,[120,78,64].concat(isMulti()?[56]:[]).concat([92]))}
+  function xSeatTbl(){
+    var ts=tblSeats(),trs=[],M=[],W=1;
+    ts.forEach(function(x){var r=Math.floor(x.i/tblCols);(trs[r]=trs[r]||[]).push(x)});
+    var cell=function(s){if(!s)return {t:'',cls:'xgap'};if(s.g<0)return {t:D.coord?s.lbl:'',cls:'xempty'};return {t:'第 '+(s.g+1)+' 組'+(D.coord?'　'+s.lbl:'')+'\n'+nmT(s.s,s.name),cls:'xseat '+pc(s.g)}};
+    trs.forEach(function(tr){var w=0;tr.forEach(function(x,j){w+=Math.max(x.top.length,x.bot.length,1)+(j?1:0)});if(w>W)W=w});
+    M.push([{t:CT()+'座位表（分組座位）',cls:'xt',cs:W}]);
+    M.push([{t:'從講台往教室看：下方是前面。圓桌、六邊形桌在表格裡以上下兩排表示',cls:'xs',cs:W}]);
+    for(var r=trs.length-1;r>=0;r--){
+      var a=[],b=[],c=[];
+      trs[r].forEach(function(x,j){
+        var w=Math.max(x.top.length,x.bot.length,1),k,gs={};
+        x.top.concat(x.bot).forEach(function(s){if(s&&s.g>=0)gs[s.g+1]=1});
+        if(j){a.push({t:'',cls:'xgap'});b.push({t:'',cls:'xgap'});c.push({t:'',cls:'xgap'})}
+        for(k=0;k<w;k++)a.push(cell(x.top[k]));
+        b.push({t:'桌 '+(x.i+1)+(Object.keys(gs).length?'（第 '+Object.keys(gs).join('、')+' 組）':''),cls:'xtb',cs:w});
+        for(k=0;k<w;k++)c.push(cell(x.bot[k]))});
+      M.push(a,b,c,[{t:'',cls:'xgap'}])}
+    M.push([{t:'講台（前方）',cls:'xb',cs:W}]);
+    var cw=[];for(var i=0;i<W;i++)cw.push(92);
+    return xlGrid(M,cw)}
+  function xSeatListTbl(){
+    var rows=[[{t:'座位（桌-座） ▾',cls:'xh'},{t:'組別 ▾',cls:'xh'},{t:'座號 ▾',cls:'xh'}].concat(isMulti()?[{t:'班級 ▾',cls:'xh'}]:[]).concat([{t:'姓名 ▾',cls:'xh'}])];
+    tblSeats().forEach(function(x){x.top.concat(x.bot).filter(Boolean).sort(function(a,b){return a.seq-b.seq}).forEach(function(s){if(s.g<0)return;rows.push([{t:s.lbl,cls:'xr'},{t:'第 '+(s.g+1)+' 組',cls:'xp xg '+pc(s.g)},{t:String(s.s+1),cls:'xr'}].concat(isMulti()?[{t:clsOf(s.s)}]:[]).concat([{t:s.name}]))})});
+    return xlGrid(rows,[120,78,64].concat(isMulti()?[56]:[]).concat([92]))}
+
+  function noteCard(title,items){return '<div class="card pv-note"><h3 style="font:700 15px var(--font-display);margin-bottom:8px">'+title+'</h3><ul>'+items.map(function(i){return '<li>'+i+'</li>'}).join('')+'</ul></div>'}
+  function pvBlock(title,sub,win,notes){return '<div class="pvb"><div class="sec-h"><h3>'+title+'</h3><span>'+sub+'</span></div><div class="pair"><div class="pvw">'+win+'</div>'+notes+'</div></div>'}
+  function renderPv(){
+    var el=$('pv');if(!el)return;
+    var trad=pvSeat==='trad',lack=seatLack(trad?'trad':'tbl');
+    var warn=lack>0?'<div class="alert" style="margin-bottom:12px">'+ic('warn')+'<div><b>目前座位還缺 '+lack+' 個</b>實際使用時，這裡的下載按鈕會停用；預覽仍照目前的座位畫出來。</div></div>':'';
+    var ctl='<div class="card" style="margin-bottom:8px"><div class="card-h"><h3>示範：程式對名單的智慧判斷</h3></div><div class="row"><div class="seg" data-pv="rsc" role="tablist"><button type="button" role="tab" data-v="1" aria-selected="'+R.sc+'">名單有成績</button><button type="button" role="tab" data-v="0" aria-selected="'+!R.sc+'">名單沒有成績</button></div><div class="seg" data-pv="rcls" role="tablist"><button type="button" role="tab" data-v="none" aria-selected="'+(R.cls==='none')+'">沒有班級資料</button><button type="button" role="tab" data-v="one" aria-selected="'+(R.cls==='one')+'">同一班（3A）</button><button type="button" role="tab" data-v="multi" aria-selected="'+(isMulti())+'">多個班級（3A、3B）</button></div></div><p class="hint" style="margin-top:8px">程式讀名單時自動判斷：沒有成績就只出不含成績的一份；沒有班級資料或全是同一班，表格不放班級欄；名單有多個班級，就多一欄班級。切換看看下面的檔案怎麼變。</p></div>';
+    el.innerHTML=ctl+
+      pvBlock('1　分組名單：Word',(R.sc?'A4 直式・含成績與不含成績各一頁':'A4 直式・一頁')+'・'+fname('group','w'),wdWin(fname('group','w'),gPages(),false),noteCard('這份檔案的內容',[
+        R.sc?'<b>分成兩頁</b>：第 1 頁含成績（老師自己看，有組平均），第 2 頁不含成績（可發給學生或張貼）。兩頁排法相同，每頁放 8 組；下載選項可只留其中一頁。':'<b>名單沒有成績</b>，所以只產生一頁（不含成績），下載選項也不出現成績相關的開關。',
+        R.cls==='one'?'名單全是同一班（'+CLS+'）：標題與檔名寫班級，表格不放班級欄。':(isMulti()?'<b>名單有多個班級</b>：每組的表格多一欄「班級」；標題不寫單一班級，檔名用「多班」。':'<b>名單沒有班級資料</b>，視為同一班：標題與檔名都不寫班級。'),
+        '每組一張小表，兩欄排；組數多時自動換頁，單一組的表格不會被切開。',
+        '標題列是「第 N 組」，用組別顏色當底色；組號是文字，黑白列印也分得出來。表內依座號排列。',
+        '是普通的 Word 表格，不是圖片，下載後可以直接改字。']))+
+      pvBlock('2　分組名單：Excel',(R.sc?'.xlsx・含成績、不含成績兩個工作表':'.xlsx・一個工作表')+'・'+fname('group','x'),xlWin(fname('group','x'),gSheets(),'gx'),noteCard('這份檔案的內容',[
+        R.sc?'<b>「含成績」</b>：一人一列（組別、'+(isMulti()?'班級、':'')+'座號、姓名、成績），已凍結首列、開啟篩選，可以直接依成績排序；右側小表是各組平均（可關）。':'<b>名單沒有成績</b>，只有一個工作表「分組名單」：每組一欄、只有姓名。',
+        R.sc?'<b>「不含成績」</b>：每組一欄、只有姓名，印出來或貼出去用。':'',
+        isMulti()?'<b>名單有多個班級</b>：有「班級」欄（可篩選）；「不含成績」每個姓名前面接班級。':(R.cls==='one'?'名單全是同一班：不放班級欄。':'<b>名單沒有班級資料</b>，視為同一班：不放班級欄。'),
+        '只有「組別」欄上色；不用合併儲存格，排序與篩選才不會壞。成績存成<b>數字</b>，可以直接做公式。',
+        '點下方的工作表分頁可以切換。'].filter(Boolean)))+
+      '<div class="pvb"><div class="sec-h"><h3>座位表的兩份檔案</h3><span>用右邊切換，看傳統座位或分組座位（桌子）的版本</span></div><div class="row"><div class="seg" data-pv="seat" role="tablist"><button type="button" role="tab" data-v="trad" aria-selected="'+trad+'">傳統座位</button><button type="button" role="tab" data-v="tbl" aria-selected="'+!trad+'">分組座位（桌子）</button></div><span class="hint">預覽依照上面④⑤目前的座位與調整結果畫出來</span></div>'+(warn?'<div style="margin-top:12px">'+warn+'</div>':'')+'</div>'+
+      pvBlock('3　座位表：Word','A4 橫式・'+fname('seat','w'),wdWin(fname('seat','w'),trad?wSeatTrad():wSeatTbl(),true),noteCard('這份檔案的內容',trad?[
+        '<b>A4 橫式一頁</b>，老師視角：講台在最下方，左到右第 1 排到第 N 排，下到上第 1 到第 N 個位置。',
+        '每個座位是一格：左上「第 N 組」、右上「排-位置」座標、中間姓名；格子用組別顏色。',
+        '走道是留空的窄欄；「設為不排」的座位畫斜線底；人比座位少時多的座位留白（虛線框）。',
+        '下方有組別色塊圖例與一行看圖說明。',
+        '是普通 Word 表格，可以直接改名字。']:[
+        '<b>A4 橫式一頁</b>：上面是桌子示意圖（圖片，與畫面一樣：講台在下、桌子依擺放排列、座位上色），下面是每桌的名單。',
+        '每桌一列：桌號、坐哪幾組、座位上的人（括號是「桌-座」座標）。名單是文字，可以改。',
+        '示意圖是圖片，之後調整座位要重新下載；桌子很多時圖會縮小，維持一頁。',
+        '「顯示座標」關掉，圖上的座標與名單的括號都不出現。']))+
+      pvBlock('4　座位表：Excel','.xlsx・兩個工作表',xlWin(fname('seat','x'),[{n:'座位表',html:trad?xSeatTrad():xSeatTbl()},{n:'座位清單',html:trad?xSeatListTrad():xSeatListTbl()}],'sx'),noteCard('這份檔案的內容',trad?[
+        '<b>「座位表」</b>：一格一個座位，欄寬列高已調好；紙張設成橫式、縮放到一頁寬，直接可以印。',
+        '欄是排、列是位置，與畫面方向相同（講台在最下方）；座位格內：第一行組別與座標、第二行姓名。',
+        '「保留組別顏色」關掉變成灰底；「顯示座標」關掉只剩組別。',
+        '<b>「座位清單」</b>：座標、組別、座號、姓名一人一列，已開篩選，找人最快。']:[
+        '<b>「座位表」</b>：每張桌子是一個區塊——上排座位、中間桌名（含坐哪幾組）、下排座位；桌子依擺放分列，講台在最下方。',
+        '圓桌與六邊形桌在 Excel 裡以上下兩排表示（Excel 畫不出圓形），座位順序與畫面相同。',
+        '桌子的格子大小一致、紙張橫式一頁寬。',
+        '<b>「座位清單」</b>：桌-座、組別、座號、姓名一人一列，可排序篩選。']))}
+  function dlStates(){
+    var cap=function(t,b){return '<div class="cap">'+t+(b?' <span class="badge '+b+'">'+(b==='ok'?'完成':b==='info'?'進行中':'停用')+'</span>':'')+'</div>'};
+    var one=function(t,b,inner){return '<div class="card">'+cap(t,b)+inner+'</div>'};
+    return '<div class="dl-states">'+
+      one('預設','',dlBody('group',{}))+
+      one('準備中（約 1 秒）','info',dlBody('group',{w:'busy'}))+
+      one('已下載','ok',dlBody('group',{w:'done'}))+
+      one('座位不足：停用','warn','<div class="alert" style="margin-bottom:10px">'+ic('warn')+'<div><b>座位還缺 3 個</b>補齊座位後才能下載座位表。</div></div><div class="dl">'+fbtn('seat','w','',true)+fbtn('seat','x','',true)+'</div>')+'</div>'}
+  function dlBody(kind,st){return '<div class="dl">'+fbtn(kind,'w',st.w,false)+fbtn(kind,'x',st.x,false)+'</div>'+(st.w==='done'?'<p class="hint">已存到瀏覽器的「下載」資料夾。</p>':'')}
+
+  /* ── ① 名單 ── */
+  var pasteTxt=names.map(function(n,i){return '3A\t'+(i+1)+'\t'+n+'\t'+(missing.indexOf(i)<0?sc[i]:'')}).join('\n');
+  var rows=names.slice(0,7).map(function(n,i){
+    var m=missing.indexOf(i)>=0;
+    return '<tr><td>3A</td><td>'+(i+1)+'</td><td>'+n+'</td><td'+(m?' class="miss">缺':'>'+sc[i])+'</td></tr>'}).join('');
+  var namesHTML=hdr('group',1)+
+  '<div class="body grid2"><div class="col"><div class="card">'+
+    '<div class="card-h"><span class="num">1</span><h3>匯入名單</h3><span class="sp"></span><button class="btn btn-danger btn-sm" type="button">'+ic('trash')+'清除名單</button><p>貼上、匯入檔案或逐筆輸入都可以</p></div>'+
+    seg('src',[['paste','貼上'],['file','匯入檔案'],['hand','逐筆輸入']])+
+    '<div style="margin-top:12px" data-pane="src:paste"><label class="label" for="paste">貼上名單（可從 Excel 直接複製）</label><textarea id="paste" spellcheck="false" aria-label="貼上名單">'+pasteTxt+'</textarea></div>'+
+    '<div style="margin-top:12px" data-pane="src:file" hidden><div class="dz"><b>把 Excel 或 CSV 檔拖到這裡</b><span class="hint">支援 .xlsx、.xls、.csv；第一個工作表會被讀取</span><button class="btn" type="button">選擇檔案</button></div></div>'+
+    '<div style="margin-top:12px" data-pane="src:hand" hidden><div class="tbl-wrap"><table><tr><th>座號</th><th>姓名</th><th>成績（可空白）</th></tr><tr><td>1</td><td><input class="input" aria-label="姓名" value="王小明"></td><td><input class="input sm" aria-label="成績" value="86"></td></tr><tr><td>2</td><td><input class="input" aria-label="姓名" value="李小華"></td><td><input class="input sm" aria-label="成績" value="79"></td></tr><tr><td>3</td><td><input class="input" aria-label="姓名" placeholder="輸入姓名"></td><td><input class="input sm" aria-label="成績" placeholder=""></td></tr></table></div><button class="btn btn-sm" style="margin-top:8px" type="button">'+ic('plus')+'新增一列</button></div>'+
+    '<div style="margin-top:12px">'+
+      '<div class="opt"><div><b>自動加入座號</b><span class="hint">名單沒有座號時，依貼上的順序編 1、2、3…；已有座號就用原本的</span></div>'+sw(true,'swno','自動加入座號')+'</div>'+
+      '<div class="opt"><div><b>第一列是標題</b><span class="hint">自動判斷：有「姓名」「成績」這類字樣就略過這一列</span></div><span class="badge info">自動判斷：沒有標題</span></div></div>'+
+  '</div>'+
+  '<div class="card"><div class="card-h"><h3>程式讀到的內容</h3><span class="sp"></span><span class="badge">共 32 人</span><span class="badge ok">有成績 29 人</span><span class="badge warn">'+ic('warn')+'缺成績 3 人</span></div>'+
+    '<div class="tbl-wrap"><table><thead><tr>'+['班級','座號','姓名','成績'].map(function(c,i){return '<th><select class="sel" aria-label="第'+(i+1)+'欄是">'+['班級','座號','姓名','成績','略過'].map(function(o){return '<option'+(o===c?' selected':'')+'>'+o+'</option>'}).join('')+'</select></th>'}).join('')+'</tr></thead><tbody>'+rows+'<tr><td colspan="4" class="hint">…另 25 人</td></tr></tbody></table></div>'+
+    '<p class="hint" style="margin-top:8px">欄位是程式自動判斷的；判斷錯了，直接改表頭的下拉選單。</p>'+
+    '<div class="btn-row" style="margin-top:14px;justify-content:flex-end"><button class="btn btn-primary btn-lg" type="button">下一步：選擇分組方式</button></div></div>'+
+  '</div>'+
+  '<aside class="col"><div class="card"><div class="card-h"><h3>可以直接貼的格式</h3></div><div class="codes">'+
+    '<div><b>只有姓名</b><code>王小明\n李小華</code></div>'+
+    '<div><b>座號、姓名</b><code>1\t王小明\n2\t李小華</code></div>'+
+    '<div><b>班級、座號、姓名</b><code>3A\t1\t王小明</code></div>'+
+    '<div><b>班級、座號、姓名、成績</b><code>3A\t1\t王小明\t86</code></div></div>'+
+    '<hr><p class="hint">成績沒有也能貼。要用「按成績分組」時，程式會請你補輸入缺的成績。</p></div></aside></div>';
+
+  /* ── ② 分組方式 ── */
+  function mini(rowsArr,cls,note){return '<div class="mini">'+rowsArr.map(function(r,i){return '<div class="g'+(i+1)+'">'+r.map(function(x){return '<i>'+x+'</i>'}).join('')+'</div>'}).join('')+'<em>'+note+'</em></div>'}
+  function cmpItem(d,t,last){return '<li'+(last?' class="cur"':'')+'><span><b>'+d+'</b>　'+t+'</span>'+(last?'<span class="badge info" style="flex:none">上一次</span>':'')+'<button class="btn btn-sm" type="button" style="flex:none">查看分組</button></li>'}
+  function dealSVG(kind){
+    var A={snake:[[1,6,7,12],[2,5,8,11],[3,4,9,10]],round:[[1,4,7,10],[2,5,8,11],[3,6,9,12]],avg:[[1,5,8,12],[2,4,9,11],[3,6,7,10]]}[kind];
+    var V={snake:['79.3','78.3','79.0'],round:['83.0','78.3','75.3'],avg:['78.8','78.8','79.0']}[kind];
+    var pos={};A.forEach(function(col,c){col.forEach(function(rk,r){pos[rk]={c:c,x:4+c*72+32,y:44+r*30}})});
+    var o='<svg class="deal" viewBox="0 0 224 188" role="img" aria-label="發牌方向示意">';
+    A.forEach(function(_,c){o+='<g class="g'+(c+1)+'"><rect x="'+(4+c*72)+'" y="4" width="64" height="146" rx="8" style="fill:var(--gs);stroke:var(--gl);stroke-width:1.5"/><text x="'+(36+c*72)+'" y="20" style="fill:var(--gi);font:700 12px var(--font);text-anchor:middle">第 '+(c+1)+' 組</text><line x1="'+(10+c*72)+'" x2="'+(62+c*72)+'" y1="28" y2="28" style="stroke:var(--gl)"/></g>'});
+    if(kind!=='avg')for(var k=1;k<12;k++){
+      var a=pos[k],b=pos[k+1],dx=b.x-a.x,dy=b.y-a.y,L=Math.sqrt(dx*dx+dy*dy),ux=dx/L,uy=dy/L,jump=kind==='round'&&b.c<a.c;
+      o+='<line class="arrow'+(jump?' jump':'')+'" x1="'+(a.x+ux*13).toFixed(1)+'" y1="'+(a.y+uy*13).toFixed(1)+'" x2="'+(b.x-ux*15).toFixed(1)+'" y2="'+(b.y-uy*15).toFixed(1)+'" marker-end="url(#arw)"/>'}
+    A.forEach(function(col,c){col.forEach(function(rk,r){o+='<g class="g'+(c+1)+'"><circle cx="'+pos[rk].x+'" cy="'+pos[rk].y+'" r="12" style="fill:var(--surface);stroke:var(--gi);stroke-width:1.5"/><text x="'+pos[rk].x+'" y="'+(pos[rk].y+1)+'" style="fill:var(--gi);font:700 12px var(--font);text-anchor:middle;dominant-baseline:central">'+rk+'</text></g>'})});
+    V.forEach(function(v,c){o+='<text x="'+(36+c*72)+'" y="168" style="fill:var(--text);font:700 13px var(--font);text-anchor:middle">'+v+'</text><text x="'+(36+c*72)+'" y="183" style="fill:var(--text-3);font:500 10px var(--font);text-anchor:middle">組平均</text>'});
+    return o+'</svg>'}
+  var methodHTML=hdr('group',2)+'<div class="body"><div class="card">'+
+    '<div class="card-h"><span class="num">2</span><h3>分組方式</h3><span class="sp"></span><span class="badge">32 人</span><p>先選方式，再按開始</p></div>'+
+    seg('meth',[['rand','隨機分組'],['score','按成績分組']])+
+    '<div style="margin-top:16px" data-pane="meth:rand">'+
+      '<div class="opt"><div><b>分組依據</b><span class="hint">32 人 → 8 組，每組 4 人（剛好整除）</span></div>'+seg('by',[['n','分幾組'],['k','每組幾人']])+stepper(8)+'</div>'+
+      '<div class="opt"><div><b>避免與上次同組</b><span class="hint">盡量讓每一組都換新夥伴；做不到時，結果頁會告訴你重複幾對。</span></div>'+sw(true,'swavoid','避免與上次同組')+'</div>'+
+      '<div class="opt" style="padding-top:0;border-top:0"><div><span class="label" style="margin:0">比對範圍</span><span class="hint">會和下面這些分組比對，避免再次同組</span></div>'+seg('cmp',[['1','上一次'],['3','最近 3 次']])+'</div>'+
+      '<div data-pane="cmp:1"><ul class="hist">'+cmpItem('11/14　13:05','隨機分組・8 組・32 人',true)+'</ul></div>'+
+      '<div data-pane="cmp:3" hidden><ul class="hist">'+cmpItem('11/14　13:05','隨機分組・8 組・32 人',true)+cmpItem('11/12　09:40','S 型・8 組・32 人')+cmpItem('11/07　10:15','隨機分組・8 組・32 人')+'</ul></div>'+
+      '<div class="btn-row" style="margin-top:8px;justify-content:flex-end"><button class="btn btn-primary" type="button">'+ic('shuffle')+'開始隨機分組</button></div>'+
+    '</div>'+
+    '<div style="margin-top:16px" data-pane="meth:score" hidden>'+
+      '<span class="label">按成績的分法</span><div class="modes">'+
+        '<label class="mode"><input type="radio" name="mode" checked><b>S 型分組</b>'+dealSVG('snake')+'<p>蛇形發牌：第 1 輪由第 1 組往右發，第 2 輪掉頭從最後一組往回發，依此類推。每組強弱搭配，最常用。</p></label>'+
+        '<label class="mode"><input type="radio" name="mode"><b>成績高到低輪流分組</b>'+dealSVG('round')+'<p>成績由高到低，一人發一組。每發完一輪（虛線）再回到第 1 組。第 1 組每輪都先拿到較高分，平均會偏高。</p></label>'+
+        '<label class="mode"><input type="radio" name="mode"><b>總平均一致</b>'+dealSVG('avg')+'<p>先 S 型發牌，再互換個別同學，讓各組平均盡量相同（此例差 0.2 分）。</p></label></div>'+
+      '<div class="opt"><div><b>分幾組</b><span class="hint">32 人 → 8 組，每組 4 人</span></div>'+stepper(8)+'</div>'+
+      '<div id="missBox"><div class="alert" id="missAlert">'+ic('warn')+'<div><b>有 3 位同學還沒有成績</b>按成績分組需要每個人都有成績。請在下面補上，或選擇略過。'+
+        '<div style="display:grid;gap:8px;margin-top:10px;max-width:360px">'+missing.map(function(i){return '<div class="fixrow"><span>'+(i+1)+' 號　'+names[i]+'</span><input class="input miss-in" inputmode="numeric" aria-label="'+names[i]+'的成績" placeholder="0–100"></div>'}).join('')+'</div>'+
+        '<p class="hint" style="margin-top:8px;color:inherit">試試看：三格都填 0–100 的數字，警示會變成綠色。</p></div></div></div>'+
+      '<div class="btn-row" style="margin-top:14px;justify-content:space-between;align-items:center"><span class="hint" id="startHint">補完成績後才能開始</span><button class="btn btn-primary" type="button" id="startBtn" aria-disabled="true">開始按成績分組</button></div>'+
+    '</div></div></div>';
+
+  /* ── ③ 結果 ── */
+  function gcardsInner(){return groups.map(function(m,g){
+    return '<div class="gcard '+gc(g)+'"><div class="gh"><span class="gnum">'+(g+1)+'</span>第 '+(g+1)+' 組<span class="avg">平均 '+avg(m).toFixed(1)+'</span></div><ul>'+
+      m.map(function(s,k){var ad=origG[s]!==g,se=selS&&selS.g===g&&selS.k===k;return '<li class="'+(se?'sel':'')+'" data-s="'+g+','+k+'"><span class="no">'+(s+1)+'</span><span class="nm">'+names[s]+(ad?' <span class="adj-tx">已調整</span>':'')+'</span><span class="sc">'+sc[s]+'</span></li>'}).join('')+'</ul></div>'}).join('')}
+  function gcards(){return '<div class="gcards" data-gcards>'+gcardsInner()+'</div>'}
+  function adjBadge(){var n=adjList().length;return n?'<span class="badge warn">'+ic('warn')+'已手動調整 '+n+' 人</span>':'<span class="badge">與分組結果相同</span>'}
+  function membersInner(){
+    var n=adjList().length,pick=selS?names[groups[selS.g][selS.k]]:null;
+    var h='<div class="card-h"><h3>各組名單</h3><span class="sp"></span><span data-adjbadge>'+adjBadge()+'</span><p>點一位同學，再點另一位，兩人互換（座位與組別一起換）</p></div>';
+    h+='<div class="status'+(pick?'':' idle')+'">'+(pick?'已選 <b>'+pick+'</b>（第 '+(selS.g+1)+' 組）。再點另一位同學就互換。<button class="btn btn-sm" type="button" data-act="cancel" style="margin-left:8px">取消選取</button>':'目前沒有選取任何人')+'</div>';
+    h+=groups.map(function(m,g){return '<div class="mrow '+gc(g)+'"><span class="gnum">'+(g+1)+'</span><div class="mnames">'+m.map(function(s,k){var ad=origG[s]!==g,se=selS&&selS.g===g&&selS.k===k;return '<button type="button" class="mn'+(se?' sel':'')+(ad?' adj':'')+'" data-s="'+g+','+k+'">'+names[s]+(ad?'<i class="adj-dot" aria-label="已手動調整"></i>':'')+'</button>'}).join('')+'</div></div>'}).join('');
+    h+='<div class="rest"><button class="btn btn-sm" type="button" data-act="undo"'+(hi>0?'':' aria-disabled="true"')+'>'+ic('rot')+'復原'+(hi>0?'（'+hi+' 步）':'')+'</button><button class="btn btn-sm" type="button" data-act="redo"'+(hi<hist.length-1?'':' aria-disabled="true"')+'>重做'+(hi<hist.length-1?'（'+(hist.length-1-hi)+' 步）':'')+'</button><span class="hint">最多保留 50 步</span></div>';
+    h+='<ol class="hist hlist" aria-label="調整紀錄">'+hist.map(function(_,i){return i}).reverse().map(function(i){return '<li'+(i===hi?' class="cur"':'')+'><button type="button" class="hbtn" data-act="jump" data-i="'+i+'"><b class="hn">'+(i===0?'起點':'第 '+i+' 步')+'</b><span>'+hist[i].d+'</span>'+(i===hi?'<span class="badge info">目前</span>':'')+'</button></li>'}).join('')+'</ol>';
+    h+='<div class="rest">'+(confirming?'<div class="confirm"><span>確定要把 '+n+' 人還原成分組結果嗎？這一步也能再復原。</span><button class="btn btn-sm btn-danger" type="button" data-act="restore-yes">確定還原</button><button class="btn btn-sm" type="button" data-act="restore-no">取消</button></div>':'<button class="btn" type="button" data-act="restore"'+(n?'':' aria-disabled="true"')+'>還原人工調整的分組</button><span class="hint">'+(n?'一次回到分組結果的原樣':'還沒有手動調整')+'</span>')+'</div>';
+    return h}
+  var membersCard=function(){return '<div class="card" data-members>'+membersInner()+'</div>'};
+  function statBars(){var a=groups.map(avg),mn=Math.min.apply(0,a),mx=Math.max.apply(0,a);
+    return '<div class="bars">'+a.map(function(v,g){return '<div class="bar '+gc(g)+'"><span class="gnum" style="width:22px;height:22px;font-size:11px">'+(g+1)+'</span><div class="t"><i style="width:'+v+'%"></i></div><span class="v">'+v.toFixed(1)+'</span></div>'}).join('')+'</div><p class="hint" style="margin-top:8px">最高與最低相差 <b>'+(mx-mn).toFixed(1)+'</b> 分</p>'}
+  function histCard(){return '<div class="card"><div class="card-h"><h3>分組紀錄</h3><span class="sp"></span><span class="hint">自動保留最近 10 筆</span></div><ul class="hist">'+
+    '<li class="cur"><span>今天 14:32　S 型・8 組</span><b>目前</b></li><li><span>今天 14:20　隨機・8 組</span><button class="btn btn-sm" type="button">載入</button></li><li><span>11/14 13:05　隨機・8 組</span><button class="btn btn-sm" type="button">載入</button></li></ul></div>'}
+  function tabs3(cur){
+    var a=cur==='r';
+    return '<div class="row" style="justify-content:space-between"><div class="seg" role="tablist"><button type="button" role="tab" aria-selected="'+a+'">分組結果</button><button type="button" role="tab" aria-selected="'+!a+'">座位安排</button></div>'+saved+'</div>'}
+  var resultHTML=hdr('group',3)+'<div class="body grid2"><div class="col">'+tabs3('r')+
+    '<div class="card" id="rc"><div class="card-h"><h3>S 型分組結果</h3><span class="badge info">按成績・8 組・每組 4 人</span><span data-adjbadge>'+adjBadge()+'</span><span class="sp"></span><label class="row" style="gap:8px;font-size:13px;font-weight:700">顯示成績 '+sw(true,'swsc','顯示成績')+'</label></div>'+gcards()+'<p class="hint" style="margin-top:10px">點一位同學再點另一位可以互換；座位畫面的調整也會同步到這裡，右欄統計會一起更新。</p></div>'+
+    '<div class="btn-row" style="justify-content:space-between"><button class="btn" type="button">'+ic('shuffle')+'重新分組</button><button class="btn btn-primary" type="button">下一步：安排座位</button></div></div>'+
+    '<aside class="col"><div class="card"><div class="card-h"><h3>各組平均</h3></div><div data-bars>'+statBars()+'</div></div>'+
+    '<div class="card"><div class="card-h"><h3>與上次同組</h3><span class="sp"></span><span class="badge ok">'+ic('check')+'沒有重複</span></div><p class="hint">與 11/14 的分組比對，沒有任何兩人再度同組。</p></div>'+dlCard('group')+histCard()+'</aside></div>';
+
+  /* ── ④ 傳統座位 ── */
+  var lays={block:'2×2 方塊',row:'橫向一段',col:'縱向一段'};
+  var SC=8,SD=4,aisleOn=true,aisleAt=4,offSeats={},seatTool='swap';
+  function seatOrder(lay){var o=[],cc,dd;
+    if(lay==='block'){for(var tr=0;tr<SD;tr+=2)for(var tc=0;tc<SC;tc+=2)for(dd=tr;dd<Math.min(tr+2,SD);dd++)for(cc=tc;cc<Math.min(tc+2,SC);cc++)o.push([cc+1,dd+1])}
+    else if(lay==='row'){for(dd=0;dd<SD;dd++)for(cc=0;cc<SC;cc++)o.push([cc+1,dd+1])}
+    else{for(cc=0;cc<SC;cc++)for(dd=0;dd<SD;dd++)o.push([cc+1,dd+1])}
+    return o}
+  function seatInfo(lay){var map={},i=0,avail=0;seatOrder(lay).forEach(function(p){var key=p[0]+','+p[1];if(offSeats[key])return;avail++;map[key]=i<32?{g:Math.floor(i/4),k:i%4}:null;i++});return {map:map,avail:avail}}
+  function seatGrid(lay){
+    var info=seatInfo(lay),gcol=function(c){return 2+(c-1)+(aisleOn&&aisleAt<SC&&c>aisleAt?1:0)},grow=function(d){return 2+(SD-d)};
+    var tpl=['26px'];for(var c=1;c<=SC;c++){tpl.push('minmax(0,1fr)');if(aisleOn&&c===aisleAt&&aisleAt<SC)tpl.push('14px')}
+    var h='<div class="room"><div class="seatgrid" style="grid-template-columns:'+tpl.join(' ')+'">';
+    h+='<div class="lbl" style="grid-column:1;grid-row:1">位置</div>';
+    for(var c1=1;c1<=SC;c1++)h+='<div class="lbl" style="grid-column:'+gcol(c1)+';grid-row:'+(SD+2)+'">第'+c1+'排</div>';
+    for(var d1=1;d1<=SD;d1++)h+='<div class="lbl" style="grid-column:1;grid-row:'+grow(d1)+'">'+d1+'</div>';
+    for(var d2=1;d2<=SD;d2++)for(var c2=1;c2<=SC;c2++){
+      var key=c2+','+d2,pos='grid-column:'+gcol(c2)+';grid-row:'+grow(d2),co='<span class="co">'+c2+'-'+d2+'</span>';
+      if(offSeats[key]){h+='<div class="cell off" data-o="'+key+'" style="'+pos+'">'+co+'</div>';continue}
+      var it=info.map[key];
+      if(!it){h+='<div class="cell empty" data-o="'+key+'" style="'+pos+'">'+co+'</div>';continue}
+      var m=groups[it.g][it.k],se=selS&&selS.g===it.g&&selS.k===it.k,ad=origG[m]!==it.g;
+      h+='<div class="cell '+gc(it.g)+(se?' sel':'')+'" role="button" tabindex="0" data-o="'+key+'" data-s="'+it.g+','+it.k+'" style="'+pos+'"><span class="gn">'+(it.g+1)+'</span>'+co+'<span class="nm">'+names[m]+'</span>'+(ad?'<i class="adj-dot" aria-label="已手動調整"></i>':'')+'</div>'}
+    h+='</div><div class="board">講台（前方）</div></div>'+
+      '<div class="legend">'+groups.map(function(_,g){return '<span class="chip '+gc(g)+'"><span class="gnum">'+(g+1)+'</span>第 '+(g+1)+' 組</span>'}).join('')+'<span class="chip" style="background:var(--sunken);color:var(--text-2);border-color:var(--line-2)"><i class="adj-dot" style="position:static"></i>手動調整過</span></div>'+
+      '<p class="hint" style="margin-top:8px">從講台往教室看：左到右是第 1 排到第 '+SC+' 排，由前往後是第 1 到第 '+SD+' 個位置。每個座位右上角的「排-位置」是座標，例如 3-2＝第 3 排第 2 個位置。</p>';
+    return h}
+  var layTip={block:'每組 4 人坐成 2×2，前後左右都是組員',row:'每組坐在同一個位置、左右相鄰的幾排',col:'每組坐在同一排、前後相鄰'};
+  function roomInner(){
+    var offN=Object.keys(offSeats).length,avail=SC*SD-offN,lack=32-avail;
+    var segLay='<div class="seg" id="layBox">'+['block','row','col'].map(function(k){return '<button type="button" data-lay="'+k+'" aria-selected="'+(k===curLay)+'" title="'+layTip[k]+'">'+lays[k]+'</button>'}).join('')+'</div>';
+    var segTool='<div class="seg" data-tool><button type="button" data-v="swap" aria-selected="'+(seatTool==='swap')+'">換人</button><button type="button" data-v="off" aria-selected="'+(seatTool==='off')+'">設為不排</button></div>';
+    return '<div class="cfg-i"><span class="label">排數</span>'+stepper(SC,'cols')+'</div>'+
+      '<div class="cfg-i"><span class="label">每排位置數</span>'+stepper(SD,'depth')+'</div>'+
+      '<div class="cfg-i"><span class="label">走道</span><div class="row" style="gap:8px">'+sw(aisleOn,'swaisle','走道')+(aisleOn?'<span class="hint">第</span>'+stepper(aisleAt,'aisle')+'<span class="hint">排之後</span>':'')+'</div></div>'+
+      '<div class="cfg-i"><span class="label">同組怎麼坐</span>'+segLay+'</div>'+
+      '<div class="cfg-i"><span class="label">點座位時</span>'+segTool+'</div>'+
+      '<div class="cfg-i cfg-sum"><span class="badge '+(lack>0?'warn':'ok')+'">'+(lack>0?ic('warn')+'座位 '+avail+'，還缺 '+lack+' 個':ic('check')+'座位 '+avail+'／人數 32')+'</span>'+(offN?'<span class="hint">不排 '+offN+' 個</span>':'')+'</div>'+
+      '<p class="hint cfg-tip">'+layTip[curLay]+'。'+(seatTool==='off'?'現在點座位會把它設成不排（再點一次取消）。':'現在點兩位同學會互換。')+'</p>'}
+  function layBtn(key,sub,svg){return '<button type="button" data-lay="'+key+'" aria-pressed="'+(key==='block')+'">'+svg+'<span><b>'+lays[key]+'</b><small>'+sub+'</small></span></button>'}
+  var icB='<svg class="lay-ic" viewBox="0 0 48 34"><rect x="2" y="2" width="9" height="9" rx="2"/><rect x="12" y="2" width="9" height="9" rx="2"/><rect x="2" y="12" width="9" height="9" rx="2"/><rect x="12" y="12" width="9" height="9" rx="2"/><rect x="26" y="2" width="9" height="9" rx="2"/><rect x="36" y="2" width="9" height="9" rx="2"/><rect x="26" y="12" width="9" height="9" rx="2"/><rect x="36" y="12" width="9" height="9" rx="2"/></svg>';
+  var icR='<svg class="lay-ic" viewBox="0 0 48 34"><rect x="2" y="2" width="9" height="9" rx="2"/><rect x="12" y="2" width="9" height="9" rx="2"/><rect x="22" y="2" width="9" height="9" rx="2"/><rect x="32" y="2" width="9" height="9" rx="2"/><rect x="2" y="14" width="9" height="9" rx="2" opacity=".55"/><rect x="12" y="14" width="9" height="9" rx="2" opacity=".55"/><rect x="22" y="14" width="9" height="9" rx="2" opacity=".55"/><rect x="32" y="14" width="9" height="9" rx="2" opacity=".55"/></svg>';
+  var icC='<svg class="lay-ic" viewBox="0 0 48 34"><rect x="2" y="2" width="9" height="9" rx="2"/><rect x="2" y="12" width="9" height="9" rx="2"/><rect x="2" y="22" width="9" height="9" rx="2"/><rect x="16" y="2" width="9" height="9" rx="2" opacity=".55"/><rect x="16" y="12" width="9" height="9" rx="2" opacity=".55"/><rect x="16" y="22" width="9" height="9" rx="2" opacity=".55"/></svg>';
+  function seatModeSeg(sel){return '<div class="row" style="justify-content:space-between"><div class="seg" role="tablist" data-seg="smode"><button type="button" role="tab" data-v="trad" aria-selected="'+(sel==='trad')+'">傳統座位</button><button type="button" role="tab" data-v="tbl" aria-selected="'+(sel==='tbl')+'">分組座位</button></div>'+saved+'</div>'}
+  var seatHTML=hdr('group',3)+'<div class="body"><div class="row" style="justify-content:space-between"><div class="seg" role="tablist"><button type="button" role="tab" aria-selected="false">分組結果</button><button type="button" role="tab" aria-selected="true">座位安排</button></div>'+saved+'</div>'+
+    '<div class="body grid2" style="padding:0"><div class="col"><div class="card"><div class="card-h"><h3>座位配置</h3><span data-adjbadge>'+adjBadge()+'</span><span class="sp"></span>'+
+      '<div class="seg" role="tablist" data-seg="smode"><button type="button" role="tab" data-v="trad" aria-selected="true">傳統座位</button><button type="button" role="tab" data-v="tbl" aria-selected="false">分組座位</button></div></div>'+
+      '<div data-pane="smode:trad"><div class="cfg" data-roompanel>'+roomInner()+'</div><div id="seatArea">'+seatGrid('block')+'</div></div>'+
+      '<div data-pane="smode:tbl" hidden><div class="alert info">'+ic('check')+'<div><b>分組座位請看下一張稿（⑤）</b>桌子數、每桌座位數、擺放位置都在那裡設定。</div></div></div></div>'+
+      '<div class="btn-row" style="justify-content:space-between"><button class="btn" type="button">'+ic('shuffle')+'重排座位</button></div></div>'+
+    '<aside class="col">'+membersCard()+dlCard('seat','trad')+'</aside></div></div>';
+
+  /* ── ⑤ 桌子畫布 ── */
+  var SW=46,SH=28,TG=6;
+  function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v))}
+  var gShape='rect',gSeats=8,gVert=false,gOne=false,gOrd='side',tblCols=2,preset='long',TB=[];
+  var canvasState={sel:0};
+  var PRESETS={island:{name:'方桌',sub:'4 人 × 8 張',count:8,seats:4,cols:4,shape:'rect'},long:{name:'長桌',sub:'8 人 × 4 張',count:4,seats:8,cols:2,shape:'rect'},hex:{name:'六邊形桌',sub:'6 人 × 6 張',count:6,seats:6,cols:3,shape:'hex'}};
+  var advOpen=false,selOpen=false;
+  function mk(){return {n:gSeats,shape:gShape,vert:gVert,one:gOne,ord:gOrd}}
+  function setCount(n){while(TB.length<n)TB.push(mk());TB.length=n}
+  function applyPreset(k){var q=PRESETS[k];preset=k;gShape=q.shape;gSeats=q.seats;gVert=false;gOne=false;gOrd='side';tblCols=q.cols;TB=[];setCount(q.count);canvasState.sel=0}
+  applyPreset('long');
+  function tbox(t){
+    if(t.shape==='round'){var rt=22+t.n*2,d=Math.max(rt+22,t.n*8);return {w:2*(d+26),h:2*(d+26),rt:rt,d:d}}
+    if(t.shape==='hex'){var rh=32,dh=Math.max(rh*0.866+28,t.n*8);return {w:2*(dh+26),h:2*(dh+26),rt:rh,d:dh}}
+    var a=t.one?t.n:Math.ceil(t.n/2),b=t.one?0:t.n-a;
+    if(!t.vert)return {w:a*(SW+TG)+TG,h:SH+4+34+(b?4+SH:0),a:a,b:b};
+    return {w:SW+4+34+(b?4+SW:0),h:a*(SH+TG)+TG,a:a,b:b}}
+  function layout(){
+    var rows=[];TB.forEach(function(t,i){var r=Math.floor(i/tblCols);(rows[r]=rows[r]||[]).push({i:i,t:t,b:tbox(t)})});
+    var GX=28,GY=22,PAD=16,rowW=[],rowH=[];
+    rows.forEach(function(r,ri){rowW[ri]=r.reduce(function(a,x){return a+x.b.w},0)+GX*(r.length-1);rowH[ri]=Math.max.apply(0,r.map(function(x){return x.b.h}))});
+    var W=Math.max(560,Math.max.apply(0,rowW)+2*PAD),body=rowH.reduce(function(a,h){return a+h},0)+GY*(rows.length-1),H=PAD+body+GY+20+PAD;
+    var y=H-PAD-20-GY,items=[];
+    rows.forEach(function(r,ri){var top=y-rowH[ri],x=(W-rowW[ri])/2;r.forEach(function(it){items.push({i:it.i,t:it.t,b:it.b,x:x,y:top+(rowH[ri]-it.b.h)/2});x+=it.b.w+GX});y=top-GY});
+    return {items:items,W:W,H:H}}
+  function seatEl(x,y,g,k,lbl){
+    var m=groups[g]&&groups[g][k],se=selS&&selS.g===g&&selS.k===k,ad=m!=null&&origG[m]!==g;
+    return '<g class="'+gc(g)+' sg'+(se?' seat-sel':'')+'" data-s="'+g+','+k+'" tabindex="0" role="button" aria-label="第'+(g+1)+'組 '+(m==null?'':names[m])+'"><rect class="seat" x="'+x+'" y="'+y+'" width="'+SW+'" height="'+SH+'" rx="6"/><text class="seat-t" x="'+(x+SW/2)+'" y="'+(y+SH/2+3)+'">'+(m==null?'':names[m])+'</text><text class="co-t" x="'+(x+SW-3)+'" y="'+(y+8)+'">'+lbl+'</text>'+(ad?'<circle class="adj-c" cx="'+(x+5)+'" cy="'+(y+5)+'" r="4"/>':'')+'</g>'}
+  function seatAt(x,y,id,lbl){
+    if(id<32)return seatEl(x,y,Math.floor(id/4),id%4,lbl);
+    return '<g><rect class="seat-e" x="'+x+'" y="'+y+'" width="'+SW+'" height="'+SH+'" rx="6"/><text class="co-t" x="'+(x+SW-3)+'" y="'+(y+8)+'">'+lbl+'</text></g>'}
+  function seatOrderPut(A,B,ord,put){
+    if(ord==='face'){for(var k=0;k<Math.max(A.length,B.length);k++){if(A[k])put(A[k][0],A[k][1]);if(B[k])put(B[k][0],B[k][1])}}
+    else{A.forEach(function(q){put(q[0],q[1])});B.forEach(function(q){put(q[0],q[1])})}}
+  function canvasSVG(sel){
+    var L=layout(),out='',selBox='',idx=0;
+    L.items.forEach(function(it){
+      var t=it.t,b=it.b,i=it.i,x=it.x,y=it.y,body='',seq=0,gs={};
+      function put(sx,sy){var id=idx++;if(id<32)gs[Math.floor(id/4)+1]=1;body+=seatAt(sx,sy,id,(i+1)+'-'+(++seq))}
+      var lx,ly;
+      if(t.shape==='round'||t.shape==='hex'){
+        var cx=x+b.w/2,cy=y+b.h/2;lx=cx;ly=cy;
+        if(t.shape==='round')body+='<circle class="t-rect" cx="'+cx+'" cy="'+cy+'" r="'+b.rt+'"/>';
+        else{var pts=[];for(var h6=0;h6<6;h6++){var ha=(-90+h6*60)*Math.PI/180;pts.push((cx+b.rt*Math.cos(ha)).toFixed(1)+','+(cy+b.rt*Math.sin(ha)).toFixed(1))}body+='<polygon class="t-rect" points="'+pts.join(' ')+'" stroke-linejoin="round"/>'}
+        for(var s1=0;s1<t.n;s1++){var ang=(t.shape==='hex'?-90+360/t.n*(s1+0.5):-90+s1*360/t.n)*Math.PI/180;put(cx+b.d*Math.cos(ang)-SW/2,cy+b.d*Math.sin(ang)-SH/2)}
+      }else if(!t.vert){
+        var ty=y+SH+4;lx=x+b.w/2;ly=ty+17;
+        body+='<rect class="t-rect" x="'+x+'" y="'+ty+'" width="'+b.w+'" height="34" rx="6"/>';
+        var tops=[],bots=[];
+        for(var k1=0;k1<b.a;k1++)tops.push([x+TG+k1*(SW+TG),y]);
+        for(var k2=0;k2<b.b;k2++)bots.push([x+TG+k2*(SW+TG),ty+34+4]);
+        seatOrderPut(tops,bots,t.ord,put);
+      }else{
+        var tx=x+SW+4;lx=tx+17;ly=y+b.h/2;
+        body+='<rect class="t-rect" x="'+tx+'" y="'+y+'" width="34" height="'+b.h+'" rx="6"/>';
+        var lefts=[],rights=[];
+        for(var k3=0;k3<b.a;k3++)lefts.push([x,y+TG+k3*(SH+TG)]);
+        for(var k4=0;k4<b.b;k4++)rights.push([tx+34+4,y+TG+k4*(SH+TG)]);
+        seatOrderPut(lefts,rights,t.ord,put);
+      }
+      var gl=Object.keys(gs);
+      body+='<text class="t-lab" x="'+lx+'" y="'+(ly+1)+'">桌 '+(i+1)+(gl.length&&t.shape==='rect'&&!t.vert&&b.w>=160?'　第 '+gl.join('、')+' 組':'')+'</text>';
+      out+='<g class="tg" data-t="'+i+'"><rect x="'+x+'" y="'+y+'" width="'+b.w+'" height="'+b.h+'" fill="transparent"/>'+body+'</g>';
+      if(i===sel)selBox='<rect class="sel-box" x="'+(x-4)+'" y="'+(y-4)+'" width="'+(b.w+8)+'" height="'+(b.h+8)+'" rx="10"/>'+[[0,0],[1,0],[0,1],[1,1]].map(function(c){return '<rect class="sel-h" x="'+(x-4+c[0]*(b.w+8)-5)+'" y="'+(y-4+c[1]*(b.h+8)-5)+'" width="10" height="10" rx="2"/>'}).join('');
+    });
+    return '<svg viewBox="0 0 '+L.W+' '+L.H+'" role="img" aria-label="桌子擺放畫布"><rect class="board-s" x="'+((L.W-260)/2)+'" y="'+(L.H-36)+'" width="260" height="20" rx="4"/><text class="board-t" x="'+(L.W/2)+'" y="'+(L.H-25)+'">講台（前方）</text>'+out+selBox+'</svg>'}
+  var stepA=function(v,a){return '<div class="stepper"><button type="button" aria-label="減少" '+a+' data-d="-1">'+ic('minus')+'</button><output>'+v+'</output><button type="button" aria-label="增加" '+a+' data-d="1">'+ic('plus')+'</button></div>'};
+  var segC=function(kind,opts,cur){return '<div class="seg">'+opts.map(function(o){return '<button type="button" '+kind+' data-val="'+o[0]+'" aria-selected="'+(o[0]===cur)+'">'+o[1]+'</button>'}).join('')+'</div>'};
+  function tableGroups(sel){var st=0;for(var i=0;i<sel;i++)st+=TB[i].n;var o={};for(var j=st;j<st+TB[sel].n;j++)if(j<32)o[Math.floor(j/4)]=1;return Object.keys(o).map(Number)}
+  function tileSVG(k){
+    var o='<svg viewBox="0 0 64 40" aria-hidden="true">';
+    var seat=function(x,y){return '<rect class="st" x="'+x+'" y="'+y+'" width="11" height="6" rx="2"/>'};
+    if(k==='island'){o+='<rect class="tb" x="14" y="14" width="36" height="12" rx="3"/>'+seat(16,5)+seat(37,5)+seat(16,29)+seat(37,29)}
+    else if(k==='long'){o+='<rect class="tb" x="4" y="14" width="56" height="12" rx="3"/>';[6,19,32,45].forEach(function(x){o+=seat(x,5)+seat(x,29)})}
+    else{var pts=[];for(var i=0;i<6;i++){var a=(-90+i*60)*Math.PI/180;pts.push((32+10*Math.cos(a)).toFixed(1)+','+(20+10*Math.sin(a)).toFixed(1))}
+      o+='<polygon class="tb" points="'+pts.join(' ')+'"/>';
+      for(var j=0;j<6;j++){var b=(-60+j*60)*Math.PI/180;o+=seat((32+18*Math.cos(b)-5.5).toFixed(1),(20+15*Math.sin(b)-3).toFixed(1))}}
+    return o+'</svg>'}
+  function gcfgInner(){
+    var rect=gShape==='rect';
+    return '<div class="tiles">'+['island','long','hex'].map(function(k){var q=PRESETS[k];return '<button type="button" class="tile" data-ct="preset" data-val="'+k+'" aria-pressed="'+(preset===k)+'">'+tileSVG(k)+'<b>'+q.name+'</b><small>'+q.sub+'</small></button>'}).join('')+'</div>'+
+      '<div class="cfg2">'+
+        '<div class="cfg-i"><span class="label">桌子數量</span>'+stepA(TB.length,'data-ct="count"')+'</div>'+
+        '<div class="cfg-i"><span class="label">每張桌座位數</span>'+stepA(gSeats,'data-ct="seats"')+'</div>'+
+        '<div class="cfg-i"><span class="label">每列幾張桌</span>'+stepA(tblCols,'data-ct="cols"')+'</div>'+
+        (rect?'<div class="cfg-i"><span class="label">長桌擺放</span>'+segC('data-ct="vert"',[['h','橫放'],['v','直放']],gVert?'v':'h')+'</div><div class="cfg-i"><span class="label">座位位置</span>'+segC('data-ct="side"',[['two','兩側'],['one','單側']],gOne?'one':'two')+'</div>':'')+
+        (rect&&!gOne?'<div class="cfg-i"><span class="label">同組怎麼坐</span>'+segC('data-ct="ord"',[['side','同一邊'],['face','面對面']],gOrd)+'</div>':'')+
+        (preset?'':'<span class="badge info" style="align-self:end">已自訂</span>')+
+      '</div>'+
+      (rect&&!gOne?'<p class="hint" style="margin:0 0 8px">'+(gOrd==='side'?'同一邊：同組並排坐桌子同一側，兩組隔著桌子相對。':'面對面：同組分坐桌子兩側，隔著桌子面對面。')+'</p>':'')}
+  function inspector(sel){
+    var t=TB[sel],rect=t.shape==='rect',gs=tableGroups(sel);
+    return '<b class="cfg-t">桌 '+(sel+1)+'</b><span class="hint">'+(gs.length?'坐第 '+gs.map(function(g){return g+1}).join('、')+' 組':'沒有人')+'</span>'+
+      '<div class="selbar-i"><span class="label">座位數</span>'+stepA(t.n,'data-pt="n"')+'</div>'+
+      '<div class="btn-row"><button class="btn btn-sm" type="button" data-pt="copy">'+ic('copy')+'複製</button><button class="btn btn-sm btn-danger" type="button" data-pt="del"'+(TB.length<2?' aria-disabled="true"':'')+'>'+ic('trash')+'刪除</button></div>'+
+      '<details class="adv adv2"'+(selOpen?' open':'')+'><summary>這張桌子的更多設定</summary><div class="cfg">'+
+        '<div class="cfg-i"><span class="label">桌型</span>'+segC('data-pt="shape"',[['rect','長桌'],['round','圓桌'],['hex','六邊形']],t.shape)+'</div>'+
+        (rect?'<div class="cfg-i"><span class="label">同組怎麼坐</span>'+segC('data-pt="ord"',[['side','同一邊'],['face','面對面']],t.ord)+'</div><div class="cfg-i"><span class="label">擺放</span>'+segC('data-pt="vert"',[['h','橫放'],['v','直放']],t.vert?'v':'h')+'</div><div class="cfg-i"><span class="label">座位位置</span>'+segC('data-pt="side"',[['two','兩側'],['one','單側']],t.one?'one':'two')+'</div>':'')+
+      '</div></details>'}
+  function summary(){var s=TB.reduce(function(a,x){return a+x.n},0),lack=32-s;return '<div class="sumbar"><span>桌子 <b>'+TB.length+'</b> 張</span><span>座位 <b>'+s+'</b></span><span>人數 <b>32</b></span><span class="badge '+(lack>0?'warn':'ok')+'">'+(lack>0?ic('warn')+'還缺 '+lack+' 個座位':ic('check')+'座位足夠'+(lack<0?'（多 '+(-lack)+' 個）':''))+'</span></div>'}
+  function canvasHTML(id,mobile){
+    return hdr('group',3)+'<div class="body"><div class="row" style="justify-content:space-between"><div class="seg" role="tablist"><button type="button" role="tab" aria-selected="false">分組結果</button><button type="button" role="tab" aria-selected="true">座位安排</button></div>'+saved+'</div>'+
+      '<div class="'+(mobile?'':'grid2')+'" style="display:grid;gap:16px"><div class="col"><div class="card"><div class="card-h"><h3>座位配置</h3><span data-adjbadge>'+adjBadge()+'</span><span class="sp"></span><div class="seg" role="tablist"><button type="button" role="tab" aria-selected="false">傳統座位</button><button type="button" role="tab" aria-selected="true">分組座位</button></div></div>'+
+      '<div data-gcfg="'+id+'">'+gcfgInner()+'</div>'+
+      '<div class="canvas" data-cv="'+id+'">'+canvasSVG(canvasState.sel)+'</div>'+
+      '<div class="selbar" data-ins="'+id+'">'+inspector(canvasState.sel)+'</div>'+
+      '<div data-sum="'+id+'">'+summary()+'</div><p class="fab-note">桌子從講台前方（畫面下方）往後排。點桌子可單獨調整。同組坐在連續的座位，所以一張桌子坐兩組時，兩組各占一段。點兩位同學的座位可以互換，座位右上角是「桌-座」座標。</p></div>'+
+      '<div class="btn-row" style="justify-content:space-between"><button class="btn" type="button">'+ic('shuffle')+'依組別重新填入座位</button></div></div>'+
+      '<aside class="col">'+membersCard()+dlCard('seat','tbl')+'</aside></div></div>'}
+
+  /* ── ⑥ 手機 ── */
+  var m1=hdr('group',3)+'<div class="body">'+tabs3('r')+
+    '<div class="card"><div class="card-h"><h3>S 型分組結果</h3><span class="sp"></span><label class="row" style="gap:8px;font-size:13px;font-weight:700">成績 '+sw(true,'swscm','顯示成績')+'</label></div>'+gcards()+'</div>'+
+    dlCard('group')+
+    '<button class="btn btn-primary" type="button" style="min-height:44px">下一步：安排座位</button></div>';
+  var m2cv={key:'long',sel:1};
+
+  /* ── 組裝 ── */
+  var $=function(id){return document.getElementById(id)};
+  $('f-names').className='frame app';$('f-names').innerHTML=namesHTML;
+  $('f-method').className='frame app';$('f-method').innerHTML=methodHTML;
+  $('f-result').className='frame app';$('f-result').innerHTML=resultHTML;
+  $('f-seat').className='frame app';$('f-seat').innerHTML=seatHTML;
+  $('f-canvas').className='frame app';$('f-canvas').innerHTML=canvasHTML('a',false);
+  $('f-m1').innerHTML=m1;
+  $('f-m2').innerHTML=canvasHTML('b',true);
+  $('dlstates').innerHTML=dlStates();
+  renderPv();
+
+  /* ── 互動 ── */
+  document.addEventListener('click',function(e){
+    var b=e.target.closest('.seg button');
+    if(b){
+      var sg=b.closest('.seg');
+      sg.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-selected',x===b)});
+      var nm=sg.getAttribute('data-seg');
+      if(nm){var scope=sg.closest('.frame');scope.querySelectorAll('[data-pane^="'+nm+':"]').forEach(function(p){p.hidden=p.getAttribute('data-pane')!==nm+':'+b.getAttribute('data-v')})}
+      if(sg.hasAttribute('data-tool')){seatTool=b.getAttribute('data-v');renderAll();return}
+      if(sg.hasAttribute('data-pv')){var pk0=sg.getAttribute('data-pv'),v0=b.getAttribute('data-v');if(pk0==='seat'){pvSeat=v0;xTab.sx=0}else if(pk0==='rsc'){R.sc=v0==='1';xTab.gx=0}else if(pk0==='rcls')R.cls=v0;renderAll();return}
+    }
+    var xt=e.target.closest('[data-xt]');
+    if(xt){var xp=xt.getAttribute('data-xt').split(':');xTab[xp[0]]=+xp[1];renderPv();return}
+    var dg=e.target.closest('[data-dlgo]');
+    if(dg){
+      if(dg.getAttribute('aria-disabled')==='true'||dg.getAttribute('aria-busy')==='true')return;
+      var dk=dg.getAttribute('data-dlgo');dlSt[dk]='busy';renderDl();
+      setTimeout(function(){dlSt[dk]='done';renderDl()},900);return}
+    var st=e.target.closest('[data-st]');
+    if(st){var kk=st.getAttribute('data-st'),dd=+st.getAttribute('data-d');
+      if(kk==='cols')SC=Math.max(2,Math.min(12,SC+dd));
+      if(kk==='depth')SD=Math.max(2,Math.min(8,SD+dd));
+      if(kk==='aisle')aisleAt=Math.max(1,Math.min(SC-1,aisleAt+dd));
+      aisleAt=Math.min(aisleAt,SC-1);
+      Object.keys(offSeats).forEach(function(k2){var q=k2.split(',');if(+q[0]>SC||+q[1]>SD)delete offSeats[k2]});
+      renderAll();return}
+    var l=e.target.closest('#layBox button');
+    if(l){document.querySelectorAll('#layBox button').forEach(function(x){x.setAttribute('aria-pressed',x===l)});curLay=l.getAttribute('data-lay');renderAll();return}
+    var act=e.target.closest('[data-act]');
+    if(act){
+      var a=act.getAttribute('data-act');
+      if(a==='cancel')selS=null;
+      else if(a==='restore'){if(act.getAttribute('aria-disabled')==='true')return;confirming=true}
+      else if(a==='restore-no')confirming=false;
+      else if(a==='restore-yes'){groups=cp(orig);selS=null;confirming=false;pushHist('還原成分組結果')}
+      else if(a==='undo'){gotoHist(hi-1)}
+      else if(a==='redo'){gotoHist(hi+1)}
+      else if(a==='jump'){gotoHist(+act.getAttribute('data-i'))}
+      renderAll();return}
+    var ob=e.target.closest('[data-o]');
+    if(ob&&seatTool==='off'){var ok=ob.getAttribute('data-o');if(offSeats[ok])delete offSeats[ok];else offSeats[ok]=true;selS=null;renderAll();return}
+    var s=e.target.closest('[data-s]');
+    if(s){
+      var p=s.getAttribute('data-s').split(','),g=+p[0],k=+p[1];
+      if(!selS)selS={g:g,k:k};
+      else if(selS.g===g&&selS.k===k)selS=null;
+      else{var gA=selS.g,n1=names[groups[gA][selS.k]],n2=names[groups[g][k]],tmp=groups[gA][selS.k];groups[gA][selS.k]=groups[g][k];groups[g][k]=tmp;selS=null;confirming=false;pushHist(n1+'（第 '+(gA+1)+' 組）↔ '+n2+'（第 '+(g+1)+' 組）')}
+      renderAll();return}
+    var sm=e.target.closest('summary');
+    if(sm){var dt=sm.parentNode;if(dt.classList.contains('adv2'))selOpen=!dt.open;else if(dt.classList.contains('adv'))advOpen=!dt.open;return}
+    var ct=e.target.closest('[data-ct]');
+    if(ct){
+      var ck=ct.getAttribute('data-ct'),cv=ct.getAttribute('data-val'),cd=+ct.getAttribute('data-d')||0;
+      if(ck==='preset')applyPreset(cv);
+      else{
+        if(ck==='count')setCount(clamp(TB.length+cd,1,16));
+        else if(ck==='seats'){gSeats=clamp(gSeats+cd,2,16);TB.forEach(function(x){x.n=gSeats})}
+        else if(ck==='cols')tblCols=clamp(tblCols+cd,1,6);
+        else if(ck==='shape'){gShape=cv;TB.forEach(function(x){x.shape=cv})}
+        else if(ck==='vert'){gVert=cv==='v';TB.forEach(function(x){x.vert=gVert})}
+        else if(ck==='side'){gOne=cv==='one';TB.forEach(function(x){x.one=gOne})}
+        else if(ck==='ord'){gOrd=cv;TB.forEach(function(x){x.ord=gOrd})}
+        if(ck!=='ord')preset='';
+      }
+      canvasState.sel=Math.min(canvasState.sel,TB.length-1);renderAll();return}
+    var pt=e.target.closest('[data-pt]');
+    if(pt){
+      var pk=pt.getAttribute('data-pt'),pv=pt.getAttribute('data-val'),pd=+pt.getAttribute('data-d')||0,tt=TB[canvasState.sel];
+      if(pk==='n')tt.n=clamp(tt.n+pd,2,16);
+      else if(pk==='shape')tt.shape=pv;
+      else if(pk==='vert')tt.vert=pv==='v';
+      else if(pk==='side')tt.one=pv==='one';
+      else if(pk==='ord')tt.ord=pv;
+      else if(pk==='copy'){TB.splice(canvasState.sel+1,0,{n:tt.n,shape:tt.shape,vert:tt.vert,one:tt.one,ord:tt.ord});canvasState.sel++;preset=''}
+      else if(pk==='del'){if(TB.length<2||pt.getAttribute('aria-disabled')==='true')return;TB.splice(canvasState.sel,1);canvasState.sel=Math.min(canvasState.sel,TB.length-1);preset=''}
+      renderAll();return}
+    var t=e.target.closest('.tg');
+    if(t){canvasState.sel=+t.getAttribute('data-t');renderAll()}
+  });
+  document.addEventListener('keydown',function(e){var el=e.target;if((e.key==='Enter'||e.key===' ')&&el.hasAttribute&&el.hasAttribute('data-s')&&el.tagName!=='BUTTON'){e.preventDefault();el.dispatchEvent(new MouseEvent('click',{bubbles:true}))}});
+  document.addEventListener('change',function(e){if(e.target.id==='swaisle'){aisleOn=e.target.checked;renderAll()}var o=e.target.getAttribute&&e.target.getAttribute('data-dlopt');if(o){D[o]=e.target.checked;renderAll()}});
+  function renderAll(){
+    document.querySelectorAll('[data-roompanel]').forEach(function(x){x.innerHTML=roomInner()});
+    var sa=$('seatArea');if(sa)sa.innerHTML=seatGrid(curLay);
+    document.querySelectorAll('[data-members]').forEach(function(x){x.innerHTML=membersInner()});
+    document.querySelectorAll('[data-gcards]').forEach(function(x){x.innerHTML=gcardsInner()});
+    document.querySelectorAll('[data-bars]').forEach(function(x){x.innerHTML=statBars()});
+    document.querySelectorAll('[data-adjbadge]').forEach(function(x){x.innerHTML=adjBadge()});
+    redrawCanvas();renderDl();renderPv();var dsx=$('dlstates');if(dsx)dsx.innerHTML=dlStates();
+  }
+  function redrawCanvas(){
+    ['a','b'].forEach(function(id){
+      var cv=document.querySelector('[data-cv="'+id+'"]');if(!cv)return;
+      cv.innerHTML=canvasSVG(canvasState.sel);
+      document.querySelector('[data-gcfg="'+id+'"]').innerHTML=gcfgInner();
+      document.querySelector('[data-ins="'+id+'"]').innerHTML=inspector(canvasState.sel);
+      document.querySelector('[data-sum="'+id+'"]').innerHTML=summary();
+    });
+  }
+  /* 補成績 */
+  var ins=document.querySelectorAll('.miss-in');
+  function chk(){
+    var ok=[].every.call(ins,function(i){var v=i.value.trim();return v!==''&&!isNaN(+v)&&+v>=0&&+v<=100});
+    var a=$('missAlert'),btn=$('startBtn');
+    a.className='alert'+(ok?' ok':'');
+    a.querySelector('b').textContent=ok?'成績都齊全了':'有 3 位同學還沒有成績';
+    btn.setAttribute('aria-disabled',!ok);btn.className='btn '+(ok?'btn-primary':'');
+    $('startHint').textContent=ok?'可以開始了':'補完成績後才能開始';
+  }
+  ins.forEach(function(i){i.addEventListener('input',chk)});
+  /* 主題 */
+  var root=document.documentElement,tb=$('themeBtn');
+  function isDark(){var t=root.getAttribute('data-theme');return t?t==='dark':matchMedia('(prefers-color-scheme: dark)').matches}
+  function lab(){tb.textContent=isDark()?'切換淺色':'切換深色'}
+  tb.addEventListener('click',function(){root.setAttribute('data-theme',isDark()?'light':'dark');lab()});lab();
+})();
+</script>
+</body></html>
