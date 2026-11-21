@@ -49,7 +49,7 @@ async function loadApp() {
 
 /* 捏造的成績檔：彙總表（兩班並排、組別欄、比重在欄名）＋一張重複的班級表＋隱藏列 */
 function fakeBook() {
-    const head = ['班級', '組別', '座號', '姓名', '一段30%', '二段30%', '學期成績'];
+    const head = ['班級', '組別', '座號', '姓名', '小考30%', '段考30%', '學期成績'];
     const sum = [head.concat([null], head)];
     for (let i = 0; i < 6; i++) sum.push(['3A', 1 + (i % 3), i + 1, NAMES[i], i === 2 ? '缺' : 70 + i, 'A', 80 + i, null, '3B', 1 + (i % 3), i + 1, NAMES[6 + i], 60 + i, 'B', i === 4 ? '假' : 75 + i]);
     const ws = XLSX.utils.aoa_to_sheet(sum);
@@ -112,7 +112,7 @@ test('匯入 .xlsx：自動挑工作表、摘要列、上次分組、缺考小�
     assert.equal(a.S.roster[0].cls, '');
     a.change('[data-a="isheet"][data-v="0"]', true);
     a.change('[data-a="isheet"][data-v="1"]', false);
-    // 改成績欄：只用一段
+    // 改成績欄：只用小考
     a.act('iedit', 'score');
     a.change('#gvIscore', '4');
     assert.equal(a.S.roster[0].score, 70);

@@ -963,7 +963,9 @@ Authorization inquiries: derliang@gmail.com
         #groupView td.err{background:var(--danger-soft);color:var(--danger-ink);font-weight:700}
         #groupView td.prev{color:var(--text-2)}
         #groupView th .conf{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--warn-ink);margin-right:6px;vertical-align:middle}
+        #groupView th .sel{min-width:6.5em}
         #groupView th.hasconf .sel{width:calc(100% - 14px)}
+        #groupView th .thl{display:block;margin-top:4px;font-weight:500;color:var(--text-3);max-width:12em;overflow:hidden;text-overflow:ellipsis}
         #groupView .sumrow{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;padding:10px 12px;margin-bottom:12px;background:var(--sunken);border:1px solid var(--line);border-radius:var(--r-md);font-size:13px;color:var(--text-2)}
         #groupView .sumrow .k{color:var(--text-3)}
         #groupView .ichip{display:inline-flex;align-items:center;gap:4px;min-height:30px;padding:0 10px;border-radius:99px;border:1px solid var(--accent-line);background:var(--accent-soft);color:var(--accent-ink);font:700 12px var(--font);cursor:pointer}
@@ -1003,6 +1005,7 @@ Authorization inquiries: derliang@gmail.com
         #groupView .nexthint{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:flex-end;margin-top:14px}
         #groupView .nexthint .hint{color:var(--warn-ink);font-weight:700}
         #groupView .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+        #groupView .ghist li .gnum{flex:none}
         #groupView .ghist li.imp{border-color:var(--accent-line);background:var(--accent-soft)}
         #groupView .sel{min-height:32px;border:1px solid var(--line-2);border-radius:6px;background:var(--surface);color:var(--text);font:700 12px var(--font);padding:0 8px;width:100%}
         #groupView .dz{border:2px dashed var(--line-2);border-radius:var(--r-md);background:var(--sunken);padding:56px 16px;min-height:280px;align-content:center;text-align:center;color:var(--text-2);display:grid;gap:10px;justify-items:center}
@@ -3075,11 +3078,11 @@ function analyzeSheet(sh, ov, si) {
 }
 function sheetSummary(a) {
     const names = new Set(), classes = new Set();
-    let people = 0, scoreCols = 0, usable = 0, grade = 0, err = 0, cells = 0, hasCls = false;
+    let people = 0, likely = 0, scoreCols = 0, usable = 0, grade = 0, err = 0, cells = 0, hasCls = false;
     a.blocks.forEach(b => {
         const nm = b.cols.find(x => x.role === 'name'), cl = b.cols.find(x => x.role === 'cls');
         if (cl) hasCls = true;
-        b.pick.rows.forEach(r => { people++; names.add(cleanName(a.sheet.rows[r][nm.col]).name); if (cl) classes.add(normCls(a.sheet.rows[r][cl.col])); });
+        b.pick.rows.forEach(r => { people++; if (nameLike(a.sheet.rows[r][nm.col])) likely++; names.add(cleanName(a.sheet.rows[r][nm.col]).name); if (cl) classes.add(normCls(a.sheet.rows[r][cl.col])); });
         let sc = 0, us = 0, gr = 0;
         b.cols.forEach(x => {
             if (x.cand || x.role === 'score') { sc++; if (x.st.num > 0) us++; if (x.st.grade > x.st.num) gr++; }
@@ -3087,7 +3090,7 @@ function sheetSummary(a) {
         });
         scoreCols = Math.max(scoreCols, sc); usable = Math.max(usable, us); grade = Math.max(grade, gr);
     });
-    return { name: a.name, hidden: !!a.sheet.hidden, people: people, names: names, classes: classes.size, blocks: a.blocks.length, scoreCols: scoreCols, usable: usable, gradeOnly: scoreCols > 0 && usable === 0 && grade > 0, cells: a.sheet.rows.length, errRate: cells ? err / cells : 0, hasClassCol: hasCls };
+    return { name: a.name, hidden: !!a.sheet.hidden, people: people, likely: likely, names: names, classes: classes.size, blocks: a.blocks.length, scoreCols: scoreCols, usable: usable, gradeOnly: scoreCols > 0 && usable === 0 && grade > 0, cells: a.sheet.rows.length, errRate: cells ? err / cells : 0, hasClassCol: hasCls };
 }
 function overlap(A, B) {
     if (!A.size || !B.size) return 0;
@@ -3096,8 +3099,9 @@ function overlap(A, B) {
     return k / s.size;
 }
 function chooseSheets(sums) {
-    const res = sums.map(s => ({ name: s.name, selected: false, why: s.hidden ? 'hidden' : (!s.people ? 'empty' : ''), dupOf: null }));
-    const order = sums.map((s, i) => i).filter(i => !sums[i].hidden && sums[i].people > 0).sort((a, b) => {
+    /* 自動預選要有 2 個以上真的像人名的人（說明頁、比重表不算）；都沒有時才退回第一張有資料的表 */
+    const res = sums.map(s => ({ name: s.name, selected: false, why: s.hidden ? 'hidden' : (s.likely < 2 ? 'empty' : ''), dupOf: null }));
+    const order = sums.map((s, i) => i).filter(i => !sums[i].hidden && sums[i].likely >= 2).sort((a, b) => {
         const A = sums[a], B = sums[b];
         return ((B.usable > 0) - (A.usable > 0)) || (B.people - A.people) || (B.usable - A.usable) || (A.errRate - B.errRate) || ((B.hasClassCol ? 1 : 0) - (A.hasClassCol ? 1 : 0)) || (a - b);
     });
@@ -3615,7 +3619,7 @@ root.ScoreImport = {
         const head = pv.cols.map((c, i) => {
             const conf = c.confidence !== 'high';
             return '<th' + (conf ? ' class="hasconf"' : '') + '>' + (conf ? '<span class="conf" title="請確認：' + esc(c.why) + '"></span>' : '') + '<select class="sel" data-in="col" data-i="' + i + '" aria-label="第' + (i + 1) + '欄' + (c.label ? '（' + esc(c.label) + '）' : '') + '是"' + (conf ? ' title="請確認：' + esc(c.why) + '"' : '') + '>' +
-                COL_TYPES.map(o => '<option value="' + o[0] + '"' + (o[0] === c.role ? ' selected' : '') + '>' + o[1] + '</option>').join('') + '</select></th>';
+                COL_TYPES.map(o => '<option value="' + o[0] + '"' + (o[0] === c.role ? ' selected' : '') + '>' + o[1] + '</option>').join('') + '</select>' + (c.label && S.parsed.hdr ? '<span class="thl" title="' + esc(c.label) + '">' + esc(c.label) + '</span>' : '') + '</th>';
         }).join('');
         let body = pv.rows.map(r => '<tr>' + r.cells.map((x, i) => {
             const role = pv.cols[i].role;
@@ -3783,9 +3787,9 @@ root.ScoreImport = {
         if (!rs.length && !ig) return '<p class="hint" style="margin:0 0 8px">還沒有分組紀錄，這是第一次分組，不需要比對。</p>';
         let imp = '';
         if (ig) {
-            const open = S.viewPast === 'imp';
+            const open = S.viewPast === 'imp', gl = l => String(l).replace(/^[^#]*#/, ''), multiCls = new Set(ig.groups.map(g => String(g[0]).split('#')[0])).size > 1;
             imp = '<li class="imp"><span class="badge info" style="flex:none">匯入</span><span>匯入的分組（來自' + (S.src === 'file' ? '檔案' : '') + '「' + esc(ig.label) + '」欄）</span><span class="hint" style="flex:none">' + ig.groups.length + ' 組、' + ig.people + ' 人</span><button class="btn btn-sm" type="button" data-a="past" data-v="imp" style="flex:none">' + (open ? '收合' : '查看分組') + '</button></li>' +
-                (open ? '<li style="display:block">' + ig.groups.map((g, gi) => '<div class="grow ' + gc(gi) + '" style="gap:6px;margin:2px 0"><span class="gnum">' + (gi + 1) + '</span><span>' + esc(String(g[0]).replace(/^[^#]*#/, '')) + '　' + g[1].map(i => esc(S.roster[i] ? S.roster[i].name : '')).join('、') + '</span></div>').join('') + '</li>' : '');
+                (open ? '<li style="display:block">' + ig.groups.map((g, gi) => '<div class="grow ' + gc(gi) + '" style="gap:6px;margin:2px 0"><span class="gnum">' + (gl(g[0]).length <= 2 ? esc(gl(g[0])) : gi + 1) + '</span><span>' + (multiCls ? esc(String(g[0]).split('#')[0]) + '　' : '') + g[1].map(i => esc(S.roster[i] ? S.roster[i].name : '')).join('、') + '</span></div>').join('') + '</li>' : '');
         }
         return '<ul class="ghist">' + imp + rs.map((r, i) => {
             const open = S.viewPast === r.id;

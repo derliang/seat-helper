@@ -41,7 +41,7 @@ test('T2 標題列在第 3 列、上方有合併儲存格橫幅', () => {
     assert.equal(r.roster[4].name, '林小安');
 });
 
-test('T3 比重列（10%、0.3）與欄名比重（一段15%）、依比重加權', () => {
+test('T3 比重列（10%、0.3）與欄名比重（期中20%）、依比重加權', () => {
     const rows = [[null, null, '30%', '30%', '40%'], ['座號', '姓名', '作業', '小考', '期末']].concat(NAMES.slice(0, 4).map((n, i) => [i + 1, n, 80, 70, 90 - i]));
     const sh = sheet('成績', rows);
     const hdr = SI.findHeader(sh);
@@ -57,11 +57,11 @@ test('T3 比重列（10%、0.3）與欄名比重（一段15%）、依比重加�
     r = run([sh], { override: { scoreMerge: 'mean' } });
     assert.equal(r.roster[0].score, 80);
     // 小數比重與欄名內的比重
-    const sh2 = sheet('成績', [[null, null, 0.4, 0.6], ['座號', '姓名', '一段15%', '二段(20%)']].concat([[1, '王小明', 60, 80]]));
+    const sh2 = sheet('成績', [[null, null, 0.4, 0.6], ['座號', '姓名', '期中20%', '期末(25%)']].concat([[1, '王小明', 60, 80]]));
     const l2 = SI.flattenHeader(sh2, SI.findHeader(sh2));
-    deq(l2.slice(2).map(x => [x.label, x.weight]), [['一段', 0.4], ['二段', 0.6]]);
-    const sh3 = sheet('成績', [['座號', '姓名', '一段15%', '二段(20%)'], [1, '王小明', 60, 80]]);
-    deq(SI.flattenHeader(sh3, SI.findHeader(sh3)).slice(2).map(x => [x.label, x.weight]), [['一段', 0.15], ['二段', 0.2]]);
+    deq(l2.slice(2).map(x => [x.label, x.weight]), [['期中', 0.4], ['期末', 0.6]]);
+    const sh3 = sheet('成績', [['座號', '姓名', '期中20%', '期末(25%)'], [1, '王小明', 60, 80]]);
+    deq(SI.flattenHeader(sh3, SI.findHeader(sh3)).slice(2).map(x => [x.label, x.weight]), [['期中', 0.2], ['期末', 0.25]]);
 });
 
 test('T4 一班一張工作表 × 2（沒有班級欄）→ 兩班都選、班級＝工作表名稱', () => {
@@ -76,7 +76,7 @@ test('T4 一班一張工作表 × 2（沒有班級欄）→ 兩班都選、班�
 
 test('T5 五張工作表：並排彙總表（兩區塊）＋等第表＋結算表 → 只選彙總表', () => {
     const A = NAMES.slice(0, 6), B = NAMES.slice(6, 12);
-    const head = ['班級', '分組', '座號', '姓名', '一段15%', '二段15%', '學期成績'];
+    const head = ['班級', '分組', '座號', '姓名', '小考20%', '段考20%', '學期成績'];
     const sum = [head.concat([null], head)];
     for (let i = 0; i < 6; i++) sum.push(['3A', 1 + (i % 2), i + 1, A[i], 70 + i, 72, 80 + i, null, '3B', 1 + (i % 2), i + 1, B[i], 60 + i, 66, 75 + i]);
     const gradeSheet = (ns) => sheet('等第', [['座號', '姓名', '活動一', '活動二', '加扣分', '學期成績']].concat(ns.map((n, i) => [i + 1, n, ['A', 'B', 'C'][i % 3], i === 2 ? '缺' : 'A', i === 0 ? 3 : null, { err: '#VALUE!' }])));
@@ -393,3 +393,15 @@ function encodeBig5(str) {
     for (const ch of str) { if (ch.charCodeAt(0) < 0x80) out.push(ch.charCodeAt(0)); else { const p = map.get(ch); if (!p) throw new Error('Big5 沒有這個字：' + ch); out.push(p[0], p[1]); } }
     return new Uint8Array(out);
 }
+
+test('說明頁、比重表這類沒有名單的工作表不會被預選', () => {
+    const list = sheet('名單', [['座號', '姓名', '成績'], [1, '王小明', 80], [2, '李小華', 70], [3, '張小美', 90]]);
+    const note = sheet('說明', [['比重說明'], ['小考 30%'], ['段考 30%']]);
+    const r = run([list, note]);
+    deq(r.report.sheets.map(s => [s.selected, s.why]), [[true, 'list'], [false, 'empty']]);
+    assert.equal(r.roster.length, 3);
+    assert.equal(r.report.sheets[1].text, '沒有名單，沒有選');
+    // 只有一張、名字都不像人名（綽號）：仍然讀它
+    const r2 = run([SI.fromRows('小明0\n小華1\n阿美2')]);
+    assert.equal(r2.roster.length, 3);
+});
