@@ -1134,6 +1134,11 @@ Authorization inquiries: derliang@gmail.com
         #groupView .fbtn .fgo{grid-column:3;grid-row:1/3;color:var(--accent-ink)}
         #groupView .fbtn.done{border-color:var(--ok-line);background:var(--ok-soft)}
         #groupView .fbtn.done .fgo,#groupView .fbtn.done small{color:var(--ok-ink)}
+        /* D4：「已下載」檔名單行，太長時中間用刪節號、尾端（日期與副檔名）保留；說明文字與下方開關留間距 */
+        #groupView .fbtn small .fn{display:flex;min-width:0;white-space:nowrap}
+        #groupView .fbtn small .fn-l,#groupView .fbtn small .fn-t{flex:none}
+        #groupView .fbtn small .fn-h{min-width:0;overflow:hidden;text-overflow:ellipsis}
+        #groupView .dl + .hint{margin:8px 0 12px}
         #groupView .fbtn[aria-busy=true]{border-color:var(--accent-line);background:var(--accent-soft);cursor:progress}
         #groupView .fbtn[aria-disabled=true]{background:var(--sunken);border-color:var(--line);color:var(--text-3);cursor:not-allowed}
         #groupView .fbtn[aria-disabled=true] .fi{opacity:.5}
@@ -1148,6 +1153,19 @@ Authorization inquiries: derliang@gmail.com
         #groupView .dl-states{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
         #groupView .dl-states .cap{display:flex;gap:8px;align-items:center;font-weight:700;margin-bottom:10px}
         @media (max-width:639px){#groupView .fbtn{min-height:56px}
+        }
+        /* D2：手機與平板窄版（≤768）分組頁所有可點元素至少 44px（DESIGN.md 手機點擊區規範）；只動這裡，桌機版面不變 */
+        @media (max-width:768px){
+        #groupView .gsi{min-height:44px}
+        #groupView .gseg button{min-height:44px}
+        #groupView .gstep button{width:44px;height:44px}
+        #groupView .btn,#groupView .btn-sm,#groupView .btn-lg{min-height:44px}
+        #groupView .sel{min-height:44px}
+        #groupView .input,#groupView .input.sm{min-height:44px}
+        #groupView details.adv>summary{min-height:44px}
+        #groupView .gsw{margin:9px 0}
+        #groupView .gsw input::before{content:"";position:absolute;inset:-9px -6px}
+        #groupView .opt:has(> .gsw){cursor:pointer;min-height:44px}
         }
 
     </style>
@@ -1824,11 +1842,16 @@ Authorization inquiries: derliang@gmail.com
                 });
                 return { pairs, pairCount: pairs.length, groupCount };
             }
-            /* 避免同組做不到時的提示文字（10.6；設計對照時再確認用字）。沒有重複回傳空字串 */
-            function avoidNotice(rep, compareCount) {
-                if (!rep || !rep.groupCount) return '';
+            /* 避免同組做不到時的提示文字（10.6，D1 定案）。沒有重複回傳空字串。
+             * nameOf：把成員 id 換成姓名的函式；有給就列出「乙＆丙、丁＆甲」，對數超過 maxPairs 時截斷並寫「…等 N 對」 */
+            function avoidNotice(rep, compareCount, nameOf, maxPairs) {
+                if (!rep || !rep.pairCount) return '';
                 const span = compareCount > 1 ? '最近 ' + compareCount + ' 次' : '上次';
-                return '有 ' + rep.groupCount + ' 組無法完全避開' + span + '的同組（共 ' + rep.pairCount + ' 對再度同組）';
+                const head = '有 ' + rep.pairCount + ' 對同學無法避開' + span + '的同組';
+                if (typeof nameOf !== 'function') return head;
+                const max = maxPairs > 0 ? maxPairs : 6;
+                const names = rep.pairs.slice(0, max).map(p => nameOf(p[0]) + '＆' + nameOf(p[1])).join('、');
+                return head + '：' + names + (rep.pairs.length > max ? '…等 ' + rep.pairCount + ' 對' : '');
             }
             function conflictOf(x, group, set, skip) {
                 let c = 0;
@@ -2136,7 +2159,10 @@ Authorization inquiries: derliang@gmail.com
                     '</w:tbl>';
             }
             function wFooter(appVersion) {
-                const fld = (instr, v) => '<w:fldSimple w:instr=" ' + instr + ' ">' + wRun(v, { size: 16, color: '6F6858' }) + '</w:fldSimple>';
+                // D5：頁碼用完整欄位（每個片段都帶字級）；fldSimple 的結果在 Word 更新後會退回預設字級，數字比文字大
+                const rp = '<w:rPr><w:color w:val="6F6858"/><w:sz w:val="16"/><w:szCs w:val="16"/></w:rPr>';
+                const fc = t => '<w:r>' + rp + '<w:fldChar w:fldCharType="' + t + '"/></w:r>';
+                const fld = (instr, v) => fc('begin') + '<w:r>' + rp + '<w:instrText xml:space="preserve"> ' + instr + ' \\* MERGEFORMAT </w:instrText></w:r>' + fc('separate') + wRun(v, { size: 16, color: '6F6858' }) + fc('end');
                 const r = t => wRun(t, { size: 16, color: '6F6858' });
                 return XML_HEAD + '<w:ftr ' + W_NS + '>' + wPara([r('座位小幫手' + (appVersion ? ' ' + appVersion : '') + '　第 '), fld('PAGE', '1'), r(' 頁／共 '), fld('NUMPAGES', '1'), r(' 頁')], { align: 'center' }) + '</w:ftr>';
             }
@@ -2178,7 +2204,11 @@ Authorization inquiries: derliang@gmail.com
                 const info = analyzeRoster(ctx.roster);
                 const d = ctx.date || new Date();
                 const opt = Object.assign({ withScore: true, withoutScore: true, showAvg: true, color: true, coord: true }, ctx.options || {});
-                return { info, d, date: formatDate(d), time: formatTime(d), opt, multi: info.classMode === 'multi', roster: ctx.roster, groups: ctx.groups };
+                const inGroup = new Set(); ctx.groups.forEach(g => g.forEach(i => inGroup.add(i)));
+                const multi = info.classMode === 'multi';
+                // 沒放進任何一組的人（缺成績按「略過」）：名單最後要列出來，免得老師以為漏人
+                const skipped = ctx.roster.map((st, i) => inGroup.has(i) ? null : ((multi && st.cls ? String(st.cls).trim() + ' ' : '') + st.name)).filter(x => x != null);
+                return { info, d, date: formatDate(d), time: formatTime(d), opt, multi, roster: ctx.roster, groups: ctx.groups, skipped, skippedText: skipped.length ? '未分組：' + skipped.join('、') : '' };
             }
             /* 分組名單會產生哪幾頁：true＝含成績、false＝不含成績（10.3a 智慧判斷） */
             function groupPages(info, opt) {
@@ -2225,7 +2255,10 @@ Authorization inquiries: derliang@gmail.com
                     const note = '共 ' + P.groups.reduce((t, g) => t + g.length, 0) + ' 人' +
                         (withSc && P.opt.showAvg !== false ? '　各組平均最高與最低相差 ' + spreadOf(avgs).toFixed(1) + ' 分' : '');
                     const last = pi === pages.length - 1;
-                    body += wPara(wRun(note, { size: 18, color: '4F493D' }), { before: 120, sectPr: last ? '' : wSect({ type: 'continuous' }) });
+                    if (P.skippedText) {
+                        body += wPara(wRun(note, { size: 18, color: '4F493D' }), { before: 120 });
+                        body += wPara(wRun(P.skippedText, { size: 18, color: '4F493D' }), { before: 40, sectPr: last ? '' : wSect({ type: 'continuous' }) });
+                    } else body += wPara(wRun(note, { size: 18, color: '4F493D' }), { before: 120, sectPr: last ? '' : wSect({ type: 'continuous' }) });
                 });
                 body += wSect({ type: 'continuous' });
                 return docxPackage(body, ctx.appVersion, [], P.d);
@@ -2398,7 +2431,20 @@ Authorization inquiries: derliang@gmail.com
                     const st = P.roster[i];
                     return { v: (P.multi && st.cls ? String(st.cls).trim() + ' ' : '') + st.name, s: { border: 'thin' } };
                 }));
-                return { name, rows, cols: P.groups.map(() => 16), freeze: true };
+                const cols = P.groups.map(() => 16), sh = { name, rows, cols, freeze: true, landscape: true, fitWidth: true };
+                addSkippedRow(sh, P, cols.length);
+                return sh;
+            }
+            /* 名單最後加一行「未分組：姓名、姓名…」（合併成整列寬、自動換行；沒有人就不加）。空一列，免得被篩選或凍結範圍吃掉 */
+            function addSkippedRow(sh, P, nCols) {
+                if (!P.skippedText) return;
+                const ri = sh.rows.length + 1, last = Math.max(0, nCols - 1);
+                while (sh.rows.length < ri) sh.rows.push([]);
+                sh.rows.push([{ v: P.skippedText, s: { wrap: true, v: 'top', color: '4F493D' }}]);
+                const width = sh.cols.slice(0, nCols).reduce((t, w) => t + w, 0) || 16;
+                const vis = Array.from(P.skippedText).reduce((t, ch) => t + (ch.charCodeAt(0) > 255 ? 2 : 1), 0);
+                (sh.merges = sh.merges || []).push('A' + (ri + 1) + ':' + ref(last, ri));
+                (sh.heights = sh.heights || {})[ri] = 16.5 * Math.max(1, Math.ceil(vis / (width * 0.85))) + 3;
             }
             /* 2 分組名單 Excel */
             function buildGroupXlsx(ctx) {
@@ -2418,7 +2464,7 @@ Authorization inquiries: derliang@gmail.com
                         r.push({ v: s == null ? '' : s, s: { border: 'thin' } });
                         rows.push(r);
                     }));
-                    const W = head.length, sh = { name: '含成績', rows, cols, freeze: true, filter: 'A1:' + ref(W - 1, rows.length - 1) };
+                    const W = head.length, sh = { name: '含成績', rows, cols, freeze: true, filter: 'A1:' + ref(W - 1, rows.length - 1), landscape: true, fitWidth: true };
                     if (P.opt.showAvg !== false) {
                         cols.push(3, 10, 8);
                         const avgs = groupAverages(P.groups, P.roster);
@@ -2426,6 +2472,7 @@ Authorization inquiries: derliang@gmail.com
                         put(0, [{ v: '組別', s: X_HEAD }, { v: '平均', s: X_HEAD }]);
                         avgs.forEach((a, gi) => put(gi + 1, [xGroupCell(gi, P.opt.color), { v: a == null ? '' : a, s: { border: 'thin', num: '0.0' } }]));
                     }
+                    addSkippedRow(sh, P, W);
                     sheets.push(sh);
                 });
                 return xlsxPackage(sheets, P.d);
@@ -2759,11 +2806,16 @@ Authorization inquiries: derliang@gmail.com
         return true;
     }
     /* 與上次同組：和這筆之前的那一筆分組比對 */
+    /* 比對範圍：分組時開了「避免同組」就用當時選的次數（最近 N 次，實際不足 N 筆就用現有筆數），否則只比上一次。
+     * 結果頁上方的提示條與右欄卡片都從這裡取，口徑才會一致。 */
     function sameInfo() {
-        const prev = prevRec();
-        if (!prev) return { none: true };
-        const rep = GL.repeatPairs(S.groups, pastToIdx(pastKeys(prev)));
-        return { prev, rep };
+        const i = S.recs.findIndex(r => r.id === S.recId);
+        const want = Math.max(1, (S.used && S.used.avoidCmp) || 1);
+        const prevs = i >= 0 ? S.recs.slice(i + 1, i + 1 + want) : [];
+        if (!prevs.length) return { none: true };
+        const rep = GL.repeatPairs(S.groups, prevs.map(r => pastToIdx(pastKeys(r))));
+        const n = prevs.length;
+        return { prev: prevs[0], n, rep, notice: GL.avoidNotice(rep, n, nameOf) };
     }
 
     /* ── 座位資料 ── */
@@ -2949,13 +3001,12 @@ Authorization inquiries: derliang@gmail.com
         const si = sameInfo();
         let b, body;
         if (si.none) { b = '<span class="badge">第一次分組</span>'; body = '<p class="hint">還沒有更早的分組可以比對。</p>'; }
-        else if (!si.rep.pairCount) { b = '<span class="badge ok">' + ic('check') + '沒有重複</span>'; body = '<p class="hint">與 ' + fmtTs(si.prev.ts) + ' 的分組比對，沒有任何兩人再度同組。</p>'; }
+        else if (!si.rep.pairCount) { b = '<span class="badge ok">' + ic('check') + '沒有重複</span>'; body = '<p class="hint">' + (si.n > 1 ? '與最近 ' + si.n + ' 次的分組比對' : '與 ' + fmtTs(si.prev.ts) + ' 的分組比對') + '，沒有任何兩人再度同組。</p>'; }
         else {
-            const notice = GL.avoidNotice(si.rep, 1);
             b = '<span class="badge warn">' + ic('warn') + si.rep.pairCount + ' 對再度同組</span>';
-            body = '<p class="hint">與 ' + fmtTs(si.prev.ts) + ' 的分組比對：' + esc(notice) + '。</p>' + '<p class="hint" style="margin-top:6px">' + si.rep.pairs.slice(0, 6).map(p => esc(nameOf(p[0]) + '＆' + nameOf(p[1]))).join('、') + (si.rep.pairs.length > 6 ? '…' : '') + '</p>';
+            body = '<p class="hint">' + esc(si.notice) + '。</p>';
         }
-        return '<div class="card"><div class="card-h"><h3>與上次同組</h3><span class="sp"></span>' + b + '</div>' + body + '</div>';
+        return '<div class="card"><div class="card-h"><h3>' + (!si.none && si.n > 1 ? '與最近 ' + si.n + ' 次同組' : '與上次同組') + '</h3><span class="sp"></span>' + b + '</div>' + body + '</div>';
     }
     function histCard() {
         return '<div class="card"><div class="card-h"><h3>分組紀錄</h3><span class="sp"></span><span class="hint">自動保留最近 10 筆</span></div><ul class="ghist">' + S.recs.map(r => '<li' + (r.id === S.recId ? ' class="cur"' : '') + '><span>' + esc(recLabel(r)) + '</span>' + (r.id === S.recId ? '<b>目前</b>' : '<button class="btn btn-sm" type="button" data-a="rec" data-v="' + r.id + '">載入</button>') + '</li>').join('') + '</ul></div>';
@@ -2965,7 +3016,7 @@ Authorization inquiries: derliang@gmail.com
     }
     function resultHTML() {
         const u = S.used || {}, sc = hasSc();
-        const notice = u.notice || '';
+        const si = sameInfo(), notice = (u.avoidCmp && !si.none) ? si.notice : '';
         return '<div class="body grid2"><div class="col">' + tabs3() +
             '<div class="card" id="gvResult"><div class="card-h"><h3>' + esc(GL.METHOD_LABELS[u.method] || '分組') + '結果</h3><span class="badge info">' + (u.method === 'random' ? '隨機' : '按成績') + '・' + S.groups.length + ' 組・' + esc(GL.sizeText(S.groups)) + '</span><span data-adj>' + adjBadge() + '</span><span class="sp"></span>' +
             (sc ? '<label class="grow" style="gap:8px;font-size:13px;font-weight:700">顯示成績 ' + gsw(S.showScore, 'showsc', '顯示成績') + '</label>' : '') + '</div>' +
@@ -3142,7 +3193,7 @@ Authorization inquiries: derliang@gmail.com
     }
     function fbtn(kind, fmt, dis) {
         const st = S.dlSt[kind + ':' + fmt], w = fmt === 'docx', nm = GL.fileName(kind, fmt, info(), new Date());
-        const sub = st === 'busy' ? '正在產生檔案…' : (st === 'done' ? '已下載　' + esc(nm) : esc(nm));
+        const sub = st === 'busy' ? '正在產生檔案…' : (st === 'done' ? '<span class="fn" title="' + esc(nm) + '"><span class="fn-l">已下載　</span><span class="fn-h">' + esc(nm.slice(0, -10)) + '</span><span class="fn-t">' + esc(nm.slice(-10)) + '</span></span>' : esc(nm));
         const right = st === 'busy' ? '<span class="spin" aria-hidden="true"></span>' : (st === 'done' ? ic('check') : ic('down'));
         return '<button type="button" class="fbtn' + (st === 'done' ? ' done' : '') + '" data-a="dl" data-v="' + kind + ':' + fmt + '"' + (dis ? ' aria-disabled="true"' : '') + (st === 'busy' ? ' aria-busy="true"' : '') + '><span class="fi ' + (w ? 'w' : 'x') + '" aria-hidden="true">' + (w ? 'W' : 'X') + '</span><b>' + (st === 'done' ? '再下載一次' : '下載 ' + (w ? 'Word 文件' : 'Excel 活頁簿')) + '</b><span class="fgo">' + right + '</span><small>' + sub + '</small></button>';
     }
@@ -3354,6 +3405,12 @@ Authorization inquiries: derliang@gmail.com
     }
     function onClick(e) {
         const root = $('groupView');
+        /* 手機：開關整列都可以點（D2），點到列上的空白處＝切換那顆開關；按鈕、下拉、輸入框照常 */
+        const orow = e.target.closest && e.target.closest('.opt');
+        if (orow && root.contains(orow) && !e.target.closest('button,input,select,textarea,a,label,.gseg,.gstep') && window.matchMedia && window.matchMedia('(max-width:768px)').matches) {
+            const cb = orow.querySelector(':scope > .gsw > input[type="checkbox"]');
+            if (cb) { cb.click(); return; }
+        }
         const el = e.target.closest('[data-a],[data-s],[data-o],[data-t]');
         if (!el || !root.contains(el)) return;
         const a = el.getAttribute('data-a');
@@ -3429,7 +3486,7 @@ Authorization inquiries: derliang@gmail.com
 })();
     </script>
     <script>
-        const APP_VERSION = "v3.5.1";
+        const APP_VERSION = "v3.5.2";
         /* 版號只寫在 APP_VERSION；<title> 與頁首徽章由程式產生，不要在 HTML 靜態文字寫版號 */
         document.title = `座位小幫手 ${APP_VERSION}`;
 

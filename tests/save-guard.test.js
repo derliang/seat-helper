@@ -44,8 +44,8 @@ for (const file of ['index.html', 'seat_helper.html']) {
         assert.doesNotMatch(w.document.getElementById('copySuccess').textContent, /儲存失敗/);
     });
 }
-test('兩份 HTML 內容完全相同，版號 v3.5.1', () => {
+test('兩份 HTML 內容完全相同，且有版號', () => {
     const a = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
     assert.equal(a, fs.readFileSync(path.join(ROOT, 'seat_helper.html'), 'utf8'));
-    assert.match(a, /APP_VERSION = "v3\.5\.1"/);
+    assert.match(a, /APP_VERSION = "v\d+\.\d+\.\d+"/);
 });

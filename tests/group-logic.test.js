@@ -63,7 +63,12 @@ test('避免同組：做不到時照常分組並提示幾組沒避開', () => {
     assertPartition(r.groups, ids);
     assert.equal(r.repeats.groupCount, 2);
     assert.equal(r.repeats.pairCount, 6);
-    assert.equal(r.notice, '有 2 組無法完全避開上次的同組（共 6 對再度同組）');
+    assert.equal(r.notice, '有 6 對同學無法避開上次的同組');
+    // 有給 nameOf 時列出名字，對數多時截斷成「…等 N 對」
+    const nm = i => '甲乙丙丁戊己'[i];
+    assert.equal(GL.avoidNotice({ pairCount: 2, groupCount: 2, pairs: [[1, 2], [3, 0]] }, 3, nm), '有 2 對同學無法避開最近 3 次的同組：乙＆丙、丁＆甲');
+    assert.equal(GL.avoidNotice(r.repeats, 1, nm, 3), '有 6 對同學無法避開上次的同組：' + r.repeats.pairs.slice(0, 3).map(p => nm(p[0]) + '＆' + nm(p[1])).join('、') + '…等 6 對');
+    assert.equal(GL.avoidNotice({ pairCount: 0, groupCount: 0, pairs: [] }, 3, nm), '');
     // 比對最近 3 次：盡量減少，提示寫「最近 3 次」
     const past3 = [[[0, 1], [2, 3], [4, 5]], [[0, 2], [1, 3], [4, 5]], [[0, 3], [1, 2], [4, 5]]];
     const r3 = GL.randomGroups(ids, 2, { seed: 5, avoid: past3 });
@@ -71,7 +76,7 @@ test('避免同組：做不到時照常分組並提示幾組沒避開', () => {
     const best = Math.min(...[[0, 1, 2], [0, 1, 3], [0, 1, 4], [0, 1, 5], [0, 2, 3], [0, 2, 4], [0, 2, 5], [0, 3, 4], [0, 3, 5], [0, 4, 5]]
         .map(g => GL.repeatPairs([g, ids.filter(x => !g.includes(x))], past3).pairCount));
     assert.equal(r3.repeats.pairCount, best, '找到最少重複對數');
-    if (best) assert.match(r3.notice, /^有 \d 組無法完全避開最近 3 次的同組/);
+    if (best) assert.match(r3.notice, /^有 \d+ 對同學無法避開最近 3 次的同組/);
 });
 
 test('按成績：輪流發牌（高到低一人一組輪流）', () => {
@@ -267,9 +272,10 @@ if (process.env.GROUP_SAMPLES_DIR) {
     test('輸出樣本檔', () => {
         const dir = process.env.GROUP_SAMPLES_DIR;
         fs.mkdirSync(dir, { recursive: true });
-        const cases = [['one', { cls: 'one' }], ['multi', { cls: 'multi' }], ['noscore', { scores: false }]];
+        const cases = [['one', { cls: 'one' }], ['multi', { cls: 'multi' }], ['noscore', { scores: false }], ['skip', { cls: 'one', skip: true }]];
         cases.forEach(([tag, o]) => {
             const c = ctxFor(o);
+            if (o.skip) c.groups = plain(c.groups).map(g => g.filter(i => i !== 1 && i !== 9 && i !== 20)); // 缺成績略過的人：不在任何一組
             c.seat = { mode: 'trad', cfg: { cols: 8, depth: 4, layout: 'block', aisleAfter: [4] } };
             ['docx', 'xlsx'].forEach(fmt => ['group', 'seat'].forEach(kind => {
                 const r = GL.buildDownload(kind, fmt, c);
@@ -280,3 +286,67 @@ if (process.env.GROUP_SAMPLES_DIR) {
         });
     });
 }
+
+/* ── v3.5.2：對照修正（#4 未分組一行、D3 Excel 橫式一頁寬、D5 頁尾頁碼字級）── */
+function buildPkg(fmt, ctx) {
+    const r = GL.buildDownload('group', fmt, Object.assign({ method: 'snake', date: DATE }, ctx));
+    return openPackage(GL, r.bytes);
+}
+const skipCtx = n => {
+    const roster = makeRoster(n);
+    const ids = roster.map((_, i) => i).filter(i => i !== 1 && i !== 4); // 第 1、4 位缺成績、略過：沒放進任何一組
+    return { roster, groups: [ids.slice(0, 4), ids.slice(4)], names: [roster[1].name, roster[4].name] };
+};
+const paraTexts = pk => Array.from(pk.text.get('word/document.xml').matchAll(/<w:t[^>]*>([^<]*)<\/w:t>/g)).map(m => m[1]);
+
+test('#4 Word：略過的同學在名單最後列成「未分組：姓名、姓名」，每一頁都有；沒有人就不出現', () => {
+    const c = skipCtx(8), line = '未分組：' + c.names.join('、');
+    const pk = buildPkg('docx', c);
+    const t = paraTexts(pk);
+    assert.equal(t.filter(x => x === line).length, 2, '含成績與不含成績兩頁各一行');
+    const total = t.findIndex(x => /^共 6 人/.test(x));
+    assert.ok(total >= 0 && t[t.indexOf(line)] === line && t.indexOf(line) > total, '在「共 N 人」之後（名單最後）');
+    const all = makeRoster(6);
+    const none = buildPkg('docx', { roster: all, groups: [[0, 1, 2], [3, 4, 5]] });
+    assert.ok(!paraTexts(none).some(x => x.startsWith('未分組')), '沒有人略過就不加');
+});
+
+test('#4 Excel：含成績與不含成績兩張工作表最後都有「未分組」一行；多班時姓名前加班級', () => {
+    const c = skipCtx(8), line = '未分組：' + c.names.join('、');
+    const pk = buildPkg('xlsx', c);
+    ['sheet1', 'sheet2'].forEach(s => {
+        const x = pk.text.get('xl/worksheets/' + s + '.xml');
+        assert.ok(x.includes('>' + line + '<'), s + ' 有未分組一行');
+        assert.match(x, /<mergeCell ref="A\d+:[A-Z]+\d+"\/>/, s + ' 合併成整列寬');
+    });
+    const none = buildPkg('xlsx', { roster: makeRoster(6), groups: [[0, 1, 2], [3, 4, 5]] });
+    assert.ok(![...none.text.values()].some(x => x.includes('未分組')));
+    const m = makeRoster(8, { cls: 'multi' });
+    const mp = buildPkg('xlsx', { roster: m, groups: [[0, 2, 4, 6], [1, 3, 5]] });
+    assert.ok(mp.text.get('xl/worksheets/sheet1.xml').includes('>未分組：3B ' + m[7].name + '<'));
+});
+
+test('D3 Excel 分組名單：每張工作表都是橫式、縮放成一頁寬（含成績／不含成績／無成績）', () => {
+    const c = skipCtx(8);
+    const check = pk => ['sheet1', 'sheet2'].filter(s => pk.text.has('xl/worksheets/' + s + '.xml')).forEach(s => {
+        const x = pk.text.get('xl/worksheets/' + s + '.xml');
+        assert.ok(x.includes('<pageSetUpPr fitToPage="1"/>'), s);
+        assert.match(x, /<pageSetup [^>]*orientation="landscape"[^>]*fitToWidth="1" fitToHeight="0"\/>/, s);
+    });
+    check(buildPkg('xlsx', c));
+    const ns = makeRoster(8, { scores: false });
+    const pk = buildPkg('xlsx', { roster: ns, groups: [[0, 1, 2, 3], [4, 5, 6, 7]] });
+    assert.ok(pk.text.has('xl/worksheets/sheet1.xml') && !pk.text.has('xl/worksheets/sheet2.xml'));
+    check(pk);
+});
+
+test('D5 Word 頁尾：頁碼用完整欄位，每個片段都是 8pt，與文字同大小', () => {
+    const f = buildPkg('docx', skipCtx(8)).text.get('word/footer1.xml');
+    assert.ok(!f.includes('fldSimple'), '不用 fldSimple（Word 更新後數字會退回預設字級）');
+    assert.equal((f.match(/fldCharType="begin"/g) || []).length, 2);
+    assert.ok(f.includes('> PAGE \\* MERGEFORMAT <'));
+    assert.ok(f.includes('> NUMPAGES \\* MERGEFORMAT <'));
+    const runs = f.match(/<w:r>.*?<\/w:r>/g);
+    assert.ok(runs.length >= 11);
+    runs.forEach(r => assert.match(r, /<w:sz w:val="16"\/>/, r));
+});
