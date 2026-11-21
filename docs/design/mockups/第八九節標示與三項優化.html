@@ -718,8 +718,8 @@ function brushBar(root,sheet){
   var daysChips=DAYS.map(function(d,k){var on=b.days.indexOf(k+1)>=0;return '<button type="button" class="dchip" data-act="bday" data-d="'+(k+1)+'" aria-pressed="'+on+'" aria-label="週'+d+'">'+d+'</button>';}).join('');
   var hintTxt={both:'點座位：標「無8·9」（沒上第八節就不會上第九節）',nine:'點座位：標「無9」（每天都不上第九節）',days:b.days.length?'點座位：標「無9」，只有週'+b.days.slice().sort().map(function(x){return DAYS[x-1];}).join('、')+'不上':'請先在右邊選星期',erase:'點座位：清除該同學的標示'}[b.type];
   var rowTitle='<span class="bb-title">'+ic('stamp')+'標示筆刷</span>';
-  var brushes='<button type="button" class="brush" data-act="brush" data-t="both" aria-pressed="'+(b.type==='both')+'">'+stampOf('both')+'<span>沒上第八節</span></button>'+
-    '<button type="button" class="brush" data-act="brush" data-t="nine" aria-pressed="'+(b.type==='nine')+'">'+stampOf('nine')+'<span>每天不上第九節</span></button>'+
+  var brushes='<button type="button" class="brush" data-act="brush" data-t="both" aria-pressed="'+(b.type==='both')+'">'+stampOf('both')+'<span>沒上八九節</span></button>'+
+    '<button type="button" class="brush" data-act="brush" data-t="nine" aria-pressed="'+(b.type==='nine')+'">'+stampOf('nine')+'<span>沒上第九節</span></button>'+
     '<span class="brush-days'+(b.type==='days'?' is-on':'')+'"><button type="button" class="brush" data-act="brush" data-t="days" aria-pressed="'+(b.type==='days')+'">'+stampOf('part')+'<span>指定星期</span></button>'+daysChips+'</span>'+
     '<button type="button" class="brush" data-act="brush" data-t="erase" aria-pressed="'+(b.type==='erase')+'">'+ic('eraser')+'<span>清除標示</span></button>';
   var done='<button type="button" class="btn btn-primary btn-sm" data-act="marktoggle" data-root="'+root+'" style="margin-left:auto">'+ic('check')+'完成標示</button>';
