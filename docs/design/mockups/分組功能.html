@@ -459,6 +459,54 @@ table.xl td.xgap{border:0}
 .xt{min-height:32px;padding:0 16px;border:1px solid var(--line-2);border-bottom:0;border-radius:6px 6px 0 0;background:var(--sunken);color:var(--text-2);font-weight:700;font-size:13px;cursor:pointer}
 .xt.on{background:#FFFFFF;color:#1B1B1B;border-color:var(--line-2)}
 @container (max-width:640px){.xt{min-height:44px}}
+
+/* ── 匯入畫面新增元素（設計 F）── */
+.sumrow{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;padding:10px 12px;margin-bottom:12px;background:var(--sunken);border:1px solid var(--line);border-radius:var(--r-md);font-size:13px;color:var(--text-2)}
+.sumrow .chip{display:inline-flex;align-items:center;gap:4px;min-height:30px;padding:0 10px;border-radius:99px;border:1px solid var(--accent-line);background:var(--accent-soft);color:var(--accent-ink);font-weight:700;font-size:12px;cursor:pointer}
+.sumrow .chip.warn{border-color:var(--warn-line);background:var(--warn-soft);color:var(--warn-ink)}
+.sumrow .k{color:var(--text-3)}
+.sheets{display:grid;gap:6px;margin-top:12px}
+.sheet{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line-2);border-radius:var(--r-md);background:var(--surface);cursor:pointer}
+.sheet.on{border-color:var(--accent);background:var(--accent-soft)}
+.sheet input{margin-top:3px;width:18px;height:18px;accent-color:var(--accent)}
+.sheet b{display:block}.sheet .hint{display:block}
+.sheet.dis{background:var(--sunken)}
+.fileline{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:10px 12px;border:1px solid var(--line-2);border-radius:var(--r-md);background:var(--sunken)}
+.fileline .fx{width:32px;height:32px;border-radius:8px;display:grid;place-items:center;background:var(--g2-soft);color:var(--g2-ink);font:700 15px var(--font-display);flex:none}
+.fileline b{display:block}.fileline>div{flex:1 1 180px;min-width:0}
+th .conf{display:inline-block;width:8px;height:8px;border-radius:50%;background:#D98E0B;margin-right:6px;vertical-align:middle}
+td.orig{background:var(--warn-soft);color:var(--warn-ink);font-weight:700}
+td.err{background:var(--danger-soft);color:var(--danger-ink);font-weight:700}
+td.prev{color:var(--text-2)}
+.warns{display:grid;gap:8px;margin-top:14px}
+.warns>header{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.warns>header b{font-size:13px}
+.wl{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:var(--r-md);border:1px solid var(--accent-line);background:var(--accent-soft);color:var(--accent-ink);font-size:13px}
+.wl.w{border-color:var(--warn-line);background:var(--warn-soft);color:var(--warn-ink)}
+.wl.x{border-color:var(--danger-line);background:var(--danger-soft);color:var(--danger-ink)}
+.wl .ic{margin-top:2px}.wl>div{flex:1;min-width:0}
+.wl .btn{margin-top:6px}
+.panel{margin-top:14px;border:1px solid var(--line-2);border-radius:var(--r-md);background:var(--surface);padding:14px}
+.panel h4{font:700 15px var(--font-display);margin-bottom:4px}
+.prow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:8px 12px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.prow:first-of-type{border-top:0}
+.prow .o{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.prow .o b{font:700 15px var(--font-display)}
+.frame.m .prow{grid-template-columns:1fr}
+.frame.m .sheet,.frame.m .sumrow .chip{min-height:44px}
+.frame.m .sheet input{width:22px;height:22px}
+.cmpl{display:grid;gap:6px;margin-top:10px}
+.cmpl .it{display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface);font-size:13px}
+.cmpl .it.imp{border-color:var(--accent-line);background:var(--accent-soft)}
+.cmpl .it .sp{margin-left:auto}
+.nexthint{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:flex-end;margin-top:14px}
+.nexthint .hint{color:var(--warn-ink);font-weight:700}
+.decide{display:grid;gap:12px}
+.decide .q{padding:14px 16px;border:1px solid var(--line-2);border-radius:var(--r-md);background:var(--surface)}
+.decide .q h3{font:700 15px var(--font-display);margin-bottom:6px}
+.decide .q p{color:var(--text-2);font-size:13px}
+.decide .rec{color:var(--accent-ink);font-weight:700}
+.tag{font-size:12px;font-weight:700;color:var(--text-3);margin-bottom:4px}
 </style>
 </head><body>
 
@@ -480,7 +528,7 @@ table.xl td.xgap{border:0}
   <h1>分組功能改版稿</h1>
   <nav aria-label="畫面目錄">
     <a href="#s-names">① 名單</a><a href="#s-method">② 分組方式</a><a href="#s-result">③ 分組結果</a>
-    <a href="#s-seat">④ 座位（傳統）</a><a href="#s-canvas">⑤ 座位（桌子畫布）</a><a href="#s-mobile">⑥ 手機</a><a href="#s-dl">⑦ 下載介面</a><a href="#s-files">⑧ 下載稿</a>
+    <a href="#s-seat">④ 座位（傳統）</a><a href="#s-canvas">⑤ 座位（桌子畫布）</a><a href="#s-mobile">⑥ 手機</a><a href="#s-dl">⑦ 下載介面</a><a href="#s-files">⑧ 下載稿</a><a href="#s-import">⑨ 匯入成績檔</a><a href="#s-import">⑨ 匯入成績檔</a>
   </nav>
   <button class="btn btn-sm" id="themeBtn" type="button">切換深色</button>
 </header>
@@ -557,6 +605,15 @@ table.xl td.xgap{border:0}
     <div class="sec-h"><h2>⑧ 下載稿：四份檔案</h2><span>分組名單 Word／Excel、座位表 Word／Excel</span></div>
     <p class="note">下面是檔案打開後的樣子，用目前畫面上的假資料即時畫出來：在④⑤換座位、在③換人、改上方的下載選項，這裡都會跟著變。紙張與試算表一律淺色（印出來與在 Office 裡就是淺色）。</p>
     <p class="note">缺成績略過的同學：下載檔名單最後多一行「未分組：林小安、楊承恩、周柏宇」（Word 兩頁、Excel 兩個工作表都有；沒人被略過時不出現），表尾「共 N 人」只算有分組的人。</p><div id="pv"></div>
+  </section>
+  <section class="sec" id="s-import">
+    <div class="sec-h"><h2>⑨ 匯入成績檔</h2><span>名單頁「匯入檔案」選了檔案之後（2026-11-22 定案）</span></div>
+    <p class="note">工作表清單、判斷摘要列、警告區、缺考／等第小面板、「上次分組」欄位角色、隱藏列略過提示。檔案與人名都是假資料。</p>
+    <div id="f-imp-d" class="frame"></div>
+    <div class="sec-h" style="margin-top:24px"><h2>手機 390</h2></div>
+    <div id="f-imp-m" class="frame m"></div>
+    <div class="sec-h" style="margin-top:24px"><h2>分組方式的比對清單</h2><span>多一筆「匯入的分組」</span></div>
+    <div id="f-imp-cmp"></div>
   </section>
 </div>
 
@@ -837,7 +894,7 @@ table.xl td.xgap{border:0}
     '<div class="card-h"><span class="num">1</span><h3>匯入名單</h3><span class="sp"></span><button class="btn btn-danger btn-sm" type="button">'+ic('trash')+'清除名單</button><p>貼上、匯入檔案或逐筆輸入都可以</p></div>'+
     seg('src',[['paste','貼上'],['file','匯入檔案'],['hand','逐筆輸入']])+
     '<div style="margin-top:12px" data-pane="src:paste"><label class="label" for="paste">貼上名單（可從 Excel 直接複製）</label><textarea id="paste" spellcheck="false" aria-label="貼上名單">'+pasteTxt+'</textarea></div>'+
-    '<div style="margin-top:12px" data-pane="src:file" hidden><div class="dz"><b>把 Excel 或 CSV 檔拖到這裡</b><span class="hint">支援 .xlsx、.xls、.csv；第一個工作表會被讀取</span><button class="btn" type="button">選擇檔案</button></div></div>'+
+    '<div style="margin-top:12px" data-pane="src:file" hidden><div class="dz"><b>把 Excel 或 CSV 檔拖到這裡</b><span class="hint">支援 .xlsx、.xls、.csv；會自動挑選名單所在的工作表，也可以自己選</span><button class="btn" type="button">選擇檔案</button></div></div>'+
     '<div style="margin-top:12px" data-pane="src:hand" hidden><div class="tbl-wrap"><table><tr><th>座號</th><th>姓名</th><th>成績（可空白）</th></tr><tr><td>1</td><td><input class="input" aria-label="姓名" value="王小明"></td><td><input class="input sm" aria-label="成績" value="86"></td></tr><tr><td>2</td><td><input class="input" aria-label="姓名" value="李小華"></td><td><input class="input sm" aria-label="成績" value="79"></td></tr><tr><td>3</td><td><input class="input" aria-label="姓名" placeholder="輸入姓名"></td><td><input class="input sm" aria-label="成績" placeholder=""></td></tr></table></div><button class="btn btn-sm" style="margin-top:8px" type="button">'+ic('plus')+'新增一列</button></div>'+
     '<div style="margin-top:12px">'+
       '<div class="opt"><div><b>自動加入座號</b><span class="hint">名單沒有座號時，依貼上的順序編 1、2、3…；已有座號就用原本的</span></div>'+sw(true,'swno','自動加入座號')+'</div>'+
@@ -1218,6 +1275,64 @@ table.xl td.xgap{border:0}
   function isDark(){var t=root.getAttribute('data-theme');return t?t==='dark':matchMedia('(prefers-color-scheme: dark)').matches}
   function lab(){tb.textContent=isDark()?'切換淺色':'切換深色'}
   tb.addEventListener('click',function(){root.setAttribute('data-theme',isDark()?'light':'dark');lab()});lab();
+})();
+
+
+(function(){
+var ic=function(n){return '<svg class="ic" aria-hidden="true"><use href="#i-'+n+'"/></svg>'};
+var sw=function(on,id,label){return '<span class="sw"><input type="checkbox" id="'+id+'" aria-label="'+label+'"'+(on?' checked':'')+'></span>'};
+var seg=function(items,sel,cls){return '<div class="seg '+(cls||'')+'" role="tablist">'+items.map(function(it,i){return '<button type="button" role="tab" aria-selected="'+(i===sel)+'">'+it+'</button>'}).join('')+'</div>'};
+function hdr(){return '<div class="hdr"><div class="brand"><span class="logo" aria-hidden="true"></span>座位小幫手<small>v3.6 稿</small></div><div class="tabs" role="tablist"><button class="tab" role="tab" aria-selected="false" type="button">排座位</button><button class="tab" role="tab" aria-selected="true" type="button">分組</button></div><div class="hdr-r"><button class="btn btn-sm" type="button">'+ic('gear')+'設定</button></div></div><div class="steps"><div class="st on"><span class="n">1</span>名單</div><div class="st"><span class="n">2</span>分組方式</div><div class="st"><span class="n">3</span>結果與座位</div></div>'}
+var names=['王小明','李小華','張小美','陳大文','林小安','黃志豪','吳雅婷'];
+var sc=['86','79','假','91','缺','74','88'], prev=['第 3 組','第 1 組','第 5 組','第 2 組','第 3 組','第 7 組','第 2 組'];
+function sheetsHTML(m){return '<div class="sheets" id="'+(m?'imp-sh-m':'imp-sh-d')+'"><label class="sheet on"><input type="checkbox" checked><div><b>彙總 <span class="badge ok">已選</span></b><span class="hint">68 人、2 個班級、成績欄 4 個</span></div></label>'+
+ '<label class="sheet"><input type="checkbox"><div><b>3A 原始成績</b><span class="hint">與「彙總」的人重複，沒有選</span></div></label>'+
+ '<label class="sheet"><input type="checkbox"><div><b>3B 原始成績</b><span class="hint">與「彙總」的人重複，沒有選</span></div></label>'+
+ '<label class="sheet dis"><input type="checkbox"><div><b>等第登記 <span class="badge warn">'+ic('warn')+'無法計算</span></b><span class="hint">34 人、成績是 A／B／C 等第，需要換算才能用</span></div></label>'+
+ '<label class="sheet dis"><input type="checkbox"><div><b>比重說明</b><span class="hint">沒有名單，沒有選</span></div></label></div>'}
+function leftCard(m){return '<div class="card"><div class="card-h"><span class="num">1</span><h3>匯入名單</h3><span class="sp"></span><button class="btn btn-danger btn-sm" type="button">'+ic('trash')+'清除名單</button><p>貼上、匯入檔案或逐筆輸入都可以</p></div>'+
+ seg(['貼上','匯入檔案','逐筆輸入'],1)+
+ '<div style="margin-top:12px" class="fileline"><span class="fx">X</span><div><b>三年級期末成績總表.xlsx</b><span class="hint">5 個工作表，會自動挑選名單所在的工作表，也可以自己選</span></div><button class="btn btn-sm" type="button">換一個檔案</button></div>'+
+ '<label class="label" style="margin-top:14px">要匯入哪些工作表</label>'+sheetsHTML(m)+
+ '<div style="margin-top:12px"><div class="opt"><div><b>第一列是標題</b><span class="hint">自動判斷：第 1 列有「姓名」「學期成績」字樣，已當作標題</span></div><span class="badge info">自動判斷：有標題</span></div>'+
+ '<div class="opt"><div><b>納入被隱藏的列</b><span class="hint">檔案裡有 2 列被隱藏，預設略過（可能是已轉出的同學）</span></div>'+sw(false,'imp-swhid'+(m?'m':'d'),'納入被隱藏的列')+'</div></div></div>'}
+function table(){return '<div class="tbl-wrap"><table><thead><tr>'+
+ [['班級',['班級','座號','姓名','成績','上次分組','略過'],0],['座號',null,1],['姓名',null,2],['學期成績',null,3],['組別',null,4]].map(function(c,i){
+  var opts=['班級','座號','姓名','成績','上次分組','略過'],selv=['班級','座號','姓名','成績','上次分組'][i];
+  return '<th>'+(i===3?'<span class="conf" title="請確認"></span>':'')+'<select class="sel" aria-label="第'+(i+1)+'欄是">'+opts.map(function(o){return '<option'+(o===selv?' selected':'')+'>'+o+'</option>'}).join('')+'</select></th>'}).join('')+'</tr></thead><tbody>'+
+ names.map(function(n,i){var s=sc[i];var cls=(s==='假'||s==='缺')?' class="orig" title="原文：'+s+'，目前當作沒有成績"':'';return '<tr><td>3A</td><td>'+(i+1)+'</td><td>'+n+'</td><td'+cls+'>'+s+'</td><td class="prev">'+prev[i]+'</td></tr>'}).join('')+
+ '<tr><td colspan="5" class="hint">…另 61 人</td></tr></tbody></table></div>'}
+function warnsHTML(){return '<div class="warns"><header><b>程式的判斷與提醒</b><span class="badge info">資訊 3</span><span class="badge warn">'+ic('warn')+'請確認 3</span><span class="badge" style="background:var(--danger-soft);border-color:var(--danger-line);color:var(--danger-ink)">無法使用 1</span><span class="sp" style="margin-left:auto"></span><button class="btn btn-sm" type="button">收合</button></header>'+
+ '<div class="wl x">'+ic('warn')+'<div><b>「等第登記」的成績是 A／B／C 等第，算不出總成績</b>要把等第換算成分數嗎？預設 A=95、B=85、C=75、D=65、E=55。<br><button class="btn btn-sm" type="button">改換算</button></div></div>'+
+ '<div class="wl w">'+ic('warn')+'<div>「學期成績」「原始成績」「平均」都像總成績，已選最右邊的「學期成績」。不對請在表頭改。</div></div>'+
+ '<div class="wl w">'+ic('warn')+'<div>成績欄裡有 5 個不是數字的格子（缺、假），目前當作沒有成績。要換算成分數嗎？<br><button class="btn btn-sm" type="button">逐項設定</button></div></div>'+
+ '<div class="wl w">'+ic('warn')+'<div>有 2 位同名（座號 12、27），都保留了。</div></div>'+
+ '<div class="wl">'+ic('check')+'<div>找到 5 個工作表，已選「彙總」（68 人）。另 2 個工作表的人和它重複，沒有選。</div></div>'+
+ '<div class="wl">'+ic('check')+'<div>第 1 列是各項成績的比重（10%、20%、30%…），已略過；成績欄也可以選「依比重加權」。</div></div>'+
+ '<div class="wl">'+ic('check')+'<div>略過 1 列：第 37 列是統計列「平均」。有 2 列被隱藏，也已略過。</div></div></div>'}
+function gradePanel(){return '<div class="panel"><h4>缺考、請假與等第怎麼算</h4><p class="hint" style="margin-bottom:6px">只有偵測到才會出現。每一項選一種算法，預設是「沒有成績」。</p>'+
+ [['缺','3 位','缺考'],['假','2 位','請假'],['A','12 位','等第'],['B','15 位','等第'],['C','7 位','等第']].map(function(r,i){var op=i<2?['沒有成績','換算成 N 分','當 0 分']:['換算成 N 分','沒有成績'];var v=i<2?'':(i===2?'95':i===3?'85':'75');
+  return '<div class="prow"><div class="o"><b>'+r[0]+'</b><span class="hint">'+r[2]+'，出現 '+r[1]+'</span></div><div style="display:flex;gap:8px;align-items:center"><select class="sel" aria-label="'+r[0]+'的算法">'+op.map(function(o){return '<option>'+o+'</option>'}).join('')+'</select>'+(i>=2?'<input class="input sm" aria-label="分數" value="'+v+'">':'')+'</div></div>'}).join('')+
+ '<p class="hint" style="margin-top:6px">換算表可改；沒用到的項目不會出現。</p></div>'}
+function multi(){return '<div class="opt" style="margin-top:12px"><div><b>有多個成績欄時</b><span class="hint">已把「期中」「期末」「學期成績」都標成績；輸出仍是單一成績</span></div>'+seg(['只取最右','平均','依比重加權'],0)+'</div>'}
+function rightCard(m){return '<div class="card"><div class="card-h"><h3>程式讀到的內容</h3><span class="sp"></span><span class="badge">共 68 人</span><span class="badge ok">有成績 61 人</span><span class="badge warn">'+ic('warn')+'缺成績 7 人</span></div>'+
+ '<div class="sumrow"><span><span class="k">讀取</span>　彙總（共 5 個工作表，已選 1）</span><span><span class="k">標題列</span>　第 1 列</span><span><span class="k">成績欄</span>　學期成績</span><span>共 68 人（2 個班級）</span><span><span class="k">略過</span>　1 列、隱藏 2 列</span>'+
+ '<button class="chip" type="button">改工作表</button><button class="chip" type="button">改標題列</button><button class="chip warn" type="button">'+ic('warn')+'改成績欄</button></div>'+
+ table()+
+ '<div class="alert info" style="margin-top:12px">'+ic('check')+'<div><b>偵測到「組別」欄，已當作「上次分組」</b>匯入後，「避免與上次同組」會多一筆「匯入的分組（來自檔案『組別』欄）」可以比對。不要的話，把表頭改成「略過」。</div></div>'+
+ multi()+gradePanel()+warnsHTML()+
+ '<div class="nexthint"><span class="hint">有 3 項需要確認</span><button class="btn btn-primary btn-lg" type="button">下一步：選擇分組方式</button></div></div>'}
+function aside(){return '<aside class="col"><div class="card"><h3 style="font:700 16px var(--font-display);margin-bottom:10px">可以匯入的檔案</h3><p class="hint">支援 .xlsx、.xls、.csv（含繁體 Windows 存的 Big5 編碼）。</p><p class="hint" style="margin-top:8px">檔案在你的電腦上讀取，名單不會上傳。</p><p class="hint" style="margin-top:8px">程式會自動找標題列、姓名欄與總成績欄，並在左邊告訴你怎麼判斷；不對的地方都能一鍵改。</p></div></aside>'}
+function page(m){return hdr()+'<div class="body '+(m?'':'grid2')+'"><div class="col">'+leftCard(m)+rightCard(m)+'</div>'+(m?'':aside())+'</div>'}
+document.getElementById('f-imp-d').innerHTML=page(false);
+document.getElementById('f-imp-m').innerHTML=page(true);
+/* 分組方式：比對清單 */
+document.getElementById('f-imp-cmp').innerHTML='<div class="card" style="max-width:640px"><div class="card-h"><span class="num">2</span><h3>分組方式</h3></div><div class="opt"><div><b>避免與上次同組</b><span class="hint">盡量讓每一組都換新夥伴；做不到時，結果頁會告訴你重複幾對。</span></div>'+sw(true,'imp-swavoid','避免與上次同組')+'</div>'+
+ '<div class="opt" style="border-top:0;padding-top:0"><div><span class="label" style="margin:0">比對範圍</span><span class="hint">會和下面這些分組比對，避免再次同組</span></div>'+seg(['上一次','最近 3 次'],1)+'</div>'+
+ '<div class="cmpl"><div class="it imp"><span class="badge info">匯入</span><span>匯入的分組（來自檔案「組別」欄）</span><span class="sp hint">3 組、7 人</span><button class="btn btn-sm" type="button">查看分組</button></div>'+
+ '<div class="it"><span>11/14 13:05　隨機分組・8 組・32 人</span><span class="sp"></span><button class="btn btn-sm" type="button">查看分組</button></div>'+
+ '<div class="it"><span>11/07 09:40　按成績分組・8 組・32 人</span><span class="sp"></span><button class="btn btn-sm" type="button">查看分組</button></div></div>'+
+ '<p class="hint" style="margin-top:8px">匯入的分組只在這個瀏覽器的比對清單裡，不會變成分組紀錄。</p></div>';
 })();
 </script>
 </body></html>
