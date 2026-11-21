@@ -1365,6 +1365,869 @@ Authorization inquiries: derliang@gmail.com
         <p id="shareModalStatus"></p>
     </div>
 
+    <script id="group-logic">
+        /* ═══ 分組功能：純邏輯層（GroupLogic）═══
+         * 規格：docs/design/DESIGN.md 第 10 節、docs/design/mockups/分組功能.html。
+         * 這一段不碰畫面（不讀寫 DOM），只做：分組演算法、座位對應、下載檔（.docx／.xlsx）的資料與位元組。
+         * .docx／.xlsx 用自寫的最小 zip（不壓縮）封裝，不依賴第三方函式庫（DESIGN.md 10.6）。
+         * 名單格式：roster = [{ cls, no, name, score }]；分組 groups = [[名單索引, …], …]。
+         * 測試：node --test tests/（tests/group-logic.test.js 會從本檔抽出這段執行）。 */
+        (function (root) {
+            'use strict';
+
+            /* ── 常數 ── */
+            const GROUP_COLORS = [ // 下載稿紙張用的組別色（DESIGN.md 10.4；淺色、十六進位）
+                { soft: 'E6EEFB', ink: '1D3F8F', line: 'B7CBF0' },
+                { soft: 'E4F5EC', ink: '0B5B3A', line: 'A9DDBF' },
+                { soft: 'FDF1D8', ink: '7A4A06', line: 'F2D08A' },
+                { soft: 'FCE7EC', ink: '9A1B3D', line: 'F4B6C4' },
+                { soft: 'EEE9FB', ink: '4B2A9E', line: 'CBBDF1' },
+                { soft: 'DDF3F4', ink: '0E5961', line: '9FD8DC' },
+                { soft: 'FDE9DC', ink: '8A3A0B', line: 'F4BE9B' },
+                { soft: 'E9EDF2', ink: '2F3C4F', line: 'C3CCD8' }
+            ];
+            const GRAY = { soft: 'F2F2F2', ink: '262626', line: 'BDBDBD' }; // 「保留組別顏色」關閉時
+            const METHOD_LABELS = { random: '隨機分組', snake: 'S 型分組', round: '輪流發牌分組', balanced: '總平均一致分組' };
+            const LAYOUT_LABELS = { block: '2×2 方塊', row: '橫排一段', col: '直排一段' };
+            const MIME = {
+                docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            };
+            const colorOf = (g, useColor) => (useColor === false ? GRAY : GROUP_COLORS[g % GROUP_COLORS.length]);
+
+            /* ── 亂數（可給種子，測試可重現）── */
+            function makeRng(seed) {
+                if (seed == null) return Math.random;
+                let a = seed >>> 0;
+                return function () {
+                    a = (a + 0x6D2B79F5) >>> 0;
+                    let t = a;
+                    t = Math.imul(t ^ (t >>> 15), t | 1);
+                    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+                    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+                };
+            }
+            function shuffle(arr, rng) {
+                const a = arr.slice();
+                for (let i = a.length - 1; i > 0; i--) {
+                    const j = Math.floor(rng() * (i + 1));
+                    const t = a[i]; a[i] = a[j]; a[j] = t;
+                }
+                return a;
+            }
+
+            /* ── 名單判斷 ── */
+            function toScore(v) {
+                if (typeof v === 'number') return Number.isFinite(v) ? v : null;
+                if (v == null) return null;
+                const s = String(v).trim();
+                if (!s || !/^[-+]?(\d+\.?\d*|\.\d+)$/.test(s)) return null;
+                return Number(s);
+            }
+            /* 智慧判斷（10.3a）：有無成績；班級 none＝沒有班級資料、one＝同一班、multi＝多個班級 */
+            function analyzeRoster(roster) {
+                const classes = [];
+                (roster || []).forEach(st => {
+                    const c = String(st && st.cls != null ? st.cls : '').trim();
+                    if (c && classes.indexOf(c) < 0) classes.push(c);
+                });
+                return {
+                    count: (roster || []).length,
+                    hasScores: (roster || []).some(st => st && toScore(st.score) != null),
+                    classMode: classes.length === 0 ? 'none' : (classes.length === 1 ? 'one' : 'multi'),
+                    className: classes.length === 1 ? classes[0] : '',
+                    classes
+                };
+            }
+            /* 按成績分組前：哪些人沒有成績（回傳名單索引） */
+            function missingScores(roster) {
+                const out = [];
+                (roster || []).forEach((st, i) => { if (toScore(st && st.score) == null) out.push(i); });
+                return out;
+            }
+            function studentKey(st) {
+                return [st.cls, st.no, st.name].map(x => String(x == null ? '' : x).trim()).join('|');
+            }
+            function pad2(n) { return String(n).padStart(2, '0'); }
+            function formatDate(d) {
+                d = d || new Date();
+                return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+            }
+            function formatTime(d) {
+                d = d || new Date();
+                return pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+            }
+            function safeFilePart(s) {
+                return String(s).replace(/[\\/:*?"<>|\u0000-\u001F]/g, '_').trim();
+            }
+            /* 檔名：[班級_]分組名單_日期、[班級_]座位表_日期；一班用班級名、多班用「多班_」、沒班級不加前綴 */
+            function fileName(kind, fmt, info, date) {
+                const prefix = info.classMode === 'one' ? safeFilePart(info.className) + '_'
+                    : (info.classMode === 'multi' ? '多班_' : '');
+                const body = kind === 'group' ? '分組名單' : '座位表';
+                const d = typeof date === 'string' ? date : formatDate(date);
+                return prefix + body + '_' + d + '.' + fmt;
+            }
+            /* 標題前綴：同一班才寫班級（例如「3A 分組名單」） */
+            function titlePrefix(info) { return info.classMode === 'one' ? info.className + ' ' : ''; }
+
+            /* ── 組數與各組人數（10.6：前幾組多 1 人，差距最多 1 人）── */
+            function groupSizes(n, count) {
+                if (n <= 0) return [];
+                const g = Math.max(1, Math.min(Math.floor(count) || 1, n)); // 組數大於人數時，最多 n 組（每組 1 人）
+                const base = Math.floor(n / g), extra = n % g, out = [];
+                for (let i = 0; i < g; i++) out.push(base + (i < extra ? 1 : 0));
+                return out;
+            }
+            /* by='count' 依組數；by='size' 依每組人數（組數＝人數÷每組人數無條件進位，因此沒有一組超過指定人數） */
+            function resolveGroupCount(n, by, value) {
+                const v = Math.max(1, Math.floor(value) || 1);
+                const want = by === 'size' ? Math.ceil(n / v) : v;
+                const sizes = groupSizes(n, want);
+                return { count: sizes.length, sizes, clamped: sizes.length !== want };
+            }
+            function chunk(order, sizes) {
+                const out = []; let p = 0;
+                sizes.forEach(s => { out.push(order.slice(p, p + s)); p += s; });
+                return out;
+            }
+            /* 大組排前面（穩定排序），讓「前幾組多 1 人」 */
+            function bigGroupsFirst(groups) {
+                return groups.map((g, i) => [g, i]).sort((a, b) => (b[0].length - a[0].length) || (a[1] - b[1])).map(x => x[0]);
+            }
+            function sizeText(groups) {
+                if (!groups.length) return '';
+                const s = groups.map(g => g.length), lo = Math.min.apply(null, s), hi = Math.max.apply(null, s);
+                return lo === hi ? '每組 ' + hi + ' 人' : '每組 ' + lo + '～' + hi + ' 人';
+            }
+
+            /* ── 與過去同組（避免同組、重複對數）── */
+            const pairKey = (a, b) => { const x = String(a), y = String(b); return x < y ? x + '\u0001' + y : y + '\u0001' + x; };
+            /* pastGroupings：過去幾次的分組，每次是 [[id, …], …]；id 要與本次分組用同一種（例如 studentKey） */
+            function pastPairSet(pastGroupings) {
+                const set = new Set();
+                (pastGroupings || []).forEach(gs => (gs || []).forEach(g => {
+                    for (let i = 0; i < g.length; i++) for (let j = i + 1; j < g.length; j++) set.add(pairKey(g[i], g[j]));
+                }));
+                return set;
+            }
+            function repeatPairs(groups, pastGroupings) {
+                const set = pastGroupings instanceof Set ? pastGroupings : pastPairSet(pastGroupings);
+                const pairs = []; let groupCount = 0;
+                groups.forEach(g => {
+                    let hit = false;
+                    for (let i = 0; i < g.length; i++) for (let j = i + 1; j < g.length; j++) {
+                        if (set.has(pairKey(g[i], g[j]))) { pairs.push([g[i], g[j]]); hit = true; }
+                    }
+                    if (hit) groupCount++;
+                });
+                return { pairs, pairCount: pairs.length, groupCount };
+            }
+            /* 避免同組做不到時的提示文字（10.6；設計對照時再確認用字）。沒有重複回傳空字串 */
+            function avoidNotice(rep, compareCount) {
+                if (!rep || !rep.groupCount) return '';
+                const span = compareCount > 1 ? '最近 ' + compareCount + ' 次' : '上次';
+                return '有 ' + rep.groupCount + ' 組無法完全避開' + span + '的同組（共 ' + rep.pairCount + ' 對再度同組）';
+            }
+            function conflictOf(x, group, set, skip) {
+                let c = 0;
+                for (let i = 0; i < group.length; i++) { const y = group[i]; if (y !== x && y !== skip && set.has(pairKey(x, y))) c++; }
+                return c;
+            }
+            function improveAvoid(groups, set, rng) {
+                for (let pass = 0; pass < 60; pass++) {
+                    let improved = false;
+                    const gi = shuffle(groups.map((_, i) => i), rng);
+                    for (const i of gi) for (let j = 0; j < groups.length; j++) {
+                        if (i === j) continue;
+                        const A = groups[i], B = groups[j];
+                        for (let a = 0; a < A.length; a++) {
+                            const x = A[a], cx = conflictOf(x, A, set);
+                            if (!cx) continue;
+                            for (let b = 0; b < B.length; b++) {
+                                const y = B[b];
+                                const before = cx + conflictOf(y, B, set);
+                                const after = conflictOf(x, B, set, y) + conflictOf(y, A, set, x);
+                                if (after < before) { A[a] = y; B[b] = x; improved = true; break; }
+                            }
+                        }
+                    }
+                    if (!improved) break;
+                }
+                return groups;
+            }
+            /* 隨機分組。opts.avoid＝要避開的過去分組（陣列，比對上一次就放 1 筆、最近 3 次放 3 筆）
+             * 回傳 { groups, repeats, notice }；做不到完全避開時照常分組，notice 說明有幾組沒避開 */
+            function randomGroups(ids, count, opts) {
+                opts = opts || {};
+                const rng = opts.rng || makeRng(opts.seed);
+                const sizes = groupSizes(ids.length, count);
+                const set = pastPairSet(opts.avoid);
+                let best = chunk(shuffle(ids, rng), sizes), bestRep = repeatPairs(best, set);
+                if (set.size && bestRep.pairCount) {
+                    const restarts = opts.restarts || 40;
+                    for (let r = 0; r < restarts && bestRep.pairCount; r++) {
+                        const g = improveAvoid(r === 0 ? best.map(x => x.slice()) : chunk(shuffle(ids, rng), sizes), set, rng);
+                        const rep = repeatPairs(g, set);
+                        if (rep.pairCount < bestRep.pairCount || (rep.pairCount === bestRep.pairCount && rep.groupCount < bestRep.groupCount)) { best = g; bestRep = rep; }
+                    }
+                }
+                return { groups: best, repeats: bestRep, notice: avoidNotice(bestRep, (opts.avoid || []).length) };
+            }
+
+            /* ── 按成績分組（10.2）── items = [{ id, score }]，score 必須是數字 ── */
+            function sortByScore(items) {
+                items.forEach(it => { if (toScore(it.score) == null) throw new Error('按成績分組需要每個人都有成績'); });
+                return items.map((it, i) => [it, i]).sort((a, b) => (toScore(b[0].score) - toScore(a[0].score)) || (a[1] - b[1])).map(x => x[0]);
+            }
+            function dealGroups(items, count, snake) {
+                const sorted = sortByScore(items), g = groupSizes(sorted.length, count).length, out = [];
+                for (let i = 0; i < g; i++) out.push([]);
+                sorted.forEach((it, k) => {
+                    const r = Math.floor(k / g), p = k % g;
+                    out[snake && r % 2 ? g - 1 - p : p].push(it.id);
+                });
+                return bigGroupsFirst(out);
+            }
+            function avgOfIds(ids, scoreOf) {
+                let t = 0, n = 0;
+                ids.forEach(id => { const s = toScore(scoreOf(id)); if (s != null) { t += s; n++; } });
+                return n ? t / n : null;
+            }
+            function spreadOf(avgs) {
+                const v = avgs.filter(x => x != null);
+                if (!v.length) return 0;
+                return Math.max.apply(null, v) - Math.min.apply(null, v);
+            }
+            /* 總平均一致：先 S 型，再兩兩互換微調，讓各組平均的最高最低差最小 */
+            function balanceGroups(items, count) {
+                const score = new Map(items.map(it => [it.id, toScore(it.score)]));
+                const groups = dealGroups(items, count, true);
+                const sums = groups.map(g => g.reduce((t, id) => t + score.get(id), 0));
+                const objective = (s) => {
+                    const a = s.map((x, i) => x / groups[i].length), m = a.reduce((t, x) => t + x, 0) / a.length;
+                    return [Math.max.apply(null, a) - Math.min.apply(null, a), a.reduce((t, x) => t + (x - m) * (x - m), 0)];
+                };
+                const better = (p, q) => p[0] < q[0] - 1e-9 || (Math.abs(p[0] - q[0]) <= 1e-9 && p[1] < q[1] - 1e-9);
+                let cur = objective(sums);
+                for (let iter = 0; iter < 500; iter++) {
+                    let best = null;
+                    for (let i = 0; i < groups.length; i++) for (let j = i + 1; j < groups.length; j++) {
+                        for (let a = 0; a < groups[i].length; a++) for (let b = 0; b < groups[j].length; b++) {
+                            const d = score.get(groups[j][b]) - score.get(groups[i][a]);
+                            if (!d) continue;
+                            sums[i] += d; sums[j] -= d;
+                            const o = objective(sums);
+                            sums[i] -= d; sums[j] += d;
+                            if (better(o, best ? best.o : cur)) best = { o, i, j, a, b, d };
+                        }
+                    }
+                    if (!best) break;
+                    const t = groups[best.i][best.a]; groups[best.i][best.a] = groups[best.j][best.b]; groups[best.j][best.b] = t;
+                    sums[best.i] += best.d; sums[best.j] -= best.d; cur = best.o;
+                }
+                return groups;
+            }
+            /* method：'snake' S 型、'round' 成績高到低輪流發牌、'balanced' 總平均一致 */
+            function scoreGroups(items, count, method) {
+                if (method === 'round') return dealGroups(items, count, false);
+                if (method === 'snake') return dealGroups(items, count, true);
+                if (method === 'balanced') return balanceGroups(items, count);
+                throw new Error('不認得的分組方式：' + method);
+            }
+            /* 名單版：groupRoster(roster, { method, count, avoid, seed })；按成績時缺成績的人要先補或略過（由畫面處理，這裡只收有成績的索引） */
+            function groupRoster(roster, opts) {
+                const idx = opts.indices || roster.map((_, i) => i);
+                // opts.avoid 是過去的分組，成員用 studentKey；換成本次名單索引（同名同號的人都算）
+                const byKey = new Map();
+                idx.forEach(i => { const k = studentKey(roster[i]); if (!byKey.has(k)) byKey.set(k, []); byKey.get(k).push(i); });
+                const avoid = (opts.avoid || []).map(gs => gs.map(g => [].concat.apply([], g.map(k => byKey.get(k) || []))));
+                if (opts.method === 'random') return randomGroups(idx, opts.count, { avoid, seed: opts.seed, rng: opts.rng });
+                const groups = scoreGroups(idx.map(i => ({ id: i, score: roster[i].score })), opts.count, opts.method);
+                return { groups, repeats: repeatPairs(groups, avoid), notice: '' };
+            }
+            function groupAverages(groups, roster) { return groups.map(g => avgOfIds(g, i => roster[i].score)); }
+
+            /* ── 座位（10.3）：座位塊大小依最多人那組，其餘組空位留空（10.6）── */
+            function maxSize(groups) { return groups.reduce((m, g) => Math.max(m, g.length), 0); }
+            function blockSlots(groups, per) {
+                const out = [];
+                groups.forEach((g, gi) => { for (let k = 0; k < per; k++) out.push({ g: gi, k, id: k < g.length ? g[k] : null }); });
+                return out;
+            }
+            const seatKey = (c, d) => c + ',' + d;
+            function normOff(off) {
+                const s = new Set();
+                (off || []).forEach(k => s.add(String(k).replace('-', ',')));
+                return s;
+            }
+            /* 傳統座位：cfg = { cols 排數, depth 每排位置數, layout 'block'|'row'|'col', off ['排,位置'…], aisleAfter [排號…] }
+             * 座標：第 c 排（左到右）、第 d 個位置（前到後，1＝最靠講台） */
+            function tradSeatOrder(cfg, per) {
+                const C = cfg.cols, D = cfg.depth, o = [];
+                if (cfg.layout === 'row') { for (let d = 1; d <= D; d++) for (let c = 1; c <= C; c++) o.push([c, d]); }
+                else if (cfg.layout === 'col') { for (let c = 1; c <= C; c++) for (let d = 1; d <= D; d++) o.push([c, d]); }
+                else {
+                    const w = Math.max(1, Math.ceil(per / 2)); // 方塊：前後 2 個位置 × w 排（4 人＝2×2）
+                    for (let tr = 1; tr <= D; tr += 2) for (let tc = 1; tc <= C; tc += w)
+                        for (let d = tr; d < Math.min(tr + 2, D + 1); d++) for (let c = tc; c < Math.min(tc + w, C + 1); c++) o.push([c, d]);
+                }
+                return o;
+            }
+            function tradSeatMap(cfg, groups) {
+                const mx = maxSize(groups), per = cfg.layout === 'block' ? 2 * Math.ceil(mx / 2) : mx;
+                const off = normOff(cfg.off), slots = blockSlots(groups, per), cells = {};
+                let i = 0, available = 0;
+                tradSeatOrder(cfg, mx).forEach(p => {
+                    const key = seatKey(p[0], p[1]);
+                    if (off.has(key)) return;
+                    available++;
+                    const s = slots[i++];
+                    cells[key] = s ? { g: s.g, k: s.k, id: s.id } : null; // id 為 null＝空位
+                });
+                const needed = slots.length;
+                return { mode: 'trad', cfg, cells, off, needed, available, lack: Math.max(0, needed - available), slotsPerGroup: per };
+            }
+            /* 分組座位（桌子）：tables = [{ n 座位數, shape 'rect'|'round'|'hex', one 長桌只坐一側, ord 'side' 同一邊|'face' 面對面 }]
+             * 每張桌回傳 top／bot 兩排（圓桌、六邊形以上下兩排表示）；座標「桌-座」 */
+            function tableSeatMap(tables, groups) {
+                const per = maxSize(groups), slots = blockSlots(groups, per);
+                let idx = 0, available = 0;
+                const out = tables.map((t, i) => {
+                    const n = t.n, a = t.shape === 'rect' && t.one ? n : Math.ceil(n / 2), b = n - a;
+                    const top = [], bot = [], order = [];
+                    if (t.shape === 'rect' && t.ord === 'face') { for (let k = 0; k < Math.max(a, b); k++) { if (k < a) order.push(['A', k]); if (k < b) order.push(['B', k]); } }
+                    else { for (let k = 0; k < a; k++) order.push(['A', k]); for (let k = 0; k < b; k++) order.push(['B', k]); }
+                    const gs = {};
+                    order.forEach((o, s) => {
+                        available++;
+                        const sl = slots[idx++];
+                        const seat = { table: i, seq: s, lbl: (i + 1) + '-' + (s + 1), g: sl ? sl.g : -1, k: sl ? sl.k : -1, id: sl ? sl.id : null };
+                        if (seat.id != null) gs[seat.g] = 1;
+                        (o[0] === 'A' ? top : bot)[o[1]] = seat;
+                    });
+                    return { index: i, table: t, top, bot, groups: Object.keys(gs).map(Number).sort((x, y) => x - y) };
+                });
+                const needed = slots.length;
+                return { mode: 'table', tables: out, needed, available, lack: Math.max(0, needed - available) };
+            }
+
+            /* ── 最小 zip（不壓縮，UTF-8 檔名）── */
+            const CRC_TABLE = (() => {
+                const t = new Uint32Array(256);
+                for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; }
+                return t;
+            })();
+            function crc32(u8) {
+                let c = 0xFFFFFFFF;
+                for (let i = 0; i < u8.length; i++) c = CRC_TABLE[(c ^ u8[i]) & 0xFF] ^ (c >>> 8);
+                return (c ^ 0xFFFFFFFF) >>> 0;
+            }
+            const utf8 = s => new TextEncoder().encode(s);
+            function zip(files, date) {
+                const d = date || new Date();
+                const dosTime = (d.getHours() << 11) | (d.getMinutes() << 5) | Math.floor(d.getSeconds() / 2);
+                const dosDate = ((Math.max(1980, d.getFullYear()) - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+                const locals = [], centrals = [];
+                let offset = 0;
+                files.forEach(f => {
+                    const name = utf8(f.name), data = typeof f.data === 'string' ? utf8(f.data) : f.data, crc = crc32(data);
+                    const lh = new DataView(new ArrayBuffer(30));
+                    lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true); lh.setUint16(8, 0, true);
+                    lh.setUint16(10, dosTime, true); lh.setUint16(12, dosDate, true); lh.setUint32(14, crc, true);
+                    lh.setUint32(18, data.length, true); lh.setUint32(22, data.length, true); lh.setUint16(26, name.length, true); lh.setUint16(28, 0, true);
+                    const ch = new DataView(new ArrayBuffer(46));
+                    ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true); ch.setUint16(10, 0, true);
+                    ch.setUint16(12, dosTime, true); ch.setUint16(14, dosDate, true); ch.setUint32(16, crc, true);
+                    ch.setUint32(20, data.length, true); ch.setUint32(24, data.length, true); ch.setUint16(28, name.length, true);
+                    ch.setUint16(30, 0, true); ch.setUint16(32, 0, true); ch.setUint16(34, 0, true); ch.setUint16(36, 0, true); ch.setUint32(38, 0, true);
+                    ch.setUint32(42, offset, true);
+                    locals.push(new Uint8Array(lh.buffer), name, data);
+                    centrals.push(new Uint8Array(ch.buffer), name);
+                    offset += 30 + name.length + data.length;
+                });
+                const cdSize = centrals.reduce((t, x) => t + x.length, 0);
+                const end = new DataView(new ArrayBuffer(22));
+                end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true);
+                end.setUint32(12, cdSize, true); end.setUint32(16, offset, true);
+                const parts = locals.concat(centrals, [new Uint8Array(end.buffer)]);
+                const out = new Uint8Array(parts.reduce((t, x) => t + x.length, 0));
+                let p = 0; parts.forEach(x => { out.set(x, p); p += x.length; });
+                return out;
+            }
+
+            /* ── XML 小工具 ── */
+            function esc(s) {
+                return String(s == null ? '' : s)
+                    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F￾￿]/g, '')
+                    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            }
+            const XML_HEAD = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
+            const fmtAvg = v => (v == null ? '—' : v.toFixed(1));
+            const noOf = (st, i) => (st.no != null && String(st.no).trim() !== '' ? String(st.no).trim() : String(i + 1));
+            /* 組內排序：先班級（多班時），再座號 */
+            function sortedMembers(g, roster) {
+                return g.slice().sort((a, b) => {
+                    const cx = String(roster[a].cls || '').trim(), cy = String(roster[b].cls || '').trim();
+                    if (cx !== cy) return cx < cy ? -1 : 1;
+                    const x = Number(noOf(roster[a], a)), y = Number(noOf(roster[b], b));
+                    if (Number.isFinite(x) && Number.isFinite(y) && x !== y) return x - y;
+                    return a - b;
+                });
+            }
+
+            /* ══ Word（.docx）══ */
+            const W_NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"';
+            const A4 = { w: 11906, h: 16838 };
+            function wRun(text, o) {
+                o = o || {};
+                let rPr = '';
+                if (o.bold) rPr += '<w:b/>';
+                if (o.color) rPr += '<w:color w:val="' + o.color + '"/>';
+                if (o.size) rPr += '<w:sz w:val="' + o.size + '"/><w:szCs w:val="' + o.size + '"/>';
+                if (o.shade) rPr += '<w:shd w:val="clear" w:color="auto" w:fill="' + o.shade + '"/>';
+                const parts = String(text == null ? '' : text).split(/(\t|\n)/), body = parts.map(p => p === '\t' ? '<w:tab/>' : (p === '\n' ? '<w:br/>' : (p ? '<w:t xml:space="preserve">' + esc(p) + '</w:t>' : ''))).join('');
+                return '<w:r>' + (rPr ? '<w:rPr>' + rPr + '</w:rPr>' : '') + body + '</w:r>';
+            }
+            function wPara(runs, o) {
+                o = o || {};
+                let pPr = '';
+                if (o.keepNext) pPr += '<w:keepNext/>';
+                if (o.keepLines) pPr += '<w:keepLines/>';
+                if (o.tabs) pPr += '<w:tabs>' + o.tabs.map(t => '<w:tab w:val="' + t.val + '" w:pos="' + t.pos + '"/>').join('') + '</w:tabs>';
+                pPr += '<w:spacing w:before="' + (o.before || 0) + '" w:after="' + (o.after || 0) + '"' + (o.line ? ' w:line="' + o.line + '" w:lineRule="' + (o.lineExact ? 'exact' : 'auto') + '"' : '') + '/>';
+                if (o.align) pPr += '<w:jc w:val="' + o.align + '"/>';
+                if (o.sectPr) pPr += o.sectPr;
+                return '<w:p><w:pPr>' + pPr + '</w:pPr>' + (Array.isArray(runs) ? runs.join('') : (runs || '')) + '</w:p>';
+            }
+            function wSect(o) {
+                const land = !!o.landscape, w = land ? A4.h : A4.w, h = land ? A4.w : A4.h, m = o.margin || 1000;
+                return '<w:sectPr><w:footerReference w:type="default" r:id="rIdFooter"/>' +
+                    '<w:type w:val="' + (o.type || 'nextPage') + '"/>' +
+                    '<w:pgSz w:w="' + w + '" w:h="' + h + '"' + (land ? ' w:orient="landscape"' : '') + '/>' +
+                    '<w:pgMar w:top="' + m + '" w:right="' + m + '" w:bottom="' + m + '" w:left="' + m + '" w:header="500" w:footer="500" w:gutter="0"/>' +
+                    '<w:cols w:num="' + (o.cols || 1) + '" w:space="' + (o.colSpace || 400) + '"/></w:sectPr>';
+            }
+            const B_SINGLE = c => 'w:val="single" w:sz="4" w:space="0" w:color="' + (c || 'BDBDBD') + '"';
+            function wBorders(tag, spec) { // spec: 'single' | 'dashed' | 'none'
+                const v = spec === 'none' ? 'w:val="nil"' : (spec === 'dashed' ? 'w:val="dashed" w:sz="6" w:space="0" w:color="9E9E9E"' : B_SINGLE());
+                return '<w:' + tag + '>' + ['top', 'left', 'bottom', 'right'].map(s => '<w:' + s + ' ' + v + '/>').join('') + '</w:' + tag + '>';
+            }
+            /* cell: { w 寬, paras [xml], fill, span, borders 'single'|'dashed'|'none', vAlign, shd 自訂 } */
+            function wCell(c) {
+                let tcPr = '<w:tcW w:w="' + c.w + '" w:type="dxa"/>';
+                if (c.span > 1) tcPr += '<w:gridSpan w:val="' + c.span + '"/>';
+                if (c.borders) tcPr += wBorders('tcBorders', c.borders);
+                if (c.shd) tcPr += c.shd;
+                else if (c.fill) tcPr += '<w:shd w:val="clear" w:color="auto" w:fill="' + c.fill + '"/>';
+                tcPr += '<w:vAlign w:val="' + (c.vAlign || 'center') + '"/>';
+                return '<w:tc><w:tcPr>' + tcPr + '</w:tcPr>' + (c.paras && c.paras.length ? c.paras.join('') : wPara('')) + '</w:tc>';
+            }
+            function wTable(grid, rows, o) {
+                o = o || {};
+                const tw = grid.reduce((t, x) => t + x, 0);
+                return '<w:tbl><w:tblPr><w:tblW w:w="' + tw + '" w:type="dxa"/>' + (o.align ? '<w:jc w:val="' + o.align + '"/>' : '') +
+                    wBorders('tblBorders', o.borders || 'single').replace('</w:tblBorders>', '<w:insideH ' + B_SINGLE() + '/><w:insideV ' + B_SINGLE() + '/></w:tblBorders>') +
+                    '<w:tblLayout w:type="fixed"/><w:tblCellMar><w:top w:w="' + (o.padV || 30) + '" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="' + (o.padV || 30) + '" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tblCellMar>' +
+                    '<w:tblLook w:val="0000" w:firstRow="0" w:lastRow="0" w:firstColumn="0" w:lastColumn="0" w:noHBand="1" w:noVBand="1"/></w:tblPr>' +
+                    '<w:tblGrid>' + grid.map(x => '<w:gridCol w:w="' + x + '"/>').join('') + '</w:tblGrid>' +
+                    rows.map(r => '<w:tr><w:trPr><w:cantSplit/>' + (r.height ? '<w:trHeight w:val="' + r.height + '" w:hRule="atLeast"/>' : '') + '</w:trPr>' + r.cells.map(wCell).join('') + '</w:tr>').join('') +
+                    '</w:tbl>';
+            }
+            function wFooter(appVersion) {
+                const fld = (instr, v) => '<w:fldSimple w:instr=" ' + instr + ' ">' + wRun(v, { size: 16, color: '6F6858' }) + '</w:fldSimple>';
+                const r = t => wRun(t, { size: 16, color: '6F6858' });
+                return XML_HEAD + '<w:ftr ' + W_NS + '>' + wPara([r('座位小幫手' + (appVersion ? ' ' + appVersion : '') + '　第 '), fld('PAGE', '1'), r(' 頁／共 '), fld('NUMPAGES', '1'), r(' 頁')], { align: 'center' }) + '</w:ftr>';
+            }
+            const W_STYLES = XML_HEAD + '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">' +
+                '<w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Microsoft JhengHei" w:hAnsi="Microsoft JhengHei" w:eastAsia="Microsoft JhengHei" w:cs="Microsoft JhengHei"/>' +
+                '<w:color w:val="1B1B1B"/><w:sz w:val="21"/><w:szCs w:val="21"/><w:lang w:val="zh-TW" w:eastAsia="zh-TW"/></w:rPr></w:rPrDefault>' +
+                '<w:pPrDefault><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults>' +
+                '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/><w:rPr><w:rFonts w:ascii="Microsoft JhengHei" w:hAnsi="Microsoft JhengHei" w:eastAsia="Microsoft JhengHei" w:cs="Microsoft JhengHei"/></w:rPr></w:style>' +
+                '<w:style w:type="table" w:default="1" w:styleId="TableNormal"><w:name w:val="Normal Table"/><w:tblPr><w:tblInd w:w="0" w:type="dxa"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr></w:style>' +
+                '</w:styles>';
+            /* images: [{ data: Uint8Array(PNG) }]，依序 rIdImg1… */
+            function docxPackage(bodyXml, appVersion, images, date) {
+                images = images || [];
+                const files = [
+                    { name: '[Content_Types].xml', data: XML_HEAD + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/>' +
+                        '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/word/footer1.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml"/></Types>' },
+                    { name: '_rels/.rels', data: XML_HEAD + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>' },
+                    { name: 'word/_rels/document.xml.rels', data: XML_HEAD + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rIdStyles" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rIdFooter" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer" Target="footer1.xml"/>' +
+                        images.map((_, i) => '<Relationship Id="rIdImg' + (i + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/image' + (i + 1) + '.png"/>').join('') + '</Relationships>' },
+                    { name: 'word/document.xml', data: XML_HEAD + '<w:document ' + W_NS + '><w:body>' + bodyXml + '</w:body></w:document>' },
+                    { name: 'word/styles.xml', data: W_STYLES },
+                    { name: 'word/footer1.xml', data: wFooter(appVersion) }
+                ];
+                images.forEach((im, i) => files.push({ name: 'word/media/image' + (i + 1) + '.png', data: im.data }));
+                return zip(files, date);
+            }
+            function wImage(n, wEmu, hEmu) {
+                return '<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="' + wEmu + '" cy="' + hEmu + '"/><wp:docPr id="' + n + '" name="桌子示意圖"/>' +
+                    '<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="' + n + '" name="image' + n + '.png"/><pic:cNvPicPr/></pic:nvPicPr>' +
+                    '<pic:blipFill><a:blip r:embed="rIdImg' + n + '"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill>' +
+                    '<pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="' + wEmu + '" cy="' + hEmu + '"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>';
+            }
+            const titleRuns = (t) => wRun(t, { bold: true, size: 32 });
+            const subRuns = (t) => wRun(t, { size: 18, color: '6F6858' });
+            const nameRuns = (st, multi, o) => (multi && st.cls ? wRun(String(st.cls).trim() + ' ', { size: 15, color: '6F6858' }) : '') + wRun(st.name, o);
+
+            /* 共用的下載情境：ctx = { roster, groups, method, date(Date), appVersion, options } */
+            function prep(ctx) {
+                const info = analyzeRoster(ctx.roster);
+                const d = ctx.date || new Date();
+                const opt = Object.assign({ withScore: true, withoutScore: true, showAvg: true, color: true, coord: true }, ctx.options || {});
+                return { info, d, date: formatDate(d), time: formatTime(d), opt, multi: info.classMode === 'multi', roster: ctx.roster, groups: ctx.groups };
+            }
+            /* 分組名單會產生哪幾頁：true＝含成績、false＝不含成績（10.3a 智慧判斷） */
+            function groupPages(info, opt) {
+                if (!info.hasScores) return [false];
+                const p = [];
+                if (opt.withScore !== false) p.push(true);
+                if (opt.withoutScore !== false) p.push(false);
+                return p;
+            }
+            function groupSubtitle(P, ctx) {
+                return (METHOD_LABELS[ctx.method] || '分組') + '・' + P.groups.length + ' 組・' + sizeText(P.groups) + '　' + P.date + ' ' + P.time;
+            }
+
+            /* 1 分組名單 Word：A4 直式；有成績時第 1 頁含成績、第 2 頁不含成績；每組一張小表、兩欄排、表格不被切開 */
+            function buildGroupDocx(ctx) {
+                const P = prep(ctx), pages = groupPages(P.info, P.opt);
+                if (!pages.length) throw new Error('請至少選一頁（含成績或不含成績）');
+                const colW = Math.floor((A4.w - 2000 - 400) / 2) - 40;
+                const avgs = groupAverages(P.groups, P.roster);
+                let body = '';
+                pages.forEach((withSc, pi) => {
+                    const tag = P.info.hasScores ? wRun('  ', {}) + wRun(withSc ? ' 含成績・老師用 ' : ' 不含成績・可發給學生 ', withSc ? { size: 18, bold: true, color: '1D3F8F', shade: 'E6EEFB' } : { size: 18, bold: true, color: '333333', shade: 'F2F2F2' }) : '';
+                    body += wPara([titleRuns(titlePrefix(P.info) + '分組名單'), tag], { after: 60 });
+                    body += wPara(subRuns(groupSubtitle(P, ctx)), { after: 160, sectPr: wSect({ type: 'nextPage' }) }); // 標題區（單欄），每份名單從新的一頁開始
+                    const scW = 1150, fixed = (P.multi ? 760 : 0) + 700 + (withSc ? scW : 0), nameW = colW - fixed; // 成績欄要放得下「平均 78.7」
+                    const grid = (P.multi ? [760] : []).concat([700, nameW]).concat(withSc ? [scW] : []);
+                    P.groups.forEach((g, gi) => {
+                        const col = colorOf(gi, P.opt.color), mem = sortedMembers(g, P.roster), span = grid.length - (withSc ? 1 : 0);
+                        const head = [{ w: grid.slice(0, span).reduce((t, x) => t + x, 0), span, fill: col.soft, paras: [wPara(wRun('第 ' + (gi + 1) + ' 組', { bold: true, color: col.ink }), { keepNext: true })] }];
+                        if (withSc) head.push({ w: scW, fill: col.soft, paras: [wPara(wRun(P.opt.showAvg !== false ? '平均 ' + fmtAvg(avgs[gi]) : '', { bold: true, color: col.ink, size: 18 }), { align: 'right', keepNext: true })] });
+                        const rows = [{ cells: head }];
+                        mem.forEach((i, k) => {
+                            const st = P.roster[i], kn = k < mem.length - 1, cells = [];
+                            if (P.multi) cells.push({ w: 760, paras: [wPara(wRun(st.cls || '', { size: 18, color: '4F493D' }), { keepNext: kn, align: 'center' })] });
+                            cells.push({ w: 700, paras: [wPara(wRun(noOf(st, i), { color: '4F493D' }), { keepNext: kn, align: 'center' })] });
+                            cells.push({ w: nameW, paras: [wPara(wRun(st.name), { keepNext: kn })] });
+                            if (withSc) { const s = toScore(st.score); cells.push({ w: scW, paras: [wPara(wRun(s == null ? '' : String(s)), { keepNext: kn, align: 'right' })] }); }
+                            rows.push({ cells });
+                        });
+                        // 表格之間要有段落；最後一個段落帶「兩欄」分節（連續分節，Word 會把兩欄平衡）
+                        const last = gi === P.groups.length - 1;
+                        body += wTable(grid, rows) + wPara('', last ? { sectPr: wSect({ type: 'continuous', cols: 2 }) } : { line: 200, lineExact: true }); // 間隔段落設固定 10pt 高，換欄時第二欄頂端才不會多空一行
+                    });
+                    const note = '共 ' + P.groups.reduce((t, g) => t + g.length, 0) + ' 人' +
+                        (withSc && P.opt.showAvg !== false ? '　各組平均最高與最低相差 ' + spreadOf(avgs).toFixed(1) + ' 分' : '');
+                    const last = pi === pages.length - 1;
+                    body += wPara(wRun(note, { size: 18, color: '4F493D' }), { before: 120, sectPr: last ? '' : wSect({ type: 'continuous' }) });
+                });
+                body += wSect({ type: 'continuous' });
+                return docxPackage(body, ctx.appVersion, [], P.d);
+            }
+
+            /* 3 座位表 Word：A4 橫式一頁。傳統座位＝普通表格（老師視角，講台在下）；分組座位＝示意圖（畫面給 PNG）＋每桌名單 */
+            function buildSeatDocx(ctx) {
+                const P = prep(ctx), seat = ctx.seat;
+                const M = 720, CW = A4.h - 2 * M;
+                let body = '';
+                if (seat.mode === 'trad') {
+                    const map = seat.map || tradSeatMap(seat.cfg, P.groups), cfg = map.cfg, C = cfg.cols, D = cfg.depth;
+                    const aisles = new Set((cfg.aisleAfter || []).filter(a => a >= 1 && a < C)), labW = 900, gapW = 280;
+                    const seatW = Math.floor((CW - labW - gapW * aisles.size) / C);
+                    const grid = [labW];
+                    for (let c = 1; c <= C; c++) { grid.push(seatW); if (aisles.has(c)) grid.push(gapW); }
+                    const rowH = Math.max(560, Math.min(1100, Math.floor(6400 / D)));
+                    const lab = (t, w) => ({ w: w || labW, fill: 'F2F2F2', paras: [wPara(wRun(t, { size: 16, color: '555555' }), { align: 'center' })] });
+                    const gap = () => ({ w: gapW, borders: 'none', paras: [wPara('')] });
+                    const rows = [];
+                    for (let d = D; d >= 1; d--) {
+                        const cells = [lab('位置 ' + d)];
+                        for (let c = 1; c <= C; c++) {
+                            const key = seatKey(c, d), it = map.cells[key];
+                            if (map.off.has(key)) cells.push({ w: seatW, shd: '<w:shd w:val="diagStripe" w:color="D9D9D9" w:fill="FFFFFF"/>', paras: [wPara('')] });
+                            else if (!it || it.id == null) cells.push({ w: seatW, borders: 'dashed', paras: [wPara(P.opt.coord ? wRun(c + '-' + d, { size: 14, color: '9E9E9E' }) : '', { align: 'right' })] });
+                            else {
+                                const col = colorOf(it.g, P.opt.color), st = P.roster[it.id];
+                                cells.push({ w: seatW, fill: col.soft, paras: [
+                                    wPara(wRun('第' + (it.g + 1) + '組' + (P.opt.coord ? '\t' + c + '-' + d : ''), { size: 14, color: col.ink, bold: true }), { tabs: [{ val: 'right', pos: seatW - 170 }] }),
+                                    wPara(nameRuns(st, P.multi, { bold: true, size: 22 }), { align: 'center', before: 40 })
+                                ] });
+                            }
+                            if (aisles.has(c)) cells.push(gap());
+                        }
+                        rows.push({ cells, height: rowH });
+                    }
+                    const labRow = [lab('')];
+                    for (let c = 1; c <= C; c++) { labRow.push(lab('第 ' + c + ' 排', seatW)); if (aisles.has(c)) labRow.push(gap()); }
+                    rows.push({ cells: labRow });
+                    rows.push({ cells: [lab(''), { w: grid.reduce((t, x) => t + x, 0) - labW, span: grid.length - 1, fill: '262626', paras: [wPara(wRun('講台（前方）', { bold: true, color: 'FFFFFF' }), { align: 'center' })] }] });
+                    body += wPara(titleRuns(titlePrefix(P.info) + '座位表'), { after: 40 });
+                    body += wPara(subRuns('傳統座位・' + C + ' 排 × ' + D + ' 個位置・' + (ctx.layoutLabel || LAYOUT_LABELS[cfg.layout] || '') + '　' + P.date), { after: 120 });
+                    body += wTable(grid, rows, { padV: 20 });
+                    body += wPara(P.groups.map((_, g) => { const col = colorOf(g, P.opt.color); return wRun(' 第 ' + (g + 1) + ' 組 ', { size: 16, bold: true, color: col.ink, shade: col.soft }) + wRun('  ', { size: 16 }); }), { before: 120 });
+                    body += wPara(wRun('從講台往教室看：左到右是第 1 排到第 ' + C + ' 排，由前往後是第 1 到第 ' + D + ' 個位置。' + (P.opt.coord ? '座位右上角是「排-位置」座標。' : ''), { size: 16, color: '4F493D' }), { before: 60 });
+                } else {
+                    const map = seat.map || tableSeatMap(seat.tables, P.groups);
+                    body += wPara(titleRuns(titlePrefix(P.info) + '座位表'), { after: 40 });
+                    body += wPara(subRuns('分組座位・' + map.tables.length + ' 張桌子　' + P.date), { after: 120 });
+                    const images = [];
+                    if (seat.image && seat.image.data) {
+                        const maxW = CW * 635, maxH = 5200 * 635, ratio = (seat.image.height || 1) / (seat.image.width || 1);
+                        let w = maxW, h = Math.round(w * ratio);
+                        if (h > maxH) { h = maxH; w = Math.round(h / ratio); }
+                        images.push({ data: seat.image.data });
+                        body += wPara(wImage(1, w, h), { align: 'center', after: 120 });
+                    }
+                    const grid = [1100, 2300, CW - 3400], head = t => ({ fill: 'F2F2F2', paras: [wPara(wRun(t, { bold: true, size: 18 }))] });
+                    const rows = [{ cells: [Object.assign(head('桌號'), { w: grid[0] }), Object.assign(head('坐哪幾組'), { w: grid[1] }), Object.assign(head('座位上的人'), { w: grid[2] })] }];
+                    map.tables.forEach(x => {
+                        const all = x.top.concat(x.bot).filter(Boolean).sort((a, b) => a.seq - b.seq).filter(s => s.id != null);
+                        const names = all.map(s => (P.multi && P.roster[s.id].cls ? String(P.roster[s.id].cls).trim() + ' ' : '') + P.roster[s.id].name + (P.opt.coord ? '（' + s.lbl + '）' : '')).join('、');
+                        rows.push({ cells: [
+                            { w: grid[0], paras: [wPara(wRun('桌 ' + (x.index + 1)))] },
+                            { w: grid[1], paras: [wPara(wRun(x.groups.length ? '第 ' + x.groups.map(g => g + 1).join('、') + ' 組' : '空桌'))] },
+                            { w: grid[2], paras: [wPara(wRun(names, { size: 19 }))] }
+                        ] });
+                    });
+                    body += wTable(grid, rows);
+                    body += wSect({ landscape: true, margin: M, type: 'continuous' });
+                    return docxPackage(body, ctx.appVersion, images, P.d);
+                }
+                body += wSect({ landscape: true, margin: M, type: 'continuous' });
+                return docxPackage(body, ctx.appVersion, [], P.d);
+            }
+
+            /* ══ Excel（.xlsx）══ */
+            function colName(i) { let s = ''; i++; while (i > 0) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; }
+            const ref = (c, r) => colName(c) + (r + 1);
+            /* 樣式登記：同樣的組合只產生一次 */
+            function xStyles() {
+                const fonts = ['<font><sz val="11"/><name val="Microsoft JhengHei"/><family val="2"/></font>'], fills = ['<fill><patternFill patternType="none"/></fill>', '<fill><patternFill patternType="gray125"/></fill>'];
+                const borders = ['<border><left/><right/><top/><bottom/><diagonal/></border>'], xfs = ['<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'];
+                const memo = {}, fmemo = {}, flmemo = {}, bmemo = {};
+                const add = (arr, m, k, xml) => (m[k] != null ? m[k] : (m[k] = arr.push(xml) - 1));
+                function id(s) {
+                    s = s || {};
+                    const key = JSON.stringify(s);
+                    if (memo[key] != null) return memo[key];
+                    const fk = [s.bold ? 1 : 0, s.color || '', s.size || 11].join('|');
+                    const font = add(fonts, fmemo, fk, '<font>' + (s.bold ? '<b/>' : '') + '<sz val="' + (s.size || 11) + '"/>' + (s.color ? '<color rgb="FF' + s.color + '"/>' : '') + '<name val="Microsoft JhengHei"/><family val="2"/></font>');
+                    let fill = 0;
+                    if (s.fill) fill = add(fills, flmemo, 'solid' + s.fill, '<fill><patternFill patternType="solid"><fgColor rgb="FF' + s.fill + '"/><bgColor indexed="64"/></patternFill></fill>');
+                    if (s.hatch) fill = add(fills, flmemo, 'hatch', '<fill><patternFill patternType="lightUp"><fgColor rgb="FFD0D0D0"/><bgColor rgb="FFFFFFFF"/></patternFill></fill>');
+                    let border = 0;
+                    if (s.border) {
+                        const v = s.border === 'dashed' ? 'dashed' : 'thin', c = s.border === 'dashed' ? '9E9E9E' : 'BDBDBD';
+                        const side = n => '<' + n + ' style="' + v + '"><color rgb="FF' + c + '"/></' + n + '>';
+                        border = add(borders, bmemo, s.border, '<border>' + side('left') + side('right') + side('top') + side('bottom') + '<diagonal/></border>');
+                    }
+                    const al = (s.h || s.v || s.wrap) ? '<alignment' + (s.h ? ' horizontal="' + s.h + '"' : '') + ' vertical="' + (s.v || 'center') + '"' + (s.wrap ? ' wrapText="1"' : '') + '/>' : '';
+                    const numFmt = s.num === '0.0' ? 164 : 0;
+                    return (memo[key] = xfs.push('<xf numFmtId="' + numFmt + '" fontId="' + font + '" fillId="' + fill + '" borderId="' + border + '" xfId="0"' +
+                        (numFmt ? ' applyNumberFormat="1"' : '') + (font ? ' applyFont="1"' : '') + (fill ? ' applyFill="1"' : '') + (border ? ' applyBorder="1"' : '') + (al ? ' applyAlignment="1">' + al + '</xf>' : '/>')) - 1);
+                }
+                function xml() {
+                    return XML_HEAD + '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="1"><numFmt numFmtId="164" formatCode="0.0"/></numFmts>' +
+                        '<fonts count="' + fonts.length + '">' + fonts.join('') + '</fonts><fills count="' + fills.length + '">' + fills.join('') + '</fills>' +
+                        '<borders count="' + borders.length + '">' + borders.join('') + '</borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
+                        '<cellXfs count="' + xfs.length + '">' + xfs.join('') + '</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+                }
+                return { id, xml };
+            }
+            /* sheet: { name, rows: [[{ v, s 樣式物件 } | null]], cols [寬（字元）], merges ['A1:C1'], freeze, filter 'A1:E9', heights {列索引: 點數}, landscape, fitWidth } */
+            function sheetXml(sh, st, selected) {
+                const rowsXml = sh.rows.map((r, ri) => {
+                    const cells = (r || []).map((c, ci) => {
+                        if (!c) return '';
+                        const s = c.s ? ' s="' + st.id(c.s) + '"' : '';
+                        if (c.v == null || c.v === '') return c.s ? '<c r="' + ref(ci, ri) + '"' + s + '/>' : '';
+                        if (typeof c.v === 'number') return '<c r="' + ref(ci, ri) + '"' + s + '><v>' + c.v + '</v></c>';
+                        return '<c r="' + ref(ci, ri) + '"' + s + ' t="inlineStr"><is><t xml:space="preserve">' + esc(c.v) + '</t></is></c>';
+                    }).join('');
+                    const h = sh.heights && sh.heights[ri];
+                    return '<row r="' + (ri + 1) + '"' + (h ? ' ht="' + h + '" customHeight="1"' : '') + '>' + cells + '</row>';
+                }).join('');
+                const W = sh.rows.reduce((m, r) => Math.max(m, (r || []).length), 1);
+                const view = '<sheetViews><sheetView workbookViewId="0"' + (selected ? ' tabSelected="1"' : '') + '>' +
+                    (sh.freeze ? '<pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A2" sqref="A2"/>' : '') + '</sheetView></sheetViews>';
+                return XML_HEAD + '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+                    (sh.fitWidth ? '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>' : '') +
+                    '<dimension ref="A1:' + ref(W - 1, Math.max(0, sh.rows.length - 1)) + '"/>' + view + '<sheetFormatPr defaultRowHeight="16.5"/>' +
+                    (sh.cols && sh.cols.length ? '<cols>' + sh.cols.map((w, i) => '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + w + '" customWidth="1"/>').join('') + '</cols>' : '') +
+                    '<sheetData>' + rowsXml + '</sheetData>' +
+                    (sh.filter ? '<autoFilter ref="' + sh.filter + '"/>' : '') +
+                    (sh.merges && sh.merges.length ? '<mergeCells count="' + sh.merges.length + '">' + sh.merges.map(m => '<mergeCell ref="' + m + '"/>').join('') + '</mergeCells>' : '') +
+                    '<pageMargins left="0.5" right="0.5" top="0.6" bottom="0.6" header="0.3" footer="0.3"/>' +
+                    '<pageSetup paperSize="9" orientation="' + (sh.landscape ? 'landscape' : 'portrait') + '"' + (sh.fitWidth ? ' fitToWidth="1" fitToHeight="0"' : '') + '/></worksheet>';
+            }
+            function xlsxPackage(sheets, date) {
+                const st = xStyles();
+                const sheetFiles = sheets.map((sh, i) => ({ name: 'xl/worksheets/sheet' + (i + 1) + '.xml', data: sheetXml(sh, st, i === 0) }));
+                const absRef = r => r.replace(/([A-Z]+)(\d+)/g, '$$$1$$$2');
+                const defined = sheets.map((sh, i) => sh.filter ? '<definedName name="_xlnm._FilterDatabase" localSheetId="' + i + '" hidden="1">\'' + esc(sh.name) + '\'!' + absRef(sh.filter) + '</definedName>' : '').join('');
+                const files = [
+                    { name: '[Content_Types].xml', data: XML_HEAD + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>' +
+                        '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' +
+                        sheets.map((_, i) => '<Override PartName="/xl/worksheets/sheet' + (i + 1) + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>').join('') + '</Types>' },
+                    { name: '_rels/.rels', data: XML_HEAD + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>' },
+                    { name: 'xl/workbook.xml', data: XML_HEAD + '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><bookViews><workbookView/></bookViews><sheets>' +
+                        sheets.map((sh, i) => '<sheet name="' + esc(sh.name) + '" sheetId="' + (i + 1) + '" r:id="rId' + (i + 1) + '"/>').join('') + '</sheets>' + (defined ? '<definedNames>' + defined + '</definedNames>' : '') + '</workbook>' },
+                    { name: 'xl/_rels/workbook.xml.rels', data: XML_HEAD + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+                        sheets.map((_, i) => '<Relationship Id="rId' + (i + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet' + (i + 1) + '.xml"/>').join('') +
+                        '<Relationship Id="rId' + (sheets.length + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>' }
+                ].concat(sheetFiles);
+                files.push({ name: 'xl/styles.xml', data: st.xml() }); // 樣式在所有工作表產生後才定案
+                return zip(files, date);
+            }
+            const X_HEAD = { bold: true, fill: 'F2F2F2', border: 'thin', h: 'center' };
+            const xGroupCell = (g, useColor) => { const c = colorOf(g, useColor); return { v: '第 ' + (g + 1) + ' 組', s: { bold: true, fill: c.soft, color: c.ink, border: 'thin', h: 'center' } }; };
+            const numOrText = v => { const n = Number(v); return v !== '' && Number.isFinite(n) ? n : v; };
+            /* 每組一欄、只有姓名（「不含成績」或名單沒成績時的「分組名單」） */
+            function groupMatrixSheet(P, name) {
+                const mx = maxSize(P.groups), rows = [P.groups.map((_, g) => xGroupCell(g, P.opt.color))];
+                const mem = P.groups.map(g => sortedMembers(g, P.roster));
+                for (let k = 0; k < mx; k++) rows.push(mem.map(m => {
+                    const i = m[k];
+                    if (i == null) return { v: '', s: { border: 'thin' } };
+                    const st = P.roster[i];
+                    return { v: (P.multi && st.cls ? String(st.cls).trim() + ' ' : '') + st.name, s: { border: 'thin' } };
+                }));
+                return { name, rows, cols: P.groups.map(() => 16), freeze: true };
+            }
+            /* 2 分組名單 Excel */
+            function buildGroupXlsx(ctx) {
+                const P = prep(ctx), pages = groupPages(P.info, P.opt);
+                if (!pages.length) throw new Error('請至少選一頁（含成績或不含成績）');
+                const sheets = [];
+                if (!P.info.hasScores) sheets.push(groupMatrixSheet(P, '分組名單'));
+                else pages.forEach(withSc => {
+                    if (!withSc) { sheets.push(groupMatrixSheet(P, '不含成績')); return; }
+                    const head = ['組別'].concat(P.multi ? ['班級'] : []).concat(['座號', '姓名', '成績']);
+                    const rows = [head.map(t => ({ v: t, s: X_HEAD }))], cols = [10].concat(P.multi ? [8] : []).concat([8, 12, 8]);
+                    P.groups.forEach((g, gi) => sortedMembers(g, P.roster).forEach(i => {
+                        const st = P.roster[i], r = [xGroupCell(gi, P.opt.color)];
+                        if (P.multi) r.push({ v: String(st.cls || '').trim(), s: { border: 'thin', h: 'center' } });
+                        r.push({ v: numOrText(noOf(st, i)), s: { border: 'thin', h: 'center' } }, { v: st.name, s: { border: 'thin' } });
+                        const s = toScore(st.score);
+                        r.push({ v: s == null ? '' : s, s: { border: 'thin' } });
+                        rows.push(r);
+                    }));
+                    const W = head.length, sh = { name: '含成績', rows, cols, freeze: true, filter: 'A1:' + ref(W - 1, rows.length - 1) };
+                    if (P.opt.showAvg !== false) {
+                        cols.push(3, 10, 8);
+                        const avgs = groupAverages(P.groups, P.roster);
+                        const put = (ri, cells) => { while (rows.length <= ri) rows.push([]); const r = rows[ri]; while (r.length < W) r.push(null); r.push(null); cells.forEach(c => r.push(c)); };
+                        put(0, [{ v: '組別', s: X_HEAD }, { v: '平均', s: X_HEAD }]);
+                        avgs.forEach((a, gi) => put(gi + 1, [xGroupCell(gi, P.opt.color), { v: a == null ? '' : a, s: { border: 'thin', num: '0.0' } }]));
+                    }
+                    sheets.push(sh);
+                });
+                return xlsxPackage(sheets, P.d);
+            }
+            /* 4 座位表 Excel：「座位表」一格一個座位＋「座位清單」一人一列 */
+            function buildSeatXlsx(ctx) {
+                const P = prep(ctx), seat = ctx.seat, M = [], merges = [], heights = {}, cw = [];
+                const addMerge = (c1, r1, c2, r2) => { if (c2 > c1 || r2 > r1) merges.push(ref(c1, r1) + ':' + ref(c2, r2)); }; // 單格不合併
+                const seatCell = (g, coord, st) => {
+                    const c = colorOf(g, P.opt.color);
+                    return { v: '第 ' + (g + 1) + ' 組' + (P.opt.coord && coord ? '　' + coord : '') + '\n' + (P.multi && st.cls ? String(st.cls).trim() + ' ' : '') + st.name, s: { fill: c.soft, color: c.ink, border: 'thin', h: 'center', wrap: true } };
+                };
+                const empty = coord => ({ v: P.opt.coord ? coord : '', s: { border: 'dashed', h: 'center', color: '9E9E9E', size: 9 } });
+                const LBL = { fill: 'F2F2F2', color: '555555', h: 'center', size: 10 };
+                const listHead = coordName => [coordName, '組別', '座號'].concat(P.multi ? ['班級'] : []).concat(['姓名']).map(t => ({ v: t, s: X_HEAD }));
+                const listRow = (coord, g, i) => {
+                    const st = P.roster[i];
+                    return [{ v: coord, s: { border: 'thin', h: 'center' } }, xGroupCell(g, P.opt.color), { v: numOrText(noOf(st, i)), s: { border: 'thin', h: 'center' } }]
+                        .concat(P.multi ? [{ v: String(st.cls || '').trim(), s: { border: 'thin', h: 'center' } }] : []).concat([{ v: st.name, s: { border: 'thin' } }]);
+                };
+                let list;
+                const title = (t, W) => { M.push([{ v: titlePrefix(P.info) + t, s: { bold: true, size: 14 } }]); addMerge(0, 0, W - 1, 0); };
+                const sub = (t, W) => { M.push([{ v: t, s: { color: '6F6858', size: 10 } }]); addMerge(0, 1, W - 1, 1); };
+                if (seat.mode === 'trad') {
+                    const map = seat.map || tradSeatMap(seat.cfg, P.groups), cfg = map.cfg, C = cfg.cols, D = cfg.depth;
+                    const aisles = new Set((cfg.aisleAfter || []).filter(a => a >= 1 && a < C)), W = 1 + C + aisles.size;
+                    title('座位表（傳統座位）', W);
+                    sub('從講台往教室看：左到右是第 1 排到第 ' + C + ' 排，下方是前面', W);
+                    cw.push(8);
+                    for (let c = 1; c <= C; c++) { cw.push(14); if (aisles.has(c)) cw.push(2.5); }
+                    for (let d = D; d >= 1; d--) {
+                        const r = [{ v: '位置 ' + d, s: LBL }];
+                        for (let c = 1; c <= C; c++) {
+                            const key = seatKey(c, d), it = map.cells[key];
+                            if (map.off.has(key)) r.push({ v: '', s: { hatch: true, border: 'thin' } });
+                            else if (!it || it.id == null) r.push(empty(c + '-' + d));
+                            else r.push(seatCell(it.g, c + '-' + d, P.roster[it.id]));
+                            if (aisles.has(c)) r.push(null);
+                        }
+                        heights[M.length] = 36; M.push(r);
+                    }
+                    const lab = [{ v: '', s: LBL }];
+                    for (let c = 1; c <= C; c++) { lab.push({ v: '第 ' + c + ' 排', s: LBL }); if (aisles.has(c)) lab.push(null); }
+                    M.push(lab);
+                    M.push([{ v: '', s: LBL }, { v: '講台（前方）', s: { fill: '262626', color: 'FFFFFF', bold: true, h: 'center' } }]);
+                    addMerge(1, M.length - 1, W - 1, M.length - 1);
+                    const L = [listHead('座位（排-位置）')];
+                    for (let c = 1; c <= C; c++) for (let d = 1; d <= D; d++) { const it = map.cells[seatKey(c, d)]; if (it && it.id != null) L.push(listRow(c + '-' + d, it.g, it.id)); }
+                    list = L;
+                } else {
+                    const map = seat.map || tableSeatMap(seat.tables, P.groups), perRow = Math.max(1, seat.perRow || 2), trs = [];
+                    map.tables.forEach(x => { const r = Math.floor(x.index / perRow); (trs[r] = trs[r] || []).push(x); });
+                    const widthOf = x => Math.max(x.top.length, x.bot.length, 1);
+                    const W = trs.reduce((m, tr) => Math.max(m, tr.reduce((t, x, j) => t + widthOf(x) + (j ? 1 : 0), 0)), 1);
+                    title('座位表（分組座位）', W);
+                    sub('從講台往教室看：下方是前面。圓桌、六邊形桌在表格裡以上下兩排表示', W);
+                    const cell = s => (!s ? null : (s.id == null ? empty(s.lbl) : seatCell(s.g, s.lbl, P.roster[s.id])));
+                    for (let r = trs.length - 1; r >= 0; r--) {
+                        const a = [], b = [], c = [], ri = M.length;
+                        let col = 0;
+                        trs[r].forEach((x, j) => {
+                            if (j) { a.push(null); b.push(null); c.push(null); col++; }
+                            const w = widthOf(x);
+                            for (let k = 0; k < w; k++) { a.push(cell(x.top[k])); c.push(cell(x.bot[k])); }
+                            b.push({ v: '桌 ' + (x.index + 1) + (x.groups.length ? '（第 ' + x.groups.map(g => g + 1).join('、') + ' 組）' : ''), s: { bold: true, fill: 'E4DECF', color: '22201B', h: 'center', border: 'thin' } });
+                            for (let k = 1; k < w; k++) b.push({ v: '', s: { fill: 'E4DECF', border: 'thin' } });
+                            addMerge(col, ri + 1, col + w - 1, ri + 1);
+                            col += w;
+                        });
+                        heights[ri] = 36; heights[ri + 2] = 36;
+                        M.push(a, b, c, []);
+                    }
+                    M.push([{ v: '講台（前方）', s: { fill: '262626', color: 'FFFFFF', bold: true, h: 'center' } }]);
+                    addMerge(0, M.length - 1, W - 1, M.length - 1);
+                    for (let i = 0; i < W; i++) cw.push(14);
+                    const L = [listHead('座位（桌-座）')];
+                    map.tables.forEach(x => x.top.concat(x.bot).filter(Boolean).sort((p, q) => p.seq - q.seq).forEach(s => { if (s.id != null) L.push(listRow(s.lbl, s.g, s.id)); }));
+                    list = L;
+                }
+                const listCols = [14, 10, 8].concat(P.multi ? [8] : []).concat([12]);
+                const sheets = [
+                    { name: '座位表', rows: M, cols: cw, merges, heights, landscape: true, fitWidth: true },
+                    { name: '座位清單', rows: list, cols: listCols, freeze: true, filter: 'A1:' + ref(listCols.length - 1, list.length - 1) }
+                ];
+                return xlsxPackage(sheets, P.d);
+            }
+
+            /* 一站式：buildDownload('group'|'seat', 'docx'|'xlsx', ctx) → { bytes, fileName, mime } */
+            function buildDownload(kind, fmt, ctx) {
+                const fn = kind === 'group' ? (fmt === 'docx' ? buildGroupDocx : buildGroupXlsx) : (fmt === 'docx' ? buildSeatDocx : buildSeatXlsx);
+                const info = analyzeRoster(ctx.roster);
+                return { bytes: fn(ctx), fileName: fileName(kind, fmt, info, ctx.date || new Date()), mime: MIME[fmt] };
+            }
+
+            root.GroupLogic = {
+                GROUP_COLORS, GRAY, METHOD_LABELS, LAYOUT_LABELS, MIME,
+                makeRng, shuffle, toScore, analyzeRoster, missingScores, studentKey, formatDate, formatTime, fileName, titlePrefix,
+                groupSizes, resolveGroupCount, sizeText, pastPairSet, repeatPairs, avoidNotice, randomGroups, scoreGroups, groupRoster, groupAverages, spreadOf,
+                tradSeatMap, tableSeatMap, groupPages,
+                crc32, zip, buildGroupDocx, buildGroupXlsx, buildSeatDocx, buildSeatXlsx, buildDownload
+            };
+        })(typeof window !== 'undefined' ? window : globalThis);
+    </script>
     <script>
         const APP_VERSION = "v3.4.3";
         /* 版號只寫在 APP_VERSION；<title> 與頁首徽章由程式產生，不要在 HTML 靜態文字寫版號 */
