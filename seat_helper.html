@@ -1042,7 +1042,10 @@ Authorization inquiries: derliang@gmail.com
         #groupView .mini div{display:flex;gap:3px;align-items:center}
         #groupView .mini i{font-style:normal;width:22px;height:20px;border-radius:4px;background:var(--gs);border:1px solid var(--gl);color:var(--gi);font-size:11px;font-weight:700;display:grid;place-items:center}
         #groupView .mini em{font-style:normal;font-size:11px;color:var(--text-3);margin-left:4px}
-        #groupView .fixrow{display:grid;grid-template-columns:1fr 100px;gap:8px;align-items:center}
+        #groupView .fixrow{display:grid;grid-template-columns:1fr 100px;gap:2px 8px;align-items:center}
+        #groupView .fixrow .input.bad{border-color:var(--danger);background:var(--danger-soft);color:var(--danger-ink)}
+        #groupView .fixerr{grid-column:1/-1;text-align:right;font-size:12px;font-weight:700;color:var(--danger-ink)}
+        #groupView .fixerr:empty{display:none}
         #groupView .gcards{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(168px,1fr))}
         #groupView .gcard{border:1px solid var(--gl);border-radius:var(--r-md);background:var(--surface);overflow:hidden;min-width:0}
         #groupView .gh{display:flex;align-items:center;gap:8px;background:var(--gs);color:var(--gi);padding:8px 10px;border-bottom:1px solid var(--gl);font-weight:700}
@@ -1107,7 +1110,9 @@ Authorization inquiries: derliang@gmail.com
         #groupView .gcell.off{background:repeating-linear-gradient(135deg,var(--sunken) 0 6px,var(--line) 6px 8px)}
         #groupView .gcell .adj-dot{top:auto;bottom:4px}
         #groupView .board{margin:10px 0 0}
-        #groupView .gcell .gnm{font-weight:700;font-size:clamp(10px,2.4cqw,14px);white-space:nowrap}
+        #groupView .gcell .gnm{font-weight:700;font-size:13px;line-height:1.2;white-space:normal;overflow-wrap:anywhere;max-width:100%}
+        #groupView .gcell .gcl{font-size:10px;font-weight:700;line-height:1.1;color:var(--text-2);font-variant-numeric:tabular-nums}
+        #groupView .seatscroll{overflow-x:auto;padding-bottom:4px}
         #groupView .glegend{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
         #groupView .lay{display:grid;gap:8px}
         #groupView .lay button{display:flex;gap:10px;align-items:center;text-align:left;padding:8px 10px;border:1px solid var(--line-2);border-radius:var(--r-md);background:var(--surface);cursor:pointer}
@@ -2044,25 +2049,58 @@ Authorization inquiries: derliang@gmail.com
                 if (cfg.layout === 'row') { for (let d = 1; d <= D; d++) for (let c = 1; c <= C; c++) o.push([c, d]); }
                 else if (cfg.layout === 'col') { for (let c = 1; c <= C; c++) for (let d = 1; d <= D; d++) o.push([c, d]); }
                 else {
-                    const w = Math.max(1, Math.ceil(per / 2)); // 方塊：前後 2 個位置 × w 排（4 人＝2×2）
-                    for (let tr = 1; tr <= D; tr += 2) for (let tc = 1; tc <= C; tc += w)
-                        for (let d = tr; d < Math.min(tr + 2, D + 1); d++) for (let c = tc; c < Math.min(tc + w, C + 1); c++) o.push([c, d]);
+                    /* 方塊：前後 2 個位置 × w 排（4 人＝2×2）。邊緣湊不滿 w 排的殘塊、含禁排座位的塊排在最後，
+                     * 才不會把一組拆到兩邊（#46）；需要時才用到殘塊，用到就會被「同組沒坐在一起」警告抓出來 */
+                    const w = Math.max(1, Math.ceil(per / 2)), off = normOff(cfg.off), good = [], bad = [];
+                    for (let tr = 1; tr <= D; tr += 2) for (let tc = 1; tc <= C; tc += w) {
+                        const cells = [];
+                        for (let d = tr; d < Math.min(tr + 2, D + 1); d++) for (let c = tc; c < Math.min(tc + w, C + 1); c++) cells.push([c, d]);
+                        const full = cells.length === 2 * w && !cells.some(p => off.has(seatKey(p[0], p[1])));
+                        (full ? good : bad).push(cells);
+                    }
+                    good.concat(bad).forEach(cs => cs.forEach(p => o.push(p)));
                 }
                 return o;
+            }
+            /* 橫向／縱向一段：每組整段放進同一條線（同位置的幾排、或同一排的幾個位置），一條線放不下就換下一條，
+             * 不在列尾把一組拆成兩半（#46）；全部放不進去才退回依序填滿（並由 split 警告） */
+            function tradLinePack(cfg, mx, G) {
+                const C = cfg.cols, D = cfg.depth, off = normOff(cfg.off), segs = [];
+                const add = (len, at) => { let cur = []; for (let i = 1; i <= len; i++) { const p = at(i); if (off.has(seatKey(p[0], p[1]))) { if (cur.length) segs.push(cur); cur = []; } else cur.push(p); } if (cur.length) segs.push(cur); };
+                if (cfg.layout === 'row') for (let d = 1; d <= D; d++) add(C, c => [c, d]);
+                else for (let c = 1; c <= C; c++) add(D, d => [c, d]);
+                const used = []; let g = 0;
+                segs.forEach(sg => { for (let k = 0; k + mx <= sg.length && g < G; k += mx) { for (let j = 0; j < mx; j++) used.push(sg[k + j]); g++; } });
+                return g >= G ? used : null;
+            }
+            /* 同組成員在座位格上是否連在一起（上下左右相鄰；走道不算斷開）。回傳被拆開的組別索引 */
+            function splitGroups(cells) {
+                const by = {};
+                Object.keys(cells).forEach(k => { const v = cells[k]; if (v && v.id != null) (by[v.g] = by[v.g] || []).push(k); });
+                const out = [];
+                Object.keys(by).forEach(g => {
+                    const ks = by[g], set = new Set(ks), seen = new Set([ks[0]]), q = [ks[0]];
+                    while (q.length) { const [c, d] = q.pop().split(',').map(Number); [[c + 1, d], [c - 1, d], [c, d + 1], [c, d - 1]].forEach(p => { const k = p[0] + ',' + p[1]; if (set.has(k) && !seen.has(k)) { seen.add(k); q.push(k); } }); }
+                    if (seen.size < ks.length) out.push(+g);
+                });
+                return out.sort((a, b) => a - b);
             }
             function tradSeatMap(cfg, groups) {
                 const mx = maxSize(groups), per = cfg.layout === 'block' ? 2 * Math.ceil(mx / 2) : mx;
                 const off = normOff(cfg.off), slots = blockSlots(groups, per), cells = {};
-                let i = 0, available = 0;
-                tradSeatOrder(cfg, mx).forEach(p => {
-                    const key = seatKey(p[0], p[1]);
-                    if (off.has(key)) return;
-                    available++;
+                const all = tradSeatOrder(cfg, mx).filter(p => !off.has(seatKey(p[0], p[1])));
+                let order = all;
+                if (cfg.layout !== 'block' && mx > 0) {
+                    const pk = tradLinePack(cfg, mx, groups.length);
+                    if (pk) { const u = new Set(pk.map(p => seatKey(p[0], p[1]))); order = pk.concat(all.filter(p => !u.has(seatKey(p[0], p[1])))); }
+                }
+                let i = 0;
+                order.forEach(p => {
                     const s = slots[i++];
-                    cells[key] = s ? { g: s.g, k: s.k, id: s.id } : null; // id 為 null＝空位
+                    cells[seatKey(p[0], p[1])] = s ? { g: s.g, k: s.k, id: s.id } : null; // id 為 null＝空位
                 });
-                const needed = slots.length;
-                return { mode: 'trad', cfg, cells, off, needed, available, lack: Math.max(0, needed - available), slotsPerGroup: per };
+                const available = order.length, needed = slots.length;
+                return { mode: 'trad', cfg, cells, off, needed, available, lack: Math.max(0, needed - available), slotsPerGroup: per, maxPer: mx, split: splitGroups(cells) };
             }
             /* 分組座位（桌子）：tables = [{ n 座位數, shape 'rect'|'round'|'hex', one 長桌只坐一側, ord 'side' 同一邊|'face' 面對面 }]
              * 每張桌回傳 top／bot 兩排（圓桌、六邊形以上下兩排表示）；座標「桌-座」 */
@@ -3355,7 +3393,14 @@ root.ScoreImport = {
     const gc = g => 'g' + (g % 8 + 1);
     const ic = n => '<svg class="ic" aria-hidden="true"><use href="#gi-' + n + '"/></svg>';
     const LAYS = { block: '2×2 方塊', row: '橫向一段', col: '縱向一段' };
-    const LAY_TIP = { block: '每組 4 人坐成 2×2，前後左右都是組員', row: '每組坐在同一個位置、左右相鄰的幾排', col: '每組坐在同一排、前後相鄰' };
+    const LAY_TIP = { block: '每組坐成一個方塊（前後 2 個位置，左右各幾排），前後左右都是組員', row: '每組坐在同一個位置、左右相鄰的幾排', col: '每組坐在同一排、前後相鄰' };
+    /* 提示依實際最多人那組寫，不寫死 4 人（#46） */
+    function layTip(k) {
+        if (k !== 'block') return LAY_TIP[k];
+        const mx = S.groups.reduce((m, g) => Math.max(m, g.length), 0), per = 2 * Math.ceil(mx / 2), w = per / 2;
+        if (!mx) return LAY_TIP.block;
+        return '每組最多 ' + mx + ' 人，坐成前後 2 個位置 × 左右 ' + w + ' 排的方塊' + (mx === 4 ? '（2×2，前後左右都是組員）' : (mx < per ? '，少 ' + (per - mx) + ' 格留空' : ''));
+    }
     const SI = window.ScoreImport;
     const COL_TYPES = [['cls', '班級'], ['no', '座號'], ['name', '姓名'], ['score', '成績'], ['group', '上次分組'], ['skip', '略過']];
     const PRESETS = {
@@ -3416,7 +3461,15 @@ root.ScoreImport = {
         return out;
     }
     const curOv = () => (S.src === 'file' ? S.ovF : S.ovP);
+    /* 補成績欄的暫存值是以名單位置為鍵；名單換成不同的人時一定要清掉，不然會把上一份名單的成績帶給新同學（#43） */
+    let rosterSig = null;
     function parseList() {
+        parseList0();
+        const sig = S.roster.map(x => [x.cls, x.no, x.name].join('|')).join('\n');
+        if (rosterSig !== null && sig !== rosterSig) { S.fix = {}; S.skip = false; }
+        rosterSig = sig;
+    }
+    function parseList0() {
         S.ires = null;
         if (S.src === 'hand') {
             const rows = S.hand.filter(h => String(h.name).trim()).map(h => [String(h.no).trim(), String(h.name).trim(), String(h.score).trim()]);
@@ -3541,12 +3594,22 @@ root.ScoreImport = {
         else if (S.selS.g === g && S.selS.k === k) S.selS = null;
         else { const a = S.selS; doSwap(a, { g, k }); }
     }
+    /* 補成績欄的值：空白＝還沒填；其他回傳 { ok, val } 或 { ok:false, msg }（#44） */
+    function fixVal(raw) {
+        const v = String(raw == null ? '' : raw).trim();
+        if (v === '') return { empty: true };
+        if (!/^[+-]?\d+(\.\d+)?$/.test(v)) return { ok: false, msg: '請輸入 0–100 的數字' };
+        const n = +v;
+        if (n < 0) return { ok: false, msg: '成績不能是負數' };
+        if (n > 100) return { ok: false, msg: '成績不能超過 100' };
+        return { ok: true, val: n };
+    }
     function newGrouping() {
         const roster = S.roster.map(x => Object.assign({}, x));
         let idx = roster.map((_, i) => i), skipped = 0;
         const score = S.meth === 'score';
         if (score) {
-            Object.keys(S.fix).forEach(i => { const v = String(S.fix[i]).trim(); if (v !== '' && !isNaN(+v) && +v >= 0 && +v <= 100 && roster[i] && GL.toScore(roster[i].score) == null) roster[i].score = +v; });
+            Object.keys(S.fix).forEach(i => { const f = fixVal(S.fix[i]); if (f.ok && roster[i] && GL.toScore(roster[i].score) == null) roster[i].score = f.val; });
             const miss = GL.missingScores(roster);
             if (miss.length) {
                 if (!S.skip) return false;
@@ -3557,7 +3620,7 @@ root.ScoreImport = {
         const rc = GL.resolveGroupCount(idx.length, S.by === 'size' ? 'size' : 'count', S.num);
         const method = score ? S.mode2 : 'random';
         const cmp = (!score && S.avoid) ? S.cmp : 0;
-        const past = cmp ? S.recs.slice(0, cmp).map(pastKeys) : [];
+        const past = cmp ? relatedRecs().slice(0, cmp).map(pastKeys) : [];
         const ig = cmp ? impGroups() : null;
         if (ig && ig.length) past.push(ig);
         const r = GL.groupRoster(roster, { method, count: rc.count, avoid: past, indices: idx });
@@ -3755,13 +3818,14 @@ root.ScoreImport = {
     /* ── ② 分組方式 ── */
     function methInfo() {
         const r = S.roster;
-        const filled = r.map((x, i) => ({ score: x.score !== '' ? x.score : (S.fix[i] !== undefined && String(S.fix[i]).trim() !== '' && !isNaN(+S.fix[i]) && +S.fix[i] >= 0 && +S.fix[i] <= 100 ? +S.fix[i] : '') }));
+        const filled = r.map((x, i) => ({ score: x.score !== '' ? x.score : (fixVal(S.fix[i]).ok ? fixVal(S.fix[i]).val : '') }));
         const origMiss = GL.missingScores(r), missIdx = GL.missingScores(filled);
+        const badIdx = origMiss.filter(i => fixVal(S.fix[i]).ok === false);
         let n = r.length;
         if (S.meth === 'score' && S.skip) n = r.length - missIdx.length;
         const rc = GL.resolveGroupCount(n, S.by === 'size' ? 'size' : 'count', S.num);
         const canStart = n >= 2 && (S.meth === 'rand' || missIdx.length === 0 || S.skip);
-        return { n, origMiss, missIdx, rc, canStart };
+        return { n, origMiss, missIdx, badIdx, rc, canStart };
     }
     function sizeHint(rc, n) {
         const eq = rc.sizes.every(s => s === rc.sizes[0]);
@@ -3782,9 +3846,14 @@ root.ScoreImport = {
         V.forEach((v, c) => { o += '<text x="' + (36 + c * 72) + '" y="168" style="fill:var(--text);font:700 13px var(--font);text-anchor:middle">' + v + '</text><text x="' + (36 + c * 72) + '" y="183" style="fill:var(--text-3);font:500 10px var(--font);text-anchor:middle">組平均（範例）</text>'; });
         return o + '</svg>';
     }
+    /* 只有和目前名單至少有一位相同同學（班級、座號、姓名都相同）的紀錄才有比對意義（#47） */
+    function relatedRecs() {
+        const keys = new Set(S.roster.map(x => GL.studentKey(x)));
+        return S.recs.filter(r => r.roster.some(x => keys.has(GL.studentKey(x))));
+    }
     function cmpList() {
-        const rs = S.recs.slice(0, S.cmp), ig = impGroupInfo();
-        if (!rs.length && !ig) return '<p class="hint" style="margin:0 0 8px">還沒有分組紀錄，這是第一次分組，不需要比對。</p>';
+        const rs = relatedRecs().slice(0, S.cmp), ig = impGroupInfo();
+        if (!rs.length && !ig) return '<p class="hint" style="margin:0 0 8px">' + (S.recs.length ? '過去的分組紀錄裡沒有和目前名單相同的同學，不需要比對。' : '還沒有分組紀錄，這是第一次分組，不需要比對。') + '</p>';
         let imp = '';
         if (ig) {
             const open = S.viewPast === 'imp', gl = l => String(l).replace(/^[^#]*#/, ''), multiCls = new Set(ig.groups.map(g => String(g[0]).split('#')[0])).size > 1;
@@ -3803,14 +3872,17 @@ root.ScoreImport = {
         if (S.meth === 'rand') return '<div class="btn-row" style="margin-top:8px;justify-content:flex-end"><button class="btn btn-primary" type="button" data-a="start"' + (m.canStart ? '' : ' disabled') + '>' + ic('shuffle') + '開始隨機分組</button></div>';
         return '<div class="btn-row" style="margin-top:14px;justify-content:space-between;align-items:center"><span class="hint">' + (m.canStart ? '可以開始了' : '補完成績後才能開始') + '</span><button class="btn ' + (m.canStart ? 'btn-primary' : '') + '" type="button" data-a="start" aria-disabled="' + (!m.canStart) + '">開始按成績分組</button></div>';
     }
+    function missNote(m) {
+        return m.badIdx.length ? '有 ' + m.badIdx.length + ' 格的成績不是 0–100 的數字，已用紅框標出，請修正。' : '按成績分組需要每個人都有成績。請在下面補上，或選擇略過。';
+    }
     function missBoxHTML() {
         const m = methInfo();
         if (!m.origMiss.length) return '';
         const ok = m.missIdx.length === 0 || S.skip;
-        const all = m.origMiss.length === S.roster.length;
+        const all = m.origMiss.length === S.roster.length, multiCls = new Set(S.roster.map(x => x.cls)).size > 1;
         return '<div class="alert' + (ok ? ' ok' : '') + '" id="gvMiss">' + ic(ok ? 'check' : 'warn') + '<div><b>' + (ok ? (S.skip ? '已略過沒有成績的同學' : '成績都齊全了') : (all ? '名單沒有成績' : '有 ' + m.origMiss.length + ' 位同學還沒有成績')) + '</b>' +
-            '<span class="gmiss-note"' + (ok ? ' hidden' : '') + '>按成績分組需要每個人都有成績。請在下面補上，或選擇略過。</span>' +
-            '<div style="display:grid;gap:8px;margin-top:10px;max-width:360px">' + m.origMiss.map(i => '<div class="fixrow"><span>' + esc(S.roster[i].no) + ' 號　' + esc(S.roster[i].name) + '</span><input class="input miss-in" data-in="fix" data-i="' + i + '" inputmode="decimal" aria-label="' + esc(S.roster[i].name) + '的成績" placeholder="0–100" value="' + esc(S.fix[i] == null ? '' : S.fix[i]) + '"' + (S.skip ? ' disabled' : '') + '></div>').join('') + '</div>' +
+            '<span class="gmiss-note"' + (ok ? ' hidden' : '') + '>' + missNote(m) + '</span>' +
+            '<div style="display:grid;gap:8px;margin-top:10px;max-width:420px">' + m.origMiss.map(i => { const st = S.roster[i], f = fixVal(S.fix[i]), bad = f.ok === false; return '<div class="fixrow"><span>' + (multiCls ? esc(st.cls) + '　' : '') + esc(st.no) + ' 號　' + esc(st.name) + '</span><input class="input miss-in' + (bad ? ' bad' : '') + '" data-in="fix" data-i="' + i + '" inputmode="decimal" aria-label="' + esc((multiCls ? st.cls + ' ' : '') + st.name) + '的成績" placeholder="0–100" aria-invalid="' + bad + '" aria-describedby="gvFe' + i + '" value="' + esc(S.fix[i] == null ? '' : S.fix[i]) + '"' + (S.skip ? ' disabled' : '') + '><span class="fixerr" id="gvFe' + i + '" role="alert">' + (bad ? esc(f.msg) : '') + '</span></div>'; }).join('') + '</div>' +
             '<div class="opt" style="border:0;padding:10px 0 0"><div><b>略過這些人</b><span class="hint" style="color:inherit">不放進分組，只分有成績的同學</span></div>' + gsw(S.skip, 'skip', '略過沒有成績的同學') + '</div></div></div>';
     }
     function methodHTML() {
@@ -3869,6 +3941,10 @@ root.ScoreImport = {
         }
         return '<div class="card"><div class="card-h"><h3>' + (!si.none && si.n > 1 ? '與最近 ' + si.n + ' 次同組' : '與上次同組') + '</h3><span class="sp"></span>' + b + '</div>' + body + '</div>';
     }
+    function rosterDiffers() {
+        const a = S.gRoster.map(x => GL.studentKey(x)).sort().join('\n'), b = S.roster.map(x => GL.studentKey(x)).sort().join('\n');
+        return a !== b;
+    }
     function histCard() {
         return '<div class="card"><div class="card-h"><h3>分組紀錄</h3><span class="sp"></span><span class="hint">自動保留最近 10 筆</span></div><ul class="ghist">' + S.recs.map(r => '<li' + (r.id === S.recId ? ' class="cur"' : '') + '><span>' + esc(recLabel(r)) + '</span>' + (r.id === S.recId ? '<b>目前</b>' : '<button class="btn btn-sm" type="button" data-a="rec" data-v="' + r.id + '">載入</button>') + '</li>').join('') + '</ul></div>';
     }
@@ -3884,6 +3960,7 @@ root.ScoreImport = {
             (u.skipped ? '<div class="alert info" style="margin-bottom:12px">' + ic('check') + '<div>有 ' + u.skipped + ' 位沒有成績的同學已略過，沒有放進分組。</div></div>' : '') +
             (u.clamped ? '<div class="alert info" style="margin-bottom:12px">' + ic('check') + '<div>組數大於人數，已改成每人一組。</div></div>' : '') +
             (notice ? '<div class="alert" style="margin-bottom:12px">' + ic('warn') + '<div>' + esc(notice) + '</div></div>' : '') +
+            (rosterDiffers() ? '<div class="alert" style="margin-bottom:12px" role="alert">' + ic('warn') + '<div><b>這筆分組的名單和「名單」頁目前的名單不同</b>這裡是 ' + S.gRoster.length + ' 人的分組，「名單」頁現在是 ' + S.roster.length + ' 人。「下一步：安排座位」用這裡的人；「重新分組」會改用「名單」頁的名單。</div></div>' : '') +
             '<div class="gcards" data-gcards>' + gcardsInner() + '</div><p class="hint" style="margin-top:10px">點一位同學再點另一位可以互換；座位畫面的調整也會同步到這裡。</p></div>' +
             '<div class="btn-row" style="justify-content:space-between"><button class="btn" type="button" data-a="regroup">' + ic('shuffle') + '重新分組</button><button class="btn btn-primary" type="button" data-a="next2">下一步：安排座位</button></div></div>' +
             '<aside class="col">' + (sc ? '<div class="card"><div class="card-h"><h3>各組平均</h3></div>' + statBars() + '</div>' : '') + sameCard() + dlCard('group') + histCard() + '</aside></div>';
@@ -3894,7 +3971,10 @@ root.ScoreImport = {
         const T = S.trad, SC = T.cols, SD = T.depth, gap = T.aisleOn && T.aisleAt < SC;
         const col = c => 2 + (c - 1) + (gap && c > T.aisleAt ? 1 : 0), grow = d => 2 + (SD - d);
         const tpl = ['26px']; for (let c = 1; c <= SC; c++) { tpl.push('minmax(0,1fr)'); if (gap && c === T.aisleAt) tpl.push('14px'); }
-        let h = '<div class="room"><div class="seatgrid" style="grid-template-columns:' + tpl.join(' ') + '">';
+        const multi = isMulti();
+        /* 每排至少留 52px（多班要加一行班級，留 60px），窄螢幕改成橫向捲動，不把姓名擠成一團（#45） */
+        const minW = 26 + SC * (multi ? 60 : 52) + (gap ? 14 : 0) + (SC + (gap ? 1 : 0)) * 6;
+        let h = '<div class="room"><div class="seatscroll" tabindex="0" role="region" aria-label="座位表（窄螢幕可左右捲動）"><div class="seatgrid" style="min-width:' + minW + 'px;grid-template-columns:' + tpl.join(' ') + '">';
         h += '<div class="lbl" style="grid-column:1;grid-row:1">位置</div>';
         for (let c = 1; c <= SC; c++) h += '<div class="lbl" style="grid-column:' + col(c) + ';grid-row:' + (SD + 2) + '">第' + c + '排</div>';
         for (let d = 1; d <= SD; d++) h += '<div class="lbl" style="grid-column:1;grid-row:' + grow(d) + '">' + d + '</div>';
@@ -3904,9 +3984,9 @@ root.ScoreImport = {
             const it = map.cells[key];
             if (!it || it.id == null) { h += '<div class="gcell empty" data-o="' + key + '" style="' + pos + '">' + co + '</div>'; continue; }
             const se = S.selS && S.selS.g === it.g && S.selS.k === it.k, ad = S.origG[it.id] !== it.g;
-            h += '<div class="gcell ' + gc(it.g) + (se ? ' sel' : '') + '" role="button" tabindex="0" data-o="' + key + '" data-s="' + it.g + ',' + it.k + '" style="' + pos + '" aria-label="第' + (it.g + 1) + '組 ' + esc(nameOf(it.id)) + '"><span class="gn">' + (it.g + 1) + '</span>' + co + '<span class="gnm">' + esc(nameC(it.id)) + '</span>' + (ad ? '<i class="adj-dot" aria-label="已手動調整"></i>' : '') + '</div>';
+            h += '<div class="gcell ' + gc(it.g) + (se ? ' sel' : '') + '" role="button" tabindex="0" data-o="' + key + '" data-s="' + it.g + ',' + it.k + '" style="' + pos + '" aria-label="第' + (it.g + 1) + '組 ' + esc(nameOf(it.id)) + '"><span class="gn">' + (it.g + 1) + '</span>' + co + (multi && S.gRoster[it.id].cls ? '<span class="gcl">' + esc(S.gRoster[it.id].cls) + '</span>' : '') + '<span class="gnm">' + esc(nameOf(it.id)) + '</span>' + (ad ? '<i class="adj-dot" aria-label="已手動調整"></i>' : '') + '</div>';
         }
-        h += '</div><div class="board">講台（前方）</div></div>' +
+        h += '</div></div><div class="board">講台（前方）</div></div>' +
             '<div class="glegend">' + S.groups.map((_, g) => '<span class="gchip ' + gc(g) + '"><span class="gnum">' + (g + 1) + '</span>第 ' + (g + 1) + ' 組</span>').join('') + '<span class="gchip" style="background:var(--sunken);color:var(--text-2);border-color:var(--line-2)"><i class="adj-dot" style="position:static"></i>手動調整過</span></div>' +
             '<p class="hint" style="margin-top:8px">從講台往教室看：左到右是第 1 排到第 ' + SC + ' 排，由前往後是第 1 到第 ' + SD + ' 個位置。每個座位右上角的「排-位置」是座標，例如 3-2＝第 3 排第 2 個位置。</p>';
         return h;
@@ -3915,10 +3995,11 @@ root.ScoreImport = {
         const T = S.trad, offN = Object.keys(T.off).length, lack = map.lack, avail = map.available;
         return '<div class="gcfg" data-roompanel><div class="cfg-i"><span class="label">排數</span>' + gstep(T.cols, 'tcols') + '</div><div class="cfg-i"><span class="label">每排位置數</span>' + gstep(T.depth, 'tdepth') + '</div>' +
             '<div class="cfg-i"><span class="label">走道</span><div class="grow" style="gap:8px">' + gsw(T.aisleOn, 'aisleon', '走道') + (T.aisleOn ? '<span class="hint">第</span>' + gstep(T.aisleAt, 'taisle') + '<span class="hint">排之後</span>' : '') + '</div></div>' +
-            '<div class="cfg-i"><span class="label">同組怎麼坐</span><div class="gseg" role="tablist">' + ['block', 'row', 'col'].map(k => '<button type="button" role="tab" data-a="lay" data-v="' + k + '" aria-selected="' + (k === T.layout) + '" title="' + LAY_TIP[k] + '">' + LAYS[k] + '</button>').join('') + '</div></div>' +
+            '<div class="cfg-i"><span class="label">同組怎麼坐</span><div class="gseg" role="tablist">' + ['block', 'row', 'col'].map(k => '<button type="button" role="tab" data-a="lay" data-v="' + k + '" aria-selected="' + (k === T.layout) + '" title="' + esc(layTip(k)) + '">' + LAYS[k] + '</button>').join('') + '</div></div>' +
             '<div class="cfg-i"><span class="label">點座位時</span><div class="gseg" role="tablist"><button type="button" role="tab" data-a="tool" data-v="swap" aria-selected="' + (S.tool === 'swap') + '">換人</button><button type="button" role="tab" data-a="tool" data-v="off" aria-selected="' + (S.tool === 'off') + '">設為不排</button></div></div>' +
             '<div class="cfg-i cfg-sum"><span class="badge ' + (lack > 0 ? 'warn' : 'ok') + '">' + (lack > 0 ? ic('warn') + '座位 ' + avail + '，還缺 ' + lack + ' 個' : ic('check') + '座位 ' + avail + '／人數 ' + peopleN()) + '</span>' + (offN ? '<span class="hint">不排 ' + offN + ' 個</span>' : '') + '</div>' +
-            '<p class="hint cfg-tip">' + LAY_TIP[T.layout] + '。' + (S.tool === 'off' ? '現在點座位會把它設成不排（再點一次取消）。' : '現在點兩位同學會互換。') + '</p></div>';
+            (map.split && map.split.length ? '<div class="alert" style="flex:1 1 100%" role="alert">' + ic('warn') + '<div><b>第 ' + map.split.map(g => g + 1).join('、') + ' 組沒有坐在一起</b>這個排數與每排位置數放不下完整的同組座位塊。可以調整排數、每排位置數、走道，或換一種「同組怎麼坐」；也可以直接點兩位同學互換。</div></div>' : '') +
+            '<p class="hint cfg-tip">' + layTip(T.layout) + '。' + (S.tool === 'off' ? '現在點座位會把它設成不排（再點一次取消）。' : '現在點兩位同學會互換。') + '</p></div>';
     }
 
     /* ── ⑤ 桌子畫布 ── */
@@ -4216,7 +4297,12 @@ root.ScoreImport = {
             a.classList.toggle('ok', ok);
             a.querySelector('b').textContent = ok ? (S.skip ? '已略過沒有成績的同學' : '成績都齊全了') : (all ? '名單沒有成績' : '有 ' + m.origMiss.length + ' 位同學還沒有成績');
             const u = a.querySelector('use'); if (u) u.setAttribute('href', ok ? '#gi-check' : '#gi-warn');
-            const note = a.querySelector('.gmiss-note'); if (note) note.hidden = ok;
+            const note = a.querySelector('.gmiss-note'); if (note) { note.hidden = ok; note.textContent = missNote(m); }
+            a.querySelectorAll('input[data-in="fix"]').forEach(inp => {
+                const f = fixVal(S.fix[inp.getAttribute('data-i')]), bad = f.ok === false;
+                inp.classList.toggle('bad', bad); inp.setAttribute('aria-invalid', String(bad));
+                const e = $('gvFe' + inp.getAttribute('data-i')); if (e) e.textContent = bad ? f.msg : '';
+            });
         }
         const sh = $('gvSizeHint'); if (sh) sh.textContent = sizeHint(m.rc, m.n) + (m.rc.clamped ? '（組數大於人數，已改為每人一組）' : '');
         const sa = $('gvStart'); if (sa) sa.innerHTML = startAreaHTML();
@@ -4243,7 +4329,13 @@ root.ScoreImport = {
             case 'iedit': if (v === 'sheet') { const c = document.querySelector('#gvSheets input'); if (c) { try { c.focus(); c.scrollIntoView({ block: 'center' }); } catch (e) { /* 略過 */ } } return; } S.iedit = S.iedit === v ? '' : v; break;
             case 'iwarn': { const W = S.ires ? S.ires.report.warnings : []; const cur = S.warnOpen != null ? S.warnOpen : W.some(w => w.level !== 'info'); S.warnOpen = !cur; break; }
             case 'igo': { const p = $('gvIpanel'); if (p) { const f = p.querySelector('select'); try { p.scrollIntoView({ block: 'center' }); if (f) f.focus(); } catch (e) { /* 略過 */ } } return; }
-            case 'start': { if (el && el.getAttribute('aria-disabled') === 'true') return; if (!methInfo().canStart) return; if (!newGrouping()) return; break; }
+            case 'start': { if (el && el.getAttribute('aria-disabled') === 'true') {
+                const m = methInfo(), box = $('gvMiss'), first = box && (box.querySelector('input.bad') || Array.from(box.querySelectorAll('input[data-in="fix"]')).find(x => !x.disabled && fixVal(x.value).ok !== true));
+                const msg = m.badIdx.length ? '有 ' + m.badIdx.length + ' 格成績不是 0–100 的數字，請先修正紅框的欄位' : '還有 ' + m.missIdx.length + ' 位同學沒有成績，請補上，或打開「略過這些人」';
+                if (typeof showToast === 'function') showToast(msg, true);
+                if (first) { try { first.focus(); first.scrollIntoView({ block: 'center' }); } catch (e) { /* 略過 */ } }
+                return;
+            } if (!methInfo().canStart) return; if (!newGrouping()) return; break; }
             case 'res': S.res = v; S.selS = null; if (v === 'seat') S.smode = S.smode || 'trad'; break;
             case 'regroup': { if (!methInfo().canStart || !newGrouping()) { S.step = 2; } break; }
             case 'next2': S.res = 'seat'; S.selS = null; break;
@@ -4383,7 +4475,7 @@ root.ScoreImport = {
 })();
     </script>
     <script>
-        const APP_VERSION = "v3.6.0";
+        const APP_VERSION = "v3.6.1";
         /* 版號只寫在 APP_VERSION；<title> 與頁首徽章由程式產生，不要在 HTML 靜態文字寫版號 */
         document.title = `座位小幫手 ${APP_VERSION}`;
 

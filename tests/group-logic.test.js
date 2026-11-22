@@ -166,6 +166,24 @@ test('傳統座位：座位塊依最多人那組，少的組空位留空', () =>
     assert.equal(b5.cells['3,2'].id, null);
 });
 
+test('傳統座位（#46）：每組 6 人時整塊放、不在邊緣或列尾拆開；放不下才警告', () => {
+    const g6 = [0, 1, 2, 3, 4].map(k => [0, 1, 2, 3, 4, 5].map(i => k * 6 + i)); // 5 組 × 6 人
+    // 8 排 × 4 位置：方塊寬 3，8 排放不整（尾端殘塊）→ 完整方塊優先，不拆組
+    const b = GL.tradSeatMap({ cols: 8, depth: 4, layout: 'block' }, g6);
+    assert.equal(b.lack, 0); assert.deepEqual(plain(b.split), [], '2 個完整方塊塞得下 4 組，第 5 組用殘塊才會被警告');
+    // 橫向一段：整組放同一位置的 6 排內，不在列尾換行
+    const r = GL.tradSeatMap({ cols: 8, depth: 5, layout: 'row' }, g6);
+    assert.deepEqual(plain(r.split), [], '橫向一段每組都連在一起');
+    assert.ok(GL.tradSeatMap({ cols: 8, depth: 4, layout: 'row' }, g6).split.length > 0, '8×4 每排只放得下 1 組、共 4 排放不下 5 組：要警告而不是默默拆開');
+    for (let k = 0; k < 5; k++) { const ds = new Set(Object.keys(r.cells).filter(c => r.cells[c] && r.cells[c].g === k).map(c => c.split(',')[1])); assert.equal(ds.size, 1, '第 ' + (k + 1) + ' 組在同一個位置'); }
+    // 真的放不下時要被抓出來
+    const bad = GL.tradSeatMap({ cols: 4, depth: 4, layout: 'row', off: ['2,1'] }, [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11], [12, 13, 14, 15]]);
+    assert.ok(bad.split.length >= 1, '禁排把一條線切斷，無法整組放入時列為被拆開');
+    // 4 人一組、剛好整除：原行為不變
+    const ok = GL.tradSeatMap({ cols: 4, depth: 2, layout: 'block' }, [[0, 1, 2, 3], [4, 5, 6, 7]]);
+    assert.deepEqual(plain(ok.split), []);
+});
+
 test('分組座位（桌子）：同組連續、面對面、缺座位', () => {
     const groups = [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10], [11, 12, 13]];
     const m = GL.tableSeatMap([{ n: 8, shape: 'rect', ord: 'side' }, { n: 8, shape: 'rect', ord: 'face' }], groups);
