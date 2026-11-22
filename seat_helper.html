@@ -2455,29 +2455,25 @@ Authorization inquiries: derliang@gmail.com
                 });
                 return { xml: wLayout(cells, 'center'), w: tw(cardW) * k + tw(GW.gapH) * (k - 1) };
             }
+            /* 「一件事情一頁」：含成績（老師用）與不含成績（可發給學生）是兩件事，各自獨立一頁（兩種都選＝共兩頁）；各頁各自排成恰好一頁 */
             function buildGroupDocx(ctx) {
                 const P = prep(ctx), pages = groupPages(P.info, P.opt);
                 if (!pages.length) throw new Error('請至少選一頁（含成績或不含成績）');
-                const plan = planGroupWord(P, pages), f = plan.f, avgs = groupAverages(P.groups, P.roster), dual = plan.dual;
-                const tag = withSc => P.info.hasScores ? wRun(withSc ? ' 含成績・老師用 ' : ' 不含成績・可發給學生 ', withSc ? { size: 18, bold: true, color: '1D3F8F', shade: 'E6EEFB' } : { size: 18, bold: true, color: '333333', shade: 'F2F2F2' }) : '';
-                let body = wPara([titleRuns(titlePrefix(P.info) + '分組名單'), dual ? '' : wRun('  ', {}) + tag(pages[0])], { after: 60 });
-                body += wPara(subRuns(groupSubtitle(P, ctx)), { after: 160 });
-                if (dual) {
-                    const panels = pages.map((withSc, i) => gwPanelXml(P, withSc, f, plan.fits[i], avgs, plan.panelW));
-                    const pw = tw(plan.panelW), gt = tw(GW.panelGutter / 2);
-                    const cell = (withSc, pn) => ({ w: pw, paras: [wPara(tag(withSc), { after: 80, align: 'center' }), pn.xml, wSpacer(1)] });
-                    if (plan.mode === 'side') body += wLayout([cell(pages[0], panels[0]), { w: gt, paras: [wSpacer(1)], edge: { right: 'dashed' } }, { w: gt, paras: [wSpacer(1)] }, cell(pages[1], panels[1])], 'center');
-                    else { // 直式上下疊：兩面板之間一條虛線，可剪開
-                        body += wLayout([cell(pages[0], panels[0])], 'center');
-                        body += wLayout([{ w: pw, paras: [wSpacer(8)], edge: { bottom: 'dashed' } }], 'center') + wSpacer(8);
-                        body += wLayout([cell(pages[1], panels[1])], 'center');
-                    }
-                } else body += gwPanelXml(P, pages[0], f, plan.fits[0], avgs, plan.usableW).xml;
-                const note = '共 ' + P.groups.reduce((t, g) => t + g.length, 0) + ' 人' +
-                    (pages.indexOf(true) >= 0 && P.opt.showAvg !== false ? '　各組平均最高與最低相差 ' + spreadOf(avgs).toFixed(1) + ' 分' : '');
-                body += wPara(wRun(note, { size: 18, color: '4F493D' }), { before: 120 });
-                if (P.skippedText) body += wPara(wRun(P.skippedText, { size: 18, color: '4F493D' }), { before: 40 });
-                body += wSect({ landscape: plan.orient === 'landscape', mx: GW.mx, mt: GW.mt, mb: GW.mb, type: 'continuous' });
+                const avgs = groupAverages(P.groups, P.roster);
+                const tag = withSc => P.info.hasScores ? wRun('  ', {}) + wRun(withSc ? ' 含成績・老師用 ' : ' 不含成績・可發給學生 ', withSc ? { size: 18, bold: true, color: '1D3F8F', shade: 'E6EEFB' } : { size: 18, bold: true, color: '333333', shade: 'F2F2F2' }) : '';
+                let body = '';
+                pages.forEach((withSc, pi) => {
+                    const plan = planGroupWord(P, [withSc]), last = pi === pages.length - 1;
+                    const sect = wSect({ landscape: plan.orient === 'landscape', mx: GW.mx, mt: GW.mt, mb: GW.mb, type: 'nextPage' });
+                    body += wPara([titleRuns(titlePrefix(P.info) + '分組名單'), tag(withSc)], { after: 60 });
+                    body += wPara(subRuns(groupSubtitle(P, ctx)), { after: 160 });
+                    body += gwPanelXml(P, withSc, plan.f, plan.fits[0], avgs, plan.usableW).xml;
+                    const note = '共 ' + P.groups.reduce((t, g) => t + g.length, 0) + ' 人' + (withSc && P.opt.showAvg !== false ? '　各組平均最高與最低相差 ' + spreadOf(avgs).toFixed(1) + ' 分' : '');
+                    const noteSect = !P.skippedText && !last ? sect : '';
+                    body += wPara(wRun(note, { size: 18, color: '4F493D' }), { before: 120, sectPr: noteSect });
+                    if (P.skippedText) body += wPara(wRun(P.skippedText, { size: 18, color: '4F493D' }), { before: 40, sectPr: last ? '' : sect });
+                    if (last) body += wSect({ landscape: plan.orient === 'landscape', mx: GW.mx, mt: GW.mt, mb: GW.mb, type: pages.length > 1 ? 'nextPage' : 'continuous' });
+                });
                 return docxPackage(body, ctx.appVersion, [], P.d);
             }
 
@@ -2791,10 +2787,8 @@ Authorization inquiries: derliang@gmail.com
                 return best;
             }
             /* 2 分組名單 Excel：一張工作表、一頁（兩種都選時左右並排）。可排序的資料表放在列印範圍之外（右側）。 */
-            function buildGroupXlsx(ctx) {
-                const P = prep(ctx), pages = groupPages(P.info, P.opt);
-                if (!pages.length) throw new Error('請至少選一頁（含成績或不含成績）');
-                const dual = pages.length > 1, avgs = groupAverages(P.groups, P.roster), total = P.groups.reduce((t, g) => t + g.length, 0);
+            function xlGroupSheet(P, ctx, pages) {
+                const dual = false, avgs = groupAverages(P.groups, P.roster), total = P.groups.reduce((t, g) => t + g.length, 0);
                 const noteTxt = '共 ' + total + ' 人' + (pages.indexOf(true) >= 0 && P.opt.showAvg !== false ? '　各組平均最高與最低相差 ' + spreadOf(avgs).toFixed(1) + ' 分' : '');
                 const HEAD = (dual ? 3 : 2); // 標題、副標題、（並排時）面板標籤
                 const plan = xlPlanGroup(P, pages, (HEAD + 1) * XROW + 8 + (P.skippedText ? XROW * 2 : 0));
@@ -2846,8 +2840,13 @@ Authorization inquiries: derliang@gmail.com
                         avgs.forEach((a, gi) => { at(gi + 1, a0, xGroupCell(gi, P.opt.color)); at(gi + 1, a0 + 1, { v: a == null ? '' : a, s: { border: 'thin', num: '0.0' } }); });
                     }
                 }
-                const sh = { name: dual ? '分組名單' : (pages[0] ? '含成績' : (P.info.hasScores ? '不含成績' : '分組名單')), rows, cols, merges, heights, landscape: plan.o === 'landscape', fitOne: true, printArea: 'A1:' + ref(W - 1, lastRow), xlScale: plan.s };
-                return xlsxPackage([sh], P.d);
+                const sh = { name: (pages[0] ? '含成績' : (P.info.hasScores ? '不含成績' : '分組名單')), rows, cols, merges, heights, landscape: plan.o === 'landscape', fitOne: true, printArea: 'A1:' + ref(W - 1, lastRow), xlScale: plan.s };
+                return sh;
+            }
+            function buildGroupXlsx(ctx) {
+                const P = prep(ctx), pages = groupPages(P.info, P.opt);
+                if (!pages.length) throw new Error('請至少選一頁（含成績或不含成績）');
+                return xlsxPackage(pages.map(withSc => xlGroupSheet(P, ctx, [withSc])), P.d); // 含成績、不含成績各一張工作表，各自一頁
             }
             /* 排座位模式的 Excel（舊匯出）：一張工作表、一頁。layout＝每列字串陣列、kinds＝每列種類（text 標題說明／grid 座位列／label 排別列／front 講台列），list＝學生清單（放列印範圍之外，下方）。 */
             function gridXlsx(layout, kinds, list, nCols, date) {
@@ -2974,10 +2973,9 @@ Authorization inquiries: derliang@gmail.com
             function fitReport(kind, ctx) {
                 const P = prep(ctx), r = {};
                 if (kind === 'group') {
-                    const pages = groupPages(P.info, P.opt), pl = planGroupWord(P, pages);
-                    r.docx = { font: pl.f, orient: pl.orient };
-                    const xp = xlPlanGroup(P, pages, ((pages.length > 1 ? 3 : 2) + 1) * XROW + 8);
-                    r.xlsx = { font: 11 * Math.min(xp.s, 1), orient: xp.o };
+                    const pages = groupPages(P.info, P.opt);
+                    r.docx = { font: Math.min.apply(null, pages.map(w => planGroupWord(P, [w]).f)) };
+                    r.xlsx = { font: Math.min.apply(null, pages.map(w => 11 * Math.min(xlPlanGroup(P, [w], 3 * XROW + 8).s, 1))) };
                 } else if (ctx.seat.mode === 'trad') {
                     const map = ctx.seat.map || tradSeatMap(ctx.seat.cfg, P.groups), pl = planSeatTrad(P, map);
                     r.docx = { font: pl.f, orient: 'landscape' };
@@ -4838,7 +4836,7 @@ root.ScoreImport = {
 })();
     </script>
     <script>
-        const APP_VERSION = "v3.7.0";
+        const APP_VERSION = "v3.7.1";
         /* 版號只寫在 APP_VERSION；<title> 與頁首徽章由程式產生，不要在 HTML 靜態文字寫版號 */
         document.title = `座位小幫手 ${APP_VERSION}`;
 
