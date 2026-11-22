@@ -194,17 +194,18 @@ function ctxFor(o) {
 }
 const docText = (pkg) => pkg.text.get('word/document.xml');
 
-test('分組名單 Word：有成績兩頁、沒成績一頁；多班有班級欄', () => {
+test('分組名單 Word：一頁為限（有成績且兩種都選時並排同一頁）；多班有班級欄', () => {
     const p1 = openPackage(GL, GL.buildGroupDocx(ctxFor({ cls: 'one' })));
     const t1 = docText(p1);
     assert.ok(t1.includes('3A 分組名單') && t1.includes('含成績・老師用') && t1.includes('不含成績・可發給學生'));
-    assert.equal((t1.match(/w:num="2"/g) || []).length, 2, '兩份名單各一個兩欄區段');
+    assert.equal((t1.match(/<w:sectPr>/g) || []).length, 1, '整份文件只有一個區段（一頁）');
+    assert.ok(!t1.includes('w:type="page"') && !t1.includes('<w:br w:type="page"/>'), '沒有分頁符號');
     assert.ok(t1.includes('各組平均最高與最低相差'));
     assert.ok(p1.text.get('word/footer1.xml').includes('NUMPAGES'));
     assert.ok(p1.text.get('word/footer1.xml').includes('座位小幫手 v9.9'));
     const p2 = docText(openPackage(GL, GL.buildGroupDocx(ctxFor({ scores: false }))));
     assert.ok(!p2.includes('含成績') && !p2.includes('平均') && p2.includes('>分組名單<'));
-    assert.equal((p2.match(/w:num="2"/g) || []).length, 1);
+    assert.equal((p2.match(/<w:sectPr>/g) || []).length, 1);
     const p3 = docText(openPackage(GL, GL.buildGroupDocx(ctxFor({ cls: 'multi' }))));
     assert.ok(p3.includes('>3B<') && !p3.includes('3A 分組名單'));
     const p4 = docText(openPackage(GL, GL.buildGroupDocx(ctxFor({ options: { withoutScore: false, showAvg: false } }))));
@@ -212,35 +213,37 @@ test('分組名單 Word：有成績兩頁、沒成績一頁；多班有班級欄
     assert.throws(() => GL.buildGroupDocx(ctxFor({ options: { withScore: false, withoutScore: false } })), /至少選一頁/);
 });
 
-test('分組名單 Excel：工作表、成績存數字、班級欄', () => {
+test('分組名單 Excel：一張工作表（兩種都選時並排）、成績存數字、資料表在列印範圍外、班級欄', () => {
     const p = openPackage(GL, GL.buildGroupXlsx(ctxFor({ cls: 'one' })));
     const wb = p.text.get('xl/workbook.xml');
-    assert.ok(wb.includes('name="含成績"') && wb.includes('name="不含成績"'));
+    assert.ok(wb.includes('name="分組名單"') && !p.files.has('xl/worksheets/sheet2.xml'));
     const s1 = p.text.get('xl/worksheets/sheet1.xml');
-    assert.ok(s1.includes('state="frozen"') && s1.includes('<autoFilter ref="A1:D32"/>'));
-    assert.ok(!s1.includes('班級') && !s1.includes('<mergeCell '), '同一班不放班級欄、不合併儲存格');
-    assert.match(s1, /<c r="D2" s="\d+"><v>\d+<\/v><\/c>/, '成績是數字');
-    assert.ok(s1.includes('<t xml:space="preserve">平均</t>'));
+    assert.ok(s1.includes('含成績・老師用') && s1.includes('不含成績・可發給學生') && s1.includes('<mergeCell '));
+    assert.match(s1, /<c r="[A-Z]+\d+" s="\d+"><v>\d+<\/v><\/c>/, '成績是數字');
+    assert.ok(s1.includes('<t xml:space="preserve">平均</t>') && s1.includes('<t xml:space="preserve">成績</t>'), '右側可排序的資料表與各組平均');
     assert.ok(p.text.get('xl/styles.xml').includes('formatCode="0.0"'));
+    assert.match(wb, /Print_Area"[^>]*>[^<]*\$A\$1:\$[A-Z]+\$\d+</, '有列印範圍');
+    const only = openPackage(GL, GL.buildGroupXlsx(ctxFor({ cls: 'one', options: { withoutScore: false } })));
+    assert.ok(only.text.get('xl/workbook.xml').includes('name="含成績"'));
     const none = openPackage(GL, GL.buildGroupXlsx(ctxFor({ scores: false })));
     assert.ok(none.text.get('xl/workbook.xml').includes('name="分組名單"'));
     assert.ok(!none.files.has('xl/worksheets/sheet2.xml'));
     const multi = openPackage(GL, GL.buildGroupXlsx(ctxFor({ cls: 'multi' })));
-    assert.ok(multi.text.get('xl/worksheets/sheet1.xml').includes('>班級<'));
-    assert.ok(multi.text.get('xl/worksheets/sheet2.xml').includes('3B '));
+    assert.ok(multi.text.get('xl/worksheets/sheet1.xml').includes('>班級<') && multi.text.get('xl/worksheets/sheet1.xml').includes('3B '));
 });
 
 test('座位表 Word／Excel：傳統座位', () => {
     const c = ctxFor({ cls: 'multi', n: 30, g: 8 });
     c.seat = { mode: 'trad', cfg: { cols: 8, depth: 4, layout: 'block', aisleAfter: [4], off: ['8,4'] } };
     const w = docText(openPackage(GL, GL.buildSeatDocx(c)));
-    assert.ok(w.includes('w:orient="landscape"') && w.includes('講台（前方）') && w.includes('diagStripe') && w.includes('w:val="dashed"'));
+    assert.ok(w.includes('w:orient="landscape"') && w.includes('講台（前方）') && w.includes('diagStripe') && w.includes('w:val="dashed"') && w.includes('w:hRule="exact"'), '列高固定，保證一頁');
     assert.ok(w.includes('第 8 排') && w.includes('座位右上角是「排-位置」座標'));
     const x = openPackage(GL, GL.buildSeatXlsx(c));
-    assert.ok(x.text.get('xl/workbook.xml').includes('name="座位表"') && x.text.get('xl/workbook.xml').includes('name="座位清單"'));
+    assert.ok(x.text.get('xl/workbook.xml').includes('name="座位表"') && !x.files.has('xl/worksheets/sheet2.xml'), '只有一張工作表（一頁）');
     const s1 = x.text.get('xl/worksheets/sheet1.xml');
-    assert.ok(s1.includes('orientation="landscape"') && s1.includes('fitToWidth="1"') && s1.includes('<mergeCell ref="A1:J1"/>'));
-    assert.ok(x.text.get('xl/worksheets/sheet2.xml').includes('>班級<'));
+    assert.ok(s1.includes('orientation="landscape"') && s1.includes('fitToWidth="1" fitToHeight="1"') && s1.includes('<mergeCell ref="A1:J1"/>'));
+    assert.ok(s1.includes('>班級<') && s1.includes('座位（排-位置）'), '座位清單放在列印範圍之外（座位表下方）');
+    assert.match(x.text.get('xl/workbook.xml'), /Print_Area"[^>]*>[^<]*\$A\$1:\$J\$\d+</);
     c.options = { coord: false, color: false };
     const w2 = docText(openPackage(GL, GL.buildSeatDocx(c)));
     assert.ok(!w2.includes('座位右上角') && !/>\d-\d</.test(w2));
@@ -299,11 +302,11 @@ const skipCtx = n => {
 };
 const paraTexts = pk => Array.from(pk.text.get('word/document.xml').matchAll(/<w:t[^>]*>([^<]*)<\/w:t>/g)).map(m => m[1]);
 
-test('#4 Word：略過的同學在名單最後列成「未分組：姓名、姓名」，每一頁都有；沒有人就不出現', () => {
+test('#4 Word：略過的同學在名單最後列成「未分組：姓名、姓名」（一頁只出現一次）；沒有人就不出現', () => {
     const c = skipCtx(8), line = '未分組：' + c.names.join('、');
     const pk = buildPkg('docx', c);
     const t = paraTexts(pk);
-    assert.equal(t.filter(x => x === line).length, 2, '含成績與不含成績兩頁各一行');
+    assert.equal(t.filter(x => x === line).length, 1, '兩種名單並排在同一頁，未分組只寫一行');
     const total = t.findIndex(x => /^共 6 人/.test(x));
     assert.ok(total >= 0 && t[t.indexOf(line)] === line && t.indexOf(line) > total, '在「共 N 人」之後（名單最後）');
     const all = makeRoster(6);
@@ -311,10 +314,10 @@ test('#4 Word：略過的同學在名單最後列成「未分組：姓名、姓�
     assert.ok(!paraTexts(none).some(x => x.startsWith('未分組')), '沒有人略過就不加');
 });
 
-test('#4 Excel：含成績與不含成績兩張工作表最後都有「未分組」一行；多班時姓名前加班級', () => {
+test('#4 Excel：同一張工作表最後有「未分組」一行；多班時姓名前加班級', () => {
     const c = skipCtx(8), line = '未分組：' + c.names.join('、');
     const pk = buildPkg('xlsx', c);
-    ['sheet1', 'sheet2'].forEach(s => {
+    ['sheet1'].forEach(s => {
         const x = pk.text.get('xl/worksheets/' + s + '.xml');
         assert.ok(x.includes('>' + line + '<'), s + ' 有未分組一行');
         assert.match(x, /<mergeCell ref="A\d+:[A-Z]+\d+"\/>/, s + ' 合併成整列寬');
@@ -326,13 +329,15 @@ test('#4 Excel：含成績與不含成績兩張工作表最後都有「未分組
     assert.ok(mp.text.get('xl/worksheets/sheet1.xml').includes('>未分組：3B ' + m[7].name + '<'));
 });
 
-test('D3 Excel 分組名單：每張工作表都是橫式、縮放成一頁寬（含成績／不含成績／無成績）', () => {
+test('D3 Excel 分組名單：只有一張工作表，寬高都縮成一頁（fitToWidth=1、fitToHeight=1），並設定列印範圍', () => {
     const c = skipCtx(8);
     const check = pk => ['sheet1', 'sheet2'].filter(s => pk.text.has('xl/worksheets/' + s + '.xml')).forEach(s => {
         const x = pk.text.get('xl/worksheets/' + s + '.xml');
         assert.ok(x.includes('<pageSetUpPr fitToPage="1"/>'), s);
-        assert.match(x, /<pageSetup [^>]*orientation="landscape"[^>]*fitToWidth="1" fitToHeight="0"\/>/, s);
+        assert.match(x, /<pageSetup [^>]*orientation="(landscape|portrait)"[^>]*fitToWidth="1" fitToHeight="1"\/>/, s);
+        assert.ok(pk.text.get('xl/workbook.xml').includes('_xlnm.Print_Area'), '有列印範圍');
     });
+    assert.ok(!buildPkg('xlsx', c).text.has('xl/worksheets/sheet2.xml'), '整本活頁簿只有一頁可印');
     check(buildPkg('xlsx', c));
     const ns = makeRoster(8, { scores: false });
     const pk = buildPkg('xlsx', { roster: ns, groups: [[0, 1, 2, 3], [4, 5, 6, 7]] });
@@ -349,4 +354,82 @@ test('D5 Word 頁尾：頁碼用完整欄位，每個片段都是 8pt，與文�
     const runs = f.match(/<w:r>.*?<\/w:r>/g);
     assert.ok(runs.length >= 11);
     runs.forEach(r => assert.match(r, /<w:sz w:val="16"\/>/, r));
+});
+
+/* ── v3.7.0：每一份下載檔都只印一頁（Word、Excel；分組名單、座位表；各種選項）── */
+function splitGroups(n, g) { const ids = [...Array(n).keys()], out = []; let p = 0; GL.groupSizes(n, g).forEach(s => { out.push(ids.slice(p, p + s)); p += s; }); return out; }
+const oneCtx = (n, g, ro, options, extra) => Object.assign({ roster: makeRoster(n, ro), groups: splitGroups(n, g), method: 'snake', date: DATE, appVersion: 'v9.9', options: options || {} }, extra || {});
+const onePageSeats = [
+    { mode: 'trad', cfg: { cols: 12, depth: 6, layout: 'block', aisleAfter: [4, 8] } },
+    { mode: 'trad', cfg: { cols: 30, depth: 2, layout: 'col', off: ['3,1'] } },
+    { mode: 'table', tables: [{ n: 8, shape: 'rect' }, { n: 8, shape: 'rect', ord: 'face' }, { n: 8, shape: 'hex' }, { n: 8, shape: 'rect', one: true }], perRow: 2 },
+    { mode: 'table', tables: Array.from({ length: 16 }, () => ({ n: 4, shape: 'rect' })), perRow: 4, image: true }
+];
+
+test('一頁為限：分組名單 Word 只有一個區段、沒有分頁符號、方塊列高固定（各種人數與選項）', () => {
+    [[8, 2, {}], [30, 5, { cls: 'one' }], [64, 16, { cls: 'multi' }], [120, 12, { cls: 'multi' }], [64, 16, { scores: false }]].forEach(([n, g, ro]) => {
+        [{}, { withoutScore: false }, { withScore: false }, { color: false, showAvg: false }].forEach(op => {
+            const d = docText(openPackage(GL, GL.buildGroupDocx(oneCtx(n, g, ro, op))));
+            assert.equal((d.match(/<w:sectPr>/g) || []).length, 1, n + '人 ' + JSON.stringify(op));
+            assert.ok(!/w:type="page"|w:pageBreakBefore|w:type="nextPage"/.test(d), '沒有分頁');
+            assert.ok(/w:hRule="exact"/.test(d) && !/w:hRule="atLeast"/.test(d), '列高固定，內容不會把頁面撐長');
+        });
+    });
+});
+
+test('一頁為限：兩種名單都選時橫式並排或直式上下疊在同一頁，字級夠大才用', () => {
+    const r = GL.fitReport('group', oneCtx(64, 16, { cls: 'multi' }));
+    assert.ok(r.docx.font >= GL.F_MIN && r.xlsx.font >= GL.F_MIN, '64 人 16 組兩頁並排字級不低於 7pt：' + JSON.stringify(r));
+    const one = GL.fitReport('group', oneCtx(64, 16, { cls: 'multi' }, { withoutScore: false }));
+    assert.ok(one.docx.font > r.docx.font, '只印一種頁面字更大');
+    const big = GL.fitReport('group', oneCtx(300, 30, { cls: 'multi' }));
+    assert.ok(big.docx.small && big.xlsx.small, '人數極多時要提示字會縮小：' + JSON.stringify(big));
+});
+
+test('一頁為限：分組名單 Excel 一張工作表、fit 1×1、有列印範圍，且各選項都成立', () => {
+    [[8, 2, {}], [64, 16, { cls: 'multi' }], [200, 20, { cls: 'one' }], [30, 5, { scores: false }]].forEach(([n, g, ro]) => {
+        [{}, { withoutScore: false }, { withScore: false }, { showAvg: false }].forEach(op => {
+            const pk = openPackage(GL, GL.buildGroupXlsx(oneCtx(n, g, ro, op)));
+            assert.ok(!pk.files.has('xl/worksheets/sheet2.xml'), '只有一張工作表');
+            const s = pk.text.get('xl/worksheets/sheet1.xml');
+            assert.ok(s.includes('fitToWidth="1" fitToHeight="1"') && s.includes('<pageSetUpPr fitToPage="1"/>'));
+            const m = pk.text.get('xl/workbook.xml').match(/Print_Area"[^>]*>[^<]*\$A\$1:\$([A-Z]+)\$(\d+)</);
+            assert.ok(m, '有列印範圍');
+        });
+    });
+});
+
+test('一頁為限：座位表 Word（傳統座位、方桌／長桌／六邊形桌）一個區段、橫式、無分頁；Excel 一張工作表 fit 1×1', () => {
+    onePageSeats.forEach(seat => {
+        [{}, { color: false, coord: false }].forEach(op => {
+            const c = oneCtx(64, 16, { cls: 'multi' }, op, { seat: Object.assign({}, seat) });
+            if (seat.image) c.seat.image = { data: tinyPng(GL), width: 1200, height: 800 };
+            const d = docText(openPackage(GL, GL.buildSeatDocx(c)));
+            assert.equal((d.match(/<w:sectPr>/g) || []).length, 1);
+            assert.ok(d.includes('w:orient="landscape"') && !/w:type="page"|w:pageBreakBefore/.test(d));
+            assert.ok(!/w:hRule="atLeast"/.test(d), '列高固定');
+            const x = openPackage(GL, GL.buildSeatXlsx(c));
+            assert.ok(!x.files.has('xl/worksheets/sheet2.xml'));
+            const s = x.text.get('xl/worksheets/sheet1.xml');
+            assert.ok(s.includes('fitToWidth="1" fitToHeight="1"'));
+            assert.match(x.text.get('xl/workbook.xml'), /Print_Area"[^>]*>[^<]*\$A\$1:\$[A-Z]+\$\d+</);
+        });
+    });
+});
+
+test('一頁為限：座位表字級預估（fitReport）與提示門檻', () => {
+    const ok = GL.fitReport('seat', oneCtx(64, 16, { cls: 'multi' }, {}, { seat: onePageSeats[0] }));
+    assert.ok(ok.docx.font >= GL.F_MIN, JSON.stringify(ok));
+    const wide = GL.fitReport('seat', oneCtx(60, 10, { cls: 'multi' }, {}, { seat: { mode: 'trad', cfg: { cols: 30, depth: 2, layout: 'col' } } }));
+    assert.ok(typeof wide.docx.small === 'boolean' && typeof wide.xlsx.small === 'boolean');
+});
+
+test('一頁為限：排座位模式的 Excel（gridXlsx）一張工作表、fit 1×1、清單在列印範圍外', () => {
+    const layout = [['高三３班座位表'], ['○○中學'], ['深位 2', '甲', '乙'], ['深位 1', '丙', ''], ['深位 \ 橫排', '第 1 排', '第 2 排'], ['講台', '', '']];
+    const kinds = ['text', 'text', 'grid', 'grid', 'label', 'front'];
+    const pk = openPackage(GL, GL.gridXlsx(layout, kinds, [['學生姓名', '狀態'], ['甲', '已定位']], 3, DATE));
+    assert.ok(!pk.files.has('xl/worksheets/sheet2.xml'));
+    const s = pk.text.get('xl/worksheets/sheet1.xml');
+    assert.ok(s.includes('fitToWidth="1" fitToHeight="1"') && s.includes('學生姓名'));
+    assert.match(pk.text.get('xl/workbook.xml'), /Print_Area"[^>]*>[^<]*\$A\$1:\$C\$6</);
 });
