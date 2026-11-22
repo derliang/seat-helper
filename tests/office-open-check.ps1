@@ -2,6 +2,7 @@
 # 用法：pwsh -NoProfile -File tests\office-open-check.ps1 [-OutDir 路徑] [-Pdf]
 #（用 PowerShell 7；Windows PowerShell 5.1 會把本檔的中文讀成亂碼）
 # 會先用 node 產生樣本檔（虛構名單），逐一開啟：Word 回報頁數、Excel 回報工作表名稱；-Pdf 另存 PDF 供目視檢查版面。
+# v3.7.0 起：每一份 Word／Excel 都必須「只印一頁」——Word 頁數不是 1、Excel 匯出的 PDF 頁數不是 1，都算失敗。
 param([string]$OutDir = (Join-Path $env:TEMP 'seat-helper-group-samples'), [switch]$Pdf)
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path -Parent $PSScriptRoot
@@ -21,6 +22,7 @@ try {
             $pages = $doc.ComputeStatistics(2)
             if ($Pdf) { $doc.ExportAsFixedFormat(($f.FullName + '.pdf'), 17) }
             $doc.Close($false)
+            if ($pages -ne 1) { throw "頁數是 $pages，必須是 1" }
             "OK   Word  頁數 $pages  $($f.Name)"
         } catch { $fail++; "FAIL Word  $($f.Name)：$($_.Exception.Message)" }
     }
@@ -35,9 +37,14 @@ try {
             $wb = $xl.Workbooks.Open($f.FullName)
             if ($wb.Name -match 'Repaired|修復') { throw 'Excel 需要修復這個檔案' }
             $names = ($wb.Worksheets | ForEach-Object { $_.Name }) -join '、'
-            if ($Pdf) { $wb.ExportAsFixedFormat(0, ($f.FullName + '.pdf')) }
+            $pdfPath = $f.FullName + '.pdf'
+            $wb.ExportAsFixedFormat(0, $pdfPath)
+            $xt = [System.Text.Encoding]::GetEncoding(28591).GetString([System.IO.File]::ReadAllBytes($pdfPath))
+            $xPages = ([regex]::Matches($xt, '/Types*/Page(?![sw])')).Count
+            if (-not $Pdf) { Remove-Item $pdfPath -Force }
             $wb.Close($false)
-            "OK   Excel 工作表 $names  $($f.Name)"
+            if ($xPages -ne 1) { throw "列印成 $xPages 頁，必須是 1" }
+            "OK   Excel 工作表 $names  列印 $xPages 頁  $($f.Name)"
         } catch { $fail++; "FAIL Excel $($f.Name)：$($_.Exception.Message)" }
     }
 } finally { $xl.Quit() }

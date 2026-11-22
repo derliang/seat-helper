@@ -2190,9 +2190,44 @@ Authorization inquiries: derliang@gmail.com
                 });
             }
 
+            /* ══ 一頁為限的版面計算（v3.7.0）：每一份下載檔都只印一頁，內容多就縮字級、改分欄，不分頁 ══
+             * 做法：先算好每個方塊的實際尺寸（Word 列高一律「固定」），再挑出「字級最大且排得進一頁」的紙張方向與欄數；
+             * 字級縮到 F_MIN（7 pt）以下仍排在一頁，但畫面會先提示。單位：pt。 */
+            const PAGE_PT = { portrait: { w: 595.3, h: 841.9 }, landscape: { w: 841.9, h: 595.3 } };
+            const F_MAX = 12, F_MIN = 7, F_FLOOR = 3;
+            /* 估字寬（單位：字級的幾倍）：全形 1、數字 .56、大寫 .66、其他 .55 */
+            function emOf(s) {
+                let t = 0;
+                for (const ch of String(s == null ? '' : s)) {
+                    const c = ch.codePointAt(0);
+                    t += (c >= 0x2E80 || (c >= 0xFF00 && c <= 0xFFEF)) ? 1 : (c === 32 ? 0.3 : (c >= 48 && c <= 57 ? 0.56 : (c >= 65 && c <= 90 ? 0.66 : 0.55)));
+                }
+                return t;
+            }
+            const maxEm = (arr, minV) => arr.reduce((m, s) => Math.max(m, emOf(s)), minV || 0);
+            /* 把依序排列的方塊高度（pt）切成 k 欄（每欄連續），回傳每欄的索引與最高欄高度 */
+            function packColumns(heights, k, gap) {
+                const n = heights.length;
+                const colH = ids => ids.reduce((t, i) => t + heights[i], 0) + gap * Math.max(0, ids.length - 1);
+                const split = H => {
+                    const cols = [[]];
+                    heights.forEach((h, i) => {
+                        const cur = cols[cols.length - 1];
+                        if (cur.length && colH(cur.concat(i)) > H + 1e-6) cols.push([i]); else cur.push(i);
+                    });
+                    return cols;
+                };
+                let lo = Math.max.apply(null, heights.concat([0])), hi = colH(heights.map((_, i) => i));
+                for (let it = 0; it < 40; it++) { const mid = (lo + hi) / 2; if (split(mid).length <= k) hi = mid; else lo = mid; }
+                const cols = split(hi);
+                while (cols.length < k && n) cols.push([]);
+                return { cols, maxH: Math.max.apply(null, cols.map(colH).concat([0])) };
+            }
+
             /* ══ Word（.docx）══ */
             const W_NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"';
             const A4 = { w: 11906, h: 16838 };
+            const tw = pt => Math.round(pt * 20); // pt → twips
             function wRun(text, o) {
                 o = o || {};
                 let rPr = '';
@@ -2203,6 +2238,7 @@ Authorization inquiries: derliang@gmail.com
                 const parts = String(text == null ? '' : text).split(/(\t|\n)/), body = parts.map(p => p === '\t' ? '<w:tab/>' : (p === '\n' ? '<w:br/>' : (p ? '<w:t xml:space="preserve">' + esc(p) + '</w:t>' : ''))).join('');
                 return '<w:r>' + (rPr ? '<w:rPr>' + rPr + '</w:rPr>' : '') + body + '</w:r>';
             }
+            const hp = pt => Math.round(pt * 2); // 字級 pt → 半點（w:sz）
             function wPara(runs, o) {
                 o = o || {};
                 let pPr = '';
@@ -2211,15 +2247,20 @@ Authorization inquiries: derliang@gmail.com
                 if (o.tabs) pPr += '<w:tabs>' + o.tabs.map(t => '<w:tab w:val="' + t.val + '" w:pos="' + t.pos + '"/>').join('') + '</w:tabs>';
                 pPr += '<w:spacing w:before="' + (o.before || 0) + '" w:after="' + (o.after || 0) + '"' + (o.line ? ' w:line="' + o.line + '" w:lineRule="' + (o.lineExact ? 'exact' : 'auto') + '"' : '') + '/>';
                 if (o.align) pPr += '<w:jc w:val="' + o.align + '"/>';
+                if (o.markSize) pPr += '<w:rPr><w:sz w:val="' + o.markSize + '"/><w:szCs w:val="' + o.markSize + '"/></w:rPr>';
                 if (o.sectPr) pPr += o.sectPr;
                 return '<w:p><w:pPr>' + pPr + '</w:pPr>' + (Array.isArray(runs) ? runs.join('') : (runs || '')) + '</w:p>';
             }
+            /* 固定高度的空段落（方塊之間的間隔、巢狀表格後面必須有的結尾段落） */
+            const wSpacer = pt => wPara('', { line: Math.max(20, tw(pt)), lineExact: true, markSize: 2 });
+            /* o：landscape、mx 左右邊界(pt)、mt 上邊界(pt)、mb 下邊界(pt)、margin（舊參數，twips，四邊同） */
             function wSect(o) {
-                const land = !!o.landscape, w = land ? A4.h : A4.w, h = land ? A4.w : A4.h, m = o.margin || 1000;
+                const land = !!o.landscape, w = land ? A4.h : A4.w, h = land ? A4.w : A4.h;
+                const m = o.margin || 1000, L = o.mx != null ? tw(o.mx) : m, T = o.mt != null ? tw(o.mt) : m, B = o.mb != null ? tw(o.mb) : m;
                 return '<w:sectPr><w:footerReference w:type="default" r:id="rIdFooter"/>' +
                     '<w:type w:val="' + (o.type || 'nextPage') + '"/>' +
                     '<w:pgSz w:w="' + w + '" w:h="' + h + '"' + (land ? ' w:orient="landscape"' : '') + '/>' +
-                    '<w:pgMar w:top="' + m + '" w:right="' + m + '" w:bottom="' + m + '" w:left="' + m + '" w:header="500" w:footer="500" w:gutter="0"/>' +
+                    '<w:pgMar w:top="' + T + '" w:right="' + L + '" w:bottom="' + B + '" w:left="' + L + '" w:header="400" w:footer="400" w:gutter="0"/>' +
                     '<w:cols w:num="' + (o.cols || 1) + '" w:space="' + (o.colSpace || 400) + '"/></w:sectPr>';
             }
             const B_SINGLE = c => 'w:val="single" w:sz="4" w:space="0" w:color="' + (c || 'BDBDBD') + '"';
@@ -2227,26 +2268,37 @@ Authorization inquiries: derliang@gmail.com
                 const v = spec === 'none' ? 'w:val="nil"' : (spec === 'dashed' ? 'w:val="dashed" w:sz="6" w:space="0" w:color="9E9E9E"' : B_SINGLE());
                 return '<w:' + tag + '>' + ['top', 'left', 'bottom', 'right'].map(s => '<w:' + s + ' ' + v + '/>').join('') + '</w:' + tag + '>';
             }
-            /* cell: { w 寬, paras [xml], fill, span, borders 'single'|'dashed'|'none', vAlign, shd 自訂 } */
+            /* cell: { w 寬, paras [xml], fill, span, borders 'single'|'dashed'|'none', vAlign, shd 自訂, edge {right:'dashed'} } */
             function wCell(c) {
                 let tcPr = '<w:tcW w:w="' + c.w + '" w:type="dxa"/>';
                 if (c.span > 1) tcPr += '<w:gridSpan w:val="' + c.span + '"/>';
-                if (c.borders) tcPr += wBorders('tcBorders', c.borders);
+                if (c.edge) tcPr += '<w:tcBorders>' + ['top', 'left', 'bottom', 'right'].map(s => '<w:' + s + ' ' + (c.edge[s] === 'dashed' ? 'w:val="dashed" w:sz="6" w:space="0" w:color="9E9E9E"' : 'w:val="nil"') + '/>').join('') + '</w:tcBorders>';
+                else if (c.borders) tcPr += wBorders('tcBorders', c.borders);
                 if (c.shd) tcPr += c.shd;
                 else if (c.fill) tcPr += '<w:shd w:val="clear" w:color="auto" w:fill="' + c.fill + '"/>';
                 tcPr += '<w:vAlign w:val="' + (c.vAlign || 'center') + '"/>';
                 return '<w:tc><w:tcPr>' + tcPr + '</w:tcPr>' + (c.paras && c.paras.length ? c.paras.join('') : wPara('')) + '</w:tc>';
             }
+            /* o：align、borders、padV（上下內距 twips）、exact（列高固定，不會被內容撐高，保證一頁） */
             function wTable(grid, rows, o) {
                 o = o || {};
-                const tw = grid.reduce((t, x) => t + x, 0);
-                return '<w:tbl><w:tblPr><w:tblW w:w="' + tw + '" w:type="dxa"/>' + (o.align ? '<w:jc w:val="' + o.align + '"/>' : '') +
+                const tw0 = grid.reduce((t, x) => t + x, 0);
+                return '<w:tbl><w:tblPr><w:tblW w:w="' + tw0 + '" w:type="dxa"/>' + (o.align ? '<w:jc w:val="' + o.align + '"/>' : '') +
                     wBorders('tblBorders', o.borders || 'single').replace('</w:tblBorders>', '<w:insideH ' + B_SINGLE() + '/><w:insideV ' + B_SINGLE() + '/></w:tblBorders>') +
-                    '<w:tblLayout w:type="fixed"/><w:tblCellMar><w:top w:w="' + (o.padV || 30) + '" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="' + (o.padV || 30) + '" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tblCellMar>' +
+                    '<w:tblLayout w:type="fixed"/><w:tblCellMar><w:top w:w="' + (o.padV != null ? o.padV : 30) + '" w:type="dxa"/><w:left w:w="' + (o.padH != null ? o.padH : 80) + '" w:type="dxa"/><w:bottom w:w="' + (o.padV != null ? o.padV : 30) + '" w:type="dxa"/><w:right w:w="' + (o.padH != null ? o.padH : 80) + '" w:type="dxa"/></w:tblCellMar>' +
                     '<w:tblLook w:val="0000" w:firstRow="0" w:lastRow="0" w:firstColumn="0" w:lastColumn="0" w:noHBand="1" w:noVBand="1"/></w:tblPr>' +
                     '<w:tblGrid>' + grid.map(x => '<w:gridCol w:w="' + x + '"/>').join('') + '</w:tblGrid>' +
-                    rows.map(r => '<w:tr><w:trPr><w:cantSplit/>' + (r.height ? '<w:trHeight w:val="' + r.height + '" w:hRule="atLeast"/>' : '') + '</w:trPr>' + r.cells.map(wCell).join('') + '</w:tr>').join('') +
+                    rows.map(r => '<w:tr><w:trPr><w:cantSplit/>' + (r.height ? '<w:trHeight w:val="' + r.height + '" w:hRule="' + (o.exact ? 'exact' : 'atLeast') + '"/>' : '') + '</w:trPr>' + r.cells.map(wCell).join('') + '</w:tr>').join('') +
                     '</w:tbl>';
+            }
+            /* 版面用的無框外表格（一列，每格一個欄位／面板）。cells：{ w twips, paras [xml 或巢狀表格], edge, vAlign } */
+            function wLayout(cells, align) {
+                const grid = cells.map(c => c.w), tw0 = grid.reduce((t, x) => t + x, 0);
+                return '<w:tbl><w:tblPr><w:tblW w:w="' + tw0 + '" w:type="dxa"/><w:jc w:val="' + (align || 'center') + '"/>' +
+                    '<w:tblLayout w:type="fixed"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="0" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="0" w:type="dxa"/></w:tblCellMar>' +
+                    '<w:tblLook w:val="0000" w:firstRow="0" w:lastRow="0" w:firstColumn="0" w:lastColumn="0" w:noHBand="1" w:noVBand="1"/></w:tblPr>' +
+                    '<w:tblGrid>' + grid.map(x => '<w:gridCol w:w="' + x + '"/>').join('') + '</w:tblGrid>' +
+                    '<w:tr><w:trPr><w:cantSplit/></w:trPr>' + cells.map(c => wCell(Object.assign({ borders: 'none', vAlign: 'top' }, c))).join('') + '</w:tr></w:tbl>';
             }
             function wFooter(appVersion) {
                 // D5：頁碼用完整欄位（每個片段都帶字級）；fldSimple 的結果在 Word 更新後會退回預設字級，數字比文字大
@@ -2300,7 +2352,7 @@ Authorization inquiries: derliang@gmail.com
                 const skipped = ctx.roster.map((st, i) => inGroup.has(i) ? null : ((multi && st.cls ? String(st.cls).trim() + ' ' : '') + st.name)).filter(x => x != null);
                 return { info, d, date: formatDate(d), time: formatTime(d), opt, multi, roster: ctx.roster, groups: ctx.groups, skipped, skippedText: skipped.length ? '未分組：' + skipped.join('、') : '' };
             }
-            /* 分組名單會產生哪幾頁：true＝含成績、false＝不含成績（10.3a 智慧判斷） */
+            /* 分組名單會產生哪幾頁：true＝含成績、false＝不含成績（10.3a 智慧判斷）。兩種都選時並排在同一頁（v3.7.0）。 */
             function groupPages(info, opt) {
                 if (!info.hasScores) return [false];
                 const p = [];
@@ -2312,118 +2364,270 @@ Authorization inquiries: derliang@gmail.com
                 return (METHOD_LABELS[ctx.method] || '分組') + '・' + P.groups.length + ' 組・' + sizeText(P.groups) + '　' + P.date + ' ' + P.time;
             }
 
-            /* 1 分組名單 Word：A4 直式；有成績時第 1 頁含成績、第 2 頁不含成績；每組一張小表、兩欄排、表格不被切開 */
+            /* ── 1 分組名單 Word：一頁。每組一張小表（方塊），依字級最大的原則挑直式／橫式與欄數；
+             *    含成績與不含成績都選時，橫式一頁左右並排（中間虛線可剪開）。 ── */
+            const GW = { mx: 36, mt: 38, mb: 44, gapH: 12, gapV: 6, pad: 5, panelGutter: 28 };
+            /* 一組方塊在字級 f 時的欄寬（pt）、列高（pt） */
+            function gwSpec(P, withSc, f) {
+                const members = P.groups.map(g => sortedMembers(g, P.roster));
+                const all = [].concat.apply([], members);
+                const noEm = Math.max(2.4, maxEm(all.map(i => noOf(P.roster[i], i))) + 0.2);
+                const clsEm = P.multi ? maxEm(all.map(i => String(P.roster[i].cls || '').trim())) * 0.86 + 0.2 : 0;
+                const nameEm = Math.max(2, maxEm(all.map(i => P.roster[i].name))) + 0.4;
+                const scEm = withSc ? Math.max(maxEm(all.map(i => { const s = toScore(P.roster[i].score); return s == null ? '' : String(s); })) + 0.3, P.opt.showAvg !== false ? 4.6 * 0.86 + 0.3 : 0) : 0;
+                const cols = (P.multi ? [clsEm * f + GW.pad] : []).concat([noEm * f + GW.pad, nameEm * f + GW.pad]).concat(withSc ? [scEm * f + GW.pad] : []);
+                const body = cols.length - (withSc ? 1 : 0), headMin = emOf('第 88 組') * f + GW.pad;
+                let sum = cols.reduce((t, x) => t + x, 0);
+                if (headMin > cols.slice(0, body).reduce((t, x) => t + x, 0)) { const add = headMin - cols.slice(0, body).reduce((t, x) => t + x, 0); cols[body - 1] += add; sum += add; }
+                return { members, cols, w: sum, rowH: f * 1.5 };
+            }
+            /* 某一個面板（一組方塊的集合）在區域 W×H、字級 f 下能不能排進去；回傳欄數與分欄 */
+            function gwFit(P, withSc, f, W, H) {
+                const sp = gwSpec(P, withSc, f), G = P.groups.length;
+                const heights = sp.members.map(m => (m.length + 1) * (sp.rowH + 0.5));
+                const kMin = G >= 4 ? 2 : 1;
+                for (let k = Math.min(kMin, G); k <= Math.min(10, G); k++) {
+                    if (sp.w * k + GW.gapH * (k - 1) > W + 1e-6) break;
+                    const pk = packColumns(heights, k, GW.gapV);
+                    if (pk.maxH <= H) return { k, sp, pack: pk, heights };
+                }
+                return null;
+            }
+            function planGroupWord(P, pages) {
+                const dual = pages.length > 1, G = P.groups.length, best = { f: -1 };
+                // 單頁：直式或橫式；兩頁並排：橫式左右並排（side）或直式上下疊（stack，中間虛線）
+                const modes = dual ? [['landscape', 'side'], ['portrait', 'stack']] : [['portrait', 'one'], ['landscape', 'one']];
+                const geo = (orient, mode) => {
+                    const pg = PAGE_PT[orient], usableW = pg.w - 2 * GW.mx;
+                    const skipLines = P.skippedText ? Math.ceil(emOf(P.skippedText) * 9 / usableW) : 0;
+                    // 標題區 50、結尾說明 19、未分組那行、表格後結尾段 1、安全邊 6
+                    let H = (pg.h - GW.mt - GW.mb - 50 - 19 - (skipLines ? skipLines * 13 + 3 : 0) - 1 - 6) * 0.985;
+                    let panelW = usableW;
+                    if (mode === 'side') { panelW = (usableW - GW.panelGutter) / 2; H -= 22; }
+                    if (mode === 'stack') { H = (H - 2 * 22 - 18) / 2; }
+                    return { pg, usableW, skipLines, H, panelW };
+                };
+                modes.forEach(([orient, mode]) => {
+                    const g = geo(orient, mode);
+                    for (let f = F_MAX; f >= F_FLOOR; f -= 0.5) {
+                        const fits = pages.map(withSc => gwFit(P, withSc, f, g.panelW, g.H));
+                        if (fits.every(Boolean)) { if (f > best.f + 1e-9) Object.assign(best, { f, orient, mode, fits, panelW: g.panelW, H: g.H, usableW: g.usableW }); break; }
+                    }
+                });
+                if (best.f < 0) { // 連最小字級都排不下（人數極端多）：用最小字級、最多欄，盡量一頁
+                    const orient = 'landscape', mode = dual ? 'side' : 'one', g = geo(orient, mode), f = F_FLOOR;
+                    const fits = pages.map(withSc => { const sp = gwSpec(P, withSc, f); const k = Math.max(1, Math.min(G, Math.floor((g.panelW + GW.gapH) / (sp.w + GW.gapH)))); const heights = sp.members.map(m => (m.length + 1) * (sp.rowH + 0.5)); return { k, sp, pack: packColumns(heights, k, GW.gapV), heights }; });
+                    Object.assign(best, { f, orient, mode, fits, panelW: g.panelW, usableW: g.usableW, H: 0, overflow: true });
+                }
+                best.dual = dual; best.tooSmall = best.f < F_MIN;
+                return best;
+            }
+            /* 一個方塊（一組）的 Word 表格 */
+            function gwCardXml(P, withSc, f, sp, gi, avgs, cardW) {
+                const col = colorOf(gi, P.opt.color), mem = sp.members[gi], fs = hp(f), fs2 = hp(f * 0.86), rowH = tw(sp.rowH);
+                const grid = sp.cols.map(x => tw(x)), cardTw = tw(cardW), sumG = grid.reduce((t, x) => t + x, 0);
+                grid[withSc ? grid.length - 2 : grid.length - 1] += cardTw - sumG; // 多出來的寬度給姓名欄
+                const span = grid.length - (withSc ? 1 : 0);
+                const head = [{ w: grid.slice(0, span).reduce((t, x) => t + x, 0), span, fill: col.soft, paras: [wPara(wRun('第 ' + (gi + 1) + ' 組', { bold: true, color: col.ink, size: fs }))] }];
+                if (withSc) head.push({ w: grid[grid.length - 1], fill: col.soft, paras: [wPara(wRun(P.opt.showAvg !== false ? '平均 ' + fmtAvg(avgs[gi]) : '', { bold: true, color: col.ink, size: fs2 }), { align: 'right' })] });
+                const rows = [{ cells: head, height: rowH }];
+                mem.forEach(i => {
+                    const st = P.roster[i], cells = [];
+                    let c = 0;
+                    if (P.multi) cells.push({ w: grid[c++], paras: [wPara(wRun(st.cls || '', { size: fs2, color: '4F493D' }), { align: 'center' })] });
+                    cells.push({ w: grid[c++], paras: [wPara(wRun(noOf(st, i), { color: '4F493D', size: fs }), { align: 'center' })] });
+                    cells.push({ w: grid[c++], paras: [wPara(wRun(st.name, { size: fs }))] });
+                    if (withSc) { const s = toScore(st.score); cells.push({ w: grid[c++], paras: [wPara(wRun(s == null ? '' : String(s), { size: fs }), { align: 'right' })] }); }
+                    rows.push({ cells, height: rowH });
+                });
+                return wTable(grid, rows, { padV: 0, padH: 50, exact: true });
+            }
+            /* 一個面板：k 欄的版面表格（每欄由上而下疊方塊） */
+            function gwPanelXml(P, withSc, f, fit, avgs, availW) {
+                const sp = fit.sp, k = fit.k, cardW = Math.min(sp.w * 1.3, (availW - GW.gapH * (k - 1)) / k);
+                const cells = [];
+                fit.pack.cols.forEach((ids, ci) => {
+                    if (ci) cells.push({ w: tw(GW.gapH), paras: [wSpacer(1)] });
+                    const paras = [];
+                    ids.forEach((gi, n) => { if (n) paras.push(wSpacer(GW.gapV)); paras.push(gwCardXml(P, withSc, f, sp, gi, avgs, cardW)); });
+                    paras.push(wSpacer(1));
+                    cells.push({ w: tw(cardW), paras });
+                });
+                return { xml: wLayout(cells, 'center'), w: tw(cardW) * k + tw(GW.gapH) * (k - 1) };
+            }
             function buildGroupDocx(ctx) {
                 const P = prep(ctx), pages = groupPages(P.info, P.opt);
                 if (!pages.length) throw new Error('請至少選一頁（含成績或不含成績）');
-                const colW = Math.floor((A4.w - 2000 - 400) / 2) - 40;
-                const avgs = groupAverages(P.groups, P.roster);
-                let body = '';
-                pages.forEach((withSc, pi) => {
-                    const tag = P.info.hasScores ? wRun('  ', {}) + wRun(withSc ? ' 含成績・老師用 ' : ' 不含成績・可發給學生 ', withSc ? { size: 18, bold: true, color: '1D3F8F', shade: 'E6EEFB' } : { size: 18, bold: true, color: '333333', shade: 'F2F2F2' }) : '';
-                    body += wPara([titleRuns(titlePrefix(P.info) + '分組名單'), tag], { after: 60 });
-                    body += wPara(subRuns(groupSubtitle(P, ctx)), { after: 160, sectPr: wSect({ type: 'nextPage' }) }); // 標題區（單欄），每份名單從新的一頁開始
-                    const scW = 1150, fixed = (P.multi ? 760 : 0) + 700 + (withSc ? scW : 0), nameW = colW - fixed; // 成績欄要放得下「平均 78.7」
-                    const grid = (P.multi ? [760] : []).concat([700, nameW]).concat(withSc ? [scW] : []);
-                    P.groups.forEach((g, gi) => {
-                        const col = colorOf(gi, P.opt.color), mem = sortedMembers(g, P.roster), span = grid.length - (withSc ? 1 : 0);
-                        const head = [{ w: grid.slice(0, span).reduce((t, x) => t + x, 0), span, fill: col.soft, paras: [wPara(wRun('第 ' + (gi + 1) + ' 組', { bold: true, color: col.ink }), { keepNext: true })] }];
-                        if (withSc) head.push({ w: scW, fill: col.soft, paras: [wPara(wRun(P.opt.showAvg !== false ? '平均 ' + fmtAvg(avgs[gi]) : '', { bold: true, color: col.ink, size: 18 }), { align: 'right', keepNext: true })] });
-                        const rows = [{ cells: head }];
-                        mem.forEach((i, k) => {
-                            const st = P.roster[i], kn = k < mem.length - 1, cells = [];
-                            if (P.multi) cells.push({ w: 760, paras: [wPara(wRun(st.cls || '', { size: 18, color: '4F493D' }), { keepNext: kn, align: 'center' })] });
-                            cells.push({ w: 700, paras: [wPara(wRun(noOf(st, i), { color: '4F493D' }), { keepNext: kn, align: 'center' })] });
-                            cells.push({ w: nameW, paras: [wPara(wRun(st.name), { keepNext: kn })] });
-                            if (withSc) { const s = toScore(st.score); cells.push({ w: scW, paras: [wPara(wRun(s == null ? '' : String(s)), { keepNext: kn, align: 'right' })] }); }
-                            rows.push({ cells });
-                        });
-                        // 表格之間要有段落；最後一個段落帶「兩欄」分節（連續分節，Word 會把兩欄平衡）
-                        const last = gi === P.groups.length - 1;
-                        body += wTable(grid, rows) + wPara('', last ? { sectPr: wSect({ type: 'continuous', cols: 2 }) } : { line: 200, lineExact: true }); // 間隔段落設固定 10pt 高，換欄時第二欄頂端才不會多空一行
-                    });
-                    const note = '共 ' + P.groups.reduce((t, g) => t + g.length, 0) + ' 人' +
-                        (withSc && P.opt.showAvg !== false ? '　各組平均最高與最低相差 ' + spreadOf(avgs).toFixed(1) + ' 分' : '');
-                    const last = pi === pages.length - 1;
-                    if (P.skippedText) {
-                        body += wPara(wRun(note, { size: 18, color: '4F493D' }), { before: 120 });
-                        body += wPara(wRun(P.skippedText, { size: 18, color: '4F493D' }), { before: 40, sectPr: last ? '' : wSect({ type: 'continuous' }) });
-                    } else body += wPara(wRun(note, { size: 18, color: '4F493D' }), { before: 120, sectPr: last ? '' : wSect({ type: 'continuous' }) });
-                });
-                body += wSect({ type: 'continuous' });
+                const plan = planGroupWord(P, pages), f = plan.f, avgs = groupAverages(P.groups, P.roster), dual = plan.dual;
+                const tag = withSc => P.info.hasScores ? wRun(withSc ? ' 含成績・老師用 ' : ' 不含成績・可發給學生 ', withSc ? { size: 18, bold: true, color: '1D3F8F', shade: 'E6EEFB' } : { size: 18, bold: true, color: '333333', shade: 'F2F2F2' }) : '';
+                let body = wPara([titleRuns(titlePrefix(P.info) + '分組名單'), dual ? '' : wRun('  ', {}) + tag(pages[0])], { after: 60 });
+                body += wPara(subRuns(groupSubtitle(P, ctx)), { after: 160 });
+                if (dual) {
+                    const panels = pages.map((withSc, i) => gwPanelXml(P, withSc, f, plan.fits[i], avgs, plan.panelW));
+                    const pw = tw(plan.panelW), gt = tw(GW.panelGutter / 2);
+                    const cell = (withSc, pn) => ({ w: pw, paras: [wPara(tag(withSc), { after: 80, align: 'center' }), pn.xml, wSpacer(1)] });
+                    if (plan.mode === 'side') body += wLayout([cell(pages[0], panels[0]), { w: gt, paras: [wSpacer(1)], edge: { right: 'dashed' } }, { w: gt, paras: [wSpacer(1)] }, cell(pages[1], panels[1])], 'center');
+                    else { // 直式上下疊：兩面板之間一條虛線，可剪開
+                        body += wLayout([cell(pages[0], panels[0])], 'center');
+                        body += wLayout([{ w: pw, paras: [wSpacer(8)], edge: { bottom: 'dashed' } }], 'center') + wSpacer(8);
+                        body += wLayout([cell(pages[1], panels[1])], 'center');
+                    }
+                } else body += gwPanelXml(P, pages[0], f, plan.fits[0], avgs, plan.usableW).xml;
+                const note = '共 ' + P.groups.reduce((t, g) => t + g.length, 0) + ' 人' +
+                    (pages.indexOf(true) >= 0 && P.opt.showAvg !== false ? '　各組平均最高與最低相差 ' + spreadOf(avgs).toFixed(1) + ' 分' : '');
+                body += wPara(wRun(note, { size: 18, color: '4F493D' }), { before: 120 });
+                if (P.skippedText) body += wPara(wRun(P.skippedText, { size: 18, color: '4F493D' }), { before: 40 });
+                body += wSect({ landscape: plan.orient === 'landscape', mx: GW.mx, mt: GW.mt, mb: GW.mb, type: 'continuous' });
                 return docxPackage(body, ctx.appVersion, [], P.d);
             }
 
-            /* 3 座位表 Word：A4 橫式一頁。傳統座位＝普通表格（老師視角，講台在下）；分組座位＝示意圖（畫面給 PNG）＋每桌名單 */
+            /* ── 3 座位表 Word：A4 橫式一頁。傳統座位＝普通表格（老師視角，講台在下），列高固定、字級依欄寬與列高縮放；
+             *    分組座位＝示意圖＋每桌名單，圖與名單依空間並排或上下排，名單字級縮到排得進為止。 ── */
+            const SW = { mx: 36, mt: 36, mb: 44 };
+            function planSeatTrad(P, map) {
+                const cfg = map.cfg, C = cfg.cols, D = cfg.depth, G = P.groups.length, pg = PAGE_PT.landscape, usableW = pg.w - 2 * SW.mx;
+                const aisles = new Set((cfg.aisleAfter || []).filter(a => a >= 1 && a < C)), labW = 45, gapW = 14;
+                const seatW = (usableW - labW - gapW * aisles.size) / C;
+                const nameEm = maxEm(P.roster.map(s => s.name)) + (P.multi ? maxEm(P.roster.map(s => String(s.cls || '').trim())) * 0.65 + 0.3 : 0);
+                const legendLines = Math.max(1, Math.ceil(G * 52 / usableW));
+                const reserved = 25 + 19 + legendLines * 15 + 18 + 12 + 14; // 標題、副標、圖例、說明、標籤列、講台列、安全
+                const availH = (pg.h - SW.mt - SW.mb - reserved - 18 - 22) * 0.985;
+                const rowCap = 44, rowH = Math.min(rowCap, availH / D);
+                const maxG = G;
+                const tagOpts = P.opt.coord ? [['full', 7.5], ['full', 6], ['grp', 6], ['num', 6]] : [['grp', 7.5], ['grp', 6], ['num', 6]];
+                const tagTxt = (kind, g, c, d) => kind === 'full' ? '第' + g + '組' + (P.opt.coord ? '\t' + c + '-' + d : '') : (kind === 'grp' ? '第' + g + '組' : String(g));
+                let tag = tagOpts[tagOpts.length - 1];
+                for (const o of tagOpts) {
+                    const w = emOf(tagTxt(o[0], maxG, C, D)) * o[1] + 8 + (o[0] === 'full' && P.opt.coord ? 6 : 0);
+                    if (w <= seatW) { tag = o; break; }
+                }
+                let f = 5.5, lines = 2;
+                for (let x = 11; x >= 5.5; x -= 0.5) {
+                    const need1 = nameEm * x + 8, n = Math.max(1, Math.ceil(need1 / seatW));
+                    const rowNeed = tag[1] * 1.5 + n * x * 1.5 + 4;
+                    const ok = rowNeed <= rowH && (n === 1 || (n === 2 && x <= 9.5));
+                    if (ok && (n === 1 ? x >= 6.5 : true)) { f = x; lines = n; break; }
+                    if (x === 5.5) { f = 5.5; lines = Math.min(2, n); }
+                }
+                return { C, D, aisles, labW, gapW, seatW, rowH, f, lines, tag, tagTxt, legendLines, usableW, tooSmall: f < F_MIN };
+            }
+            function seatTradBody(P, ctx, map, pl) {
+                const cfg = map.cfg, C = pl.C, D = pl.D, seatW = tw(pl.seatW), labW = tw(pl.labW), gapW = tw(pl.gapW), aisles = pl.aisles;
+                const grid = [labW];
+                for (let c = 1; c <= C; c++) { grid.push(seatW); if (aisles.has(c)) grid.push(gapW); }
+                const lab = (t, w) => ({ w: w || labW, fill: 'F2F2F2', paras: [wPara(wRun(t, { size: 16, color: '555555' }), { align: 'center' })] });
+                const gap = () => ({ w: gapW, borders: 'none', paras: [wPara('')] });
+                const rows = [], tf = hp(pl.tag[1]), rowH = tw(pl.rowH);
+                for (let d = D; d >= 1; d--) {
+                    const cells = [lab('位置 ' + d)];
+                    for (let c = 1; c <= C; c++) {
+                        const key = seatKey(c, d), it = map.cells[key];
+                        if (map.off.has(key)) cells.push({ w: seatW, shd: '<w:shd w:val="diagStripe" w:color="D9D9D9" w:fill="FFFFFF"/>', paras: [wPara('')] });
+                        else if (!it || it.id == null) cells.push({ w: seatW, borders: 'dashed', paras: [wPara(P.opt.coord ? wRun(c + '-' + d, { size: Math.min(14, tf), color: '9E9E9E' }) : '', { align: 'right' })] });
+                        else {
+                            const col = colorOf(it.g, P.opt.color), st = P.roster[it.id];
+                            cells.push({ w: seatW, fill: col.soft, paras: [
+                                wPara(wRun(pl.tagTxt(pl.tag[0], it.g + 1, c, d), { size: tf, color: col.ink, bold: true }), { tabs: [{ val: 'right', pos: seatW - 170 }] }),
+                                wPara(nameRuns(st, P.multi, { bold: true, size: hp(pl.f) }), { align: 'center', before: 20 })
+                            ] });
+                        }
+                        if (aisles.has(c)) cells.push(gap());
+                    }
+                    rows.push({ cells, height: rowH });
+                }
+                const labRow = [lab('')];
+                for (let c = 1; c <= C; c++) { labRow.push(lab('第 ' + c + ' 排', seatW)); if (aisles.has(c)) labRow.push(gap()); }
+                rows.push({ cells: labRow, height: tw(18) });
+                rows.push({ cells: [lab(''), { w: grid.reduce((t, x) => t + x, 0) - labW, span: grid.length - 1, fill: '262626', paras: [wPara(wRun('講台（前方）', { bold: true, color: 'FFFFFF' }), { align: 'center' })] }], height: tw(22) });
+                let body = wPara(titleRuns(titlePrefix(P.info) + '座位表'), { after: 40 });
+                body += wPara(subRuns('傳統座位・' + C + ' 排 × ' + D + ' 個位置・' + (ctx.layoutLabel || LAYOUT_LABELS[cfg.layout] || '') + '　' + P.date), { after: 120 });
+                body += wTable(grid, rows, { padV: 20, exact: true });
+                body += wPara(P.groups.map((_, g) => { const col = colorOf(g, P.opt.color); return wRun(' 第 ' + (g + 1) + ' 組 ', { size: 16, bold: true, color: col.ink, shade: col.soft }) + wRun('  ', { size: 16 }); }), { before: 120 });
+                body += wPara(wRun('從講台往教室看：左到右是第 1 排到第 ' + C + ' 排，由前往後是第 1 到第 ' + D + ' 個位置。' + (P.opt.coord ? '座位右上角是「排-位置」座標。' : ''), { size: 16, color: '4F493D' }), { before: 60 });
+                return body;
+            }
+            /* 分組座位：示意圖＋每桌名單。名單是「桌號｜坐哪幾組｜座位上的人」；人名欄會換行，行數用估的，列高固定 */
+            function planSeatTable(P, map, image) {
+                const pg = PAGE_PT.landscape, usableW = pg.w - 2 * SW.mx, availH = (pg.h - SW.mt - SW.mb - 25 - 19 - 8) * 0.985;
+                const T = map.tables.length, ratio = image && image.data ? (image.height || 1) / (image.width || 1) : 0;
+                const rowsData = map.tables.map(x => {
+                    const all = x.top.concat(x.bot).filter(Boolean).sort((a, b) => a.seq - b.seq).filter(s => s.id != null);
+                    const names = all.map(s => (P.multi && P.roster[s.id].cls ? String(P.roster[s.id].cls).trim() + ' ' : '') + P.roster[s.id].name + (P.opt.coord ? '（' + s.lbl + '）' : '')).join('、');
+                    return { no: '桌 ' + (x.index + 1), grp: x.groups.length ? '第 ' + x.groups.map(g => g + 1).join('、') + ' 組' : '空桌', names };
+                });
+                // 一個名單表在寬 W、高 H 內、字級 f 時：把桌子依序切成 c 個並排的小表，每個小表列高＝估算行數×行高
+                const listFit = (W, H, f) => {
+                    for (let c = 1; c <= 3; c++) {
+                        const gap = 10, tW = (W - gap * (c - 1)) / c, wNo = emOf('桌 88') * f + 10, wGrp = Math.max(emOf('第 8、8 組'), maxEm(rowsData.map(r => r.grp))) * f + 10, wNm = tW - wNo - wGrp;
+                        if (wNm < emOf('王小明（1-1）') * f + 10) continue;
+                        const hs = rowsData.map(r => (Math.max(1, Math.ceil(emOf(r.names) * f / (wNm - 10))) * f * 1.5 + 4));
+                        const pk = packColumns(hs.map(h => h + 0.5), c, 0), hdr = f * 1.5 + 4;
+                        if (pk.maxH + hdr <= H) return { c, f, tW, wNo, wGrp, wNm, hs, pack: pk, hdr };
+                    }
+                    return null;
+                };
+                const bestList = (W, H) => { for (let f = 10; f >= F_FLOOR; f -= 0.5) { const r = listFit(W, H, f); if (r) return r; } return null; };
+                const cands = [];
+                if (!ratio) { const r = bestList(usableW, availH); if (r) cands.push({ mode: 'list', list: r, f: r.f, area: 0 }); }
+                else {
+                    [0.62, 0.55, 0.48, 0.4, 0.32].forEach(fr => { // 左右並排
+                        const iw = usableW * fr, ih = availH, s = Math.min(iw, ih / ratio), r = bestList(usableW - iw - 12, availH);
+                        if (r) cands.push({ mode: 'side', imgBox: iw, list: r, f: r.f, area: s * s * ratio });
+                    });
+                    [0.6, 0.5, 0.42, 0.34].forEach(fr => { // 上下排
+                        const ih = availH * fr, s = Math.min(usableW, ih / ratio), r = bestList(usableW, availH - ih - 8);
+                        if (r) cands.push({ mode: 'stack', imgBox: ih, list: r, f: r.f, area: s * s * ratio });
+                    });
+                }
+                if (!cands.length) { const f = F_FLOOR, hs = rowsData.map(() => f * 1.5 + 4); cands.push({ mode: ratio ? 'side' : 'list', imgBox: usableW * 0.3, list: { c: 3, f, tW: (usableW * 0.7 - 20) / 3, wNo: 30, wGrp: 40, wNm: (usableW * 0.7 - 20) / 3 - 70, hs, pack: packColumns(hs, 3, 0), hdr: f * 1.5 + 4 }, f, area: 0, overflow: true }); }
+                cands.sort((a, b) => (Math.min(b.f, 9) - Math.min(a.f, 9)) || (b.area - a.area));
+                return Object.assign({ rowsData, usableW, availH, ratio, tooSmall: cands[0].f < F_MIN }, cands[0]);
+            }
+            function seatTableBody(P, ctx, map, pl, image) {
+                const f = pl.f, L = pl.list, fs = hp(f);
+                let images = [];
+                const listXml = () => {
+                    const tbls = L.pack.cols.map(ids => {
+                        const grid = [tw(L.wNo), tw(L.wGrp), tw(L.wNm)];
+                        const head = t => ({ fill: 'F2F2F2', paras: [wPara(wRun(t, { bold: true, size: fs }))] });
+                        const rows = [{ cells: [Object.assign(head('桌號'), { w: grid[0] }), Object.assign(head('坐哪幾組'), { w: grid[1] }), Object.assign(head('座位上的人'), { w: grid[2] })], height: tw(L.hdr) }];
+                        ids.forEach(i => { const r = pl.rowsData[i]; rows.push({ height: tw(L.hs[i]), cells: [{ w: grid[0], paras: [wPara(wRun(r.no, { size: fs }))] }, { w: grid[1], paras: [wPara(wRun(r.grp, { size: fs }))] }, { w: grid[2], paras: [wPara(wRun(r.names, { size: fs }))] }] }); });
+                        return wTable(grid, rows, { padV: 0, exact: true });
+                    });
+                    if (tbls.length === 1) return tbls[0] + wSpacer(1);
+                    const cells = []; tbls.forEach((t, i) => { if (i) cells.push({ w: tw(10), paras: [wSpacer(1)] }); cells.push({ w: tw(L.tW), paras: [t, wSpacer(1)] }); });
+                    return wLayout(cells, 'left');
+                };
+                const imgRun = box => { // box：{ w, h } pt，回傳依比例縮放後的圖
+                    let w = box.w, h = w * pl.ratio; if (h > box.h) { h = box.h; w = h / pl.ratio; }
+                    images.push({ data: image.data });
+                    return { run: wImage(1, Math.round(w * 12700), Math.round(h * 12700)), w, h };
+                };
+                let body = wPara(titleRuns(titlePrefix(P.info) + '座位表'), { after: 40 });
+                body += wPara(subRuns('分組座位・' + map.tables.length + ' 張桌子　' + P.date), { after: 120 });
+                if (pl.mode === 'list') body += listXml();
+                else if (pl.mode === 'side') {
+                    const im = imgRun({ w: pl.imgBox, h: pl.availH }), listW = pl.usableW - pl.imgBox - 12;
+                    body += wLayout([{ w: tw(pl.imgBox), paras: [wPara(im.run, { align: 'center' }), wSpacer(1)] }, { w: tw(12), paras: [wSpacer(1)] }, { w: tw(listW), paras: [listXml()] }], 'left');
+                } else {
+                    const im = imgRun({ w: pl.usableW, h: pl.imgBox });
+                    body += wPara(im.run, { align: 'center', after: 120 }) + listXml();
+                }
+                return { body, images };
+            }
             function buildSeatDocx(ctx) {
                 const P = prep(ctx), seat = ctx.seat;
-                const M = 720, CW = A4.h - 2 * M;
-                let body = '';
+                let body, images = [];
                 if (seat.mode === 'trad') {
-                    const map = seat.map || tradSeatMap(seat.cfg, P.groups), cfg = map.cfg, C = cfg.cols, D = cfg.depth;
-                    const aisles = new Set((cfg.aisleAfter || []).filter(a => a >= 1 && a < C)), labW = 900, gapW = 280;
-                    const seatW = Math.floor((CW - labW - gapW * aisles.size) / C);
-                    const grid = [labW];
-                    for (let c = 1; c <= C; c++) { grid.push(seatW); if (aisles.has(c)) grid.push(gapW); }
-                    const rowH = Math.max(560, Math.min(1100, Math.floor(6400 / D)));
-                    const lab = (t, w) => ({ w: w || labW, fill: 'F2F2F2', paras: [wPara(wRun(t, { size: 16, color: '555555' }), { align: 'center' })] });
-                    const gap = () => ({ w: gapW, borders: 'none', paras: [wPara('')] });
-                    const rows = [];
-                    for (let d = D; d >= 1; d--) {
-                        const cells = [lab('位置 ' + d)];
-                        for (let c = 1; c <= C; c++) {
-                            const key = seatKey(c, d), it = map.cells[key];
-                            if (map.off.has(key)) cells.push({ w: seatW, shd: '<w:shd w:val="diagStripe" w:color="D9D9D9" w:fill="FFFFFF"/>', paras: [wPara('')] });
-                            else if (!it || it.id == null) cells.push({ w: seatW, borders: 'dashed', paras: [wPara(P.opt.coord ? wRun(c + '-' + d, { size: 14, color: '9E9E9E' }) : '', { align: 'right' })] });
-                            else {
-                                const col = colorOf(it.g, P.opt.color), st = P.roster[it.id];
-                                cells.push({ w: seatW, fill: col.soft, paras: [
-                                    wPara(wRun('第' + (it.g + 1) + '組' + (P.opt.coord ? '\t' + c + '-' + d : ''), { size: 14, color: col.ink, bold: true }), { tabs: [{ val: 'right', pos: seatW - 170 }] }),
-                                    wPara(nameRuns(st, P.multi, { bold: true, size: 22 }), { align: 'center', before: 40 })
-                                ] });
-                            }
-                            if (aisles.has(c)) cells.push(gap());
-                        }
-                        rows.push({ cells, height: rowH });
-                    }
-                    const labRow = [lab('')];
-                    for (let c = 1; c <= C; c++) { labRow.push(lab('第 ' + c + ' 排', seatW)); if (aisles.has(c)) labRow.push(gap()); }
-                    rows.push({ cells: labRow });
-                    rows.push({ cells: [lab(''), { w: grid.reduce((t, x) => t + x, 0) - labW, span: grid.length - 1, fill: '262626', paras: [wPara(wRun('講台（前方）', { bold: true, color: 'FFFFFF' }), { align: 'center' })] }] });
-                    body += wPara(titleRuns(titlePrefix(P.info) + '座位表'), { after: 40 });
-                    body += wPara(subRuns('傳統座位・' + C + ' 排 × ' + D + ' 個位置・' + (ctx.layoutLabel || LAYOUT_LABELS[cfg.layout] || '') + '　' + P.date), { after: 120 });
-                    body += wTable(grid, rows, { padV: 20 });
-                    body += wPara(P.groups.map((_, g) => { const col = colorOf(g, P.opt.color); return wRun(' 第 ' + (g + 1) + ' 組 ', { size: 16, bold: true, color: col.ink, shade: col.soft }) + wRun('  ', { size: 16 }); }), { before: 120 });
-                    body += wPara(wRun('從講台往教室看：左到右是第 1 排到第 ' + C + ' 排，由前往後是第 1 到第 ' + D + ' 個位置。' + (P.opt.coord ? '座位右上角是「排-位置」座標。' : ''), { size: 16, color: '4F493D' }), { before: 60 });
+                    const map = seat.map || tradSeatMap(seat.cfg, P.groups);
+                    body = seatTradBody(P, ctx, map, planSeatTrad(P, map));
                 } else {
-                    const map = seat.map || tableSeatMap(seat.tables, P.groups);
-                    body += wPara(titleRuns(titlePrefix(P.info) + '座位表'), { after: 40 });
-                    body += wPara(subRuns('分組座位・' + map.tables.length + ' 張桌子　' + P.date), { after: 120 });
-                    const images = [];
-                    if (seat.image && seat.image.data) {
-                        const maxW = CW * 635, maxH = 5200 * 635, ratio = (seat.image.height || 1) / (seat.image.width || 1);
-                        let w = maxW, h = Math.round(w * ratio);
-                        if (h > maxH) { h = maxH; w = Math.round(h / ratio); }
-                        images.push({ data: seat.image.data });
-                        body += wPara(wImage(1, w, h), { align: 'center', after: 120 });
-                    }
-                    const grid = [1100, 2300, CW - 3400], head = t => ({ fill: 'F2F2F2', paras: [wPara(wRun(t, { bold: true, size: 18 }))] });
-                    const rows = [{ cells: [Object.assign(head('桌號'), { w: grid[0] }), Object.assign(head('坐哪幾組'), { w: grid[1] }), Object.assign(head('座位上的人'), { w: grid[2] })] }];
-                    map.tables.forEach(x => {
-                        const all = x.top.concat(x.bot).filter(Boolean).sort((a, b) => a.seq - b.seq).filter(s => s.id != null);
-                        const names = all.map(s => (P.multi && P.roster[s.id].cls ? String(P.roster[s.id].cls).trim() + ' ' : '') + P.roster[s.id].name + (P.opt.coord ? '（' + s.lbl + '）' : '')).join('、');
-                        rows.push({ cells: [
-                            { w: grid[0], paras: [wPara(wRun('桌 ' + (x.index + 1)))] },
-                            { w: grid[1], paras: [wPara(wRun(x.groups.length ? '第 ' + x.groups.map(g => g + 1).join('、') + ' 組' : '空桌'))] },
-                            { w: grid[2], paras: [wPara(wRun(names, { size: 19 }))] }
-                        ] });
-                    });
-                    body += wTable(grid, rows);
-                    body += wSect({ landscape: true, margin: M, type: 'continuous' });
-                    return docxPackage(body, ctx.appVersion, images, P.d);
+                    const map = seat.map || tableSeatMap(seat.tables, P.groups), image = seat.image && seat.image.data ? seat.image : null;
+                    const r = seatTableBody(P, ctx, map, planSeatTable(P, map, image), image);
+                    body = r.body; images = r.images;
                 }
-                body += wSect({ landscape: true, margin: M, type: 'continuous' });
-                return docxPackage(body, ctx.appVersion, [], P.d);
+                body += wSect({ landscape: true, mx: SW.mx, mt: SW.mt, mb: SW.mb, type: 'continuous' });
+                return docxPackage(body, ctx.appVersion, images, P.d);
             }
 
             /* ══ Excel（.xlsx）══ */
@@ -2463,7 +2667,8 @@ Authorization inquiries: derliang@gmail.com
                 }
                 return { id, xml };
             }
-            /* sheet: { name, rows: [[{ v, s 樣式物件 } | null]], cols [寬（字元）], merges ['A1:C1'], freeze, filter 'A1:E9', heights {列索引: 點數}, landscape, fitWidth } */
+            /* sheet: { name, rows: [[{ v, s 樣式物件 } | null]], cols [寬（字元）], merges ['A1:C1'], freeze, filter 'A1:E9', heights {列索引: 點數},
+             *          landscape, fitOne（一頁：寬高都縮到一頁）, printArea 'A1:K30' } */
             function sheetXml(sh, st, selected) {
                 const rowsXml = sh.rows.map((r, ri) => {
                     const cells = (r || []).map((c, ci) => {
@@ -2480,20 +2685,23 @@ Authorization inquiries: derliang@gmail.com
                 const view = '<sheetViews><sheetView workbookViewId="0"' + (selected ? ' tabSelected="1"' : '') + '>' +
                     (sh.freeze ? '<pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A2" sqref="A2"/>' : '') + '</sheetView></sheetViews>';
                 return XML_HEAD + '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
-                    (sh.fitWidth ? '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>' : '') +
+                    (sh.fitOne ? '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>' : '') +
                     '<dimension ref="A1:' + ref(W - 1, Math.max(0, sh.rows.length - 1)) + '"/>' + view + '<sheetFormatPr defaultRowHeight="16.5"/>' +
                     (sh.cols && sh.cols.length ? '<cols>' + sh.cols.map((w, i) => '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + w + '" customWidth="1"/>').join('') + '</cols>' : '') +
                     '<sheetData>' + rowsXml + '</sheetData>' +
                     (sh.filter ? '<autoFilter ref="' + sh.filter + '"/>' : '') +
                     (sh.merges && sh.merges.length ? '<mergeCells count="' + sh.merges.length + '">' + sh.merges.map(m => '<mergeCell ref="' + m + '"/>').join('') + '</mergeCells>' : '') +
-                    '<pageMargins left="0.5" right="0.5" top="0.6" bottom="0.6" header="0.3" footer="0.3"/>' +
-                    '<pageSetup paperSize="9" orientation="' + (sh.landscape ? 'landscape' : 'portrait') + '"' + (sh.fitWidth ? ' fitToWidth="1" fitToHeight="0"' : '') + '/></worksheet>';
+                    (sh.fitOne ? '<printOptions horizontalCentered="1"/>' : '') +
+                    '<pageMargins left="0.4" right="0.4" top="0.5" bottom="0.5" header="0.3" footer="0.3"/>' +
+                    '<pageSetup paperSize="9" orientation="' + (sh.landscape ? 'landscape' : 'portrait') + '"' + (sh.fitOne ? ' fitToWidth="1" fitToHeight="1"' : '') + '/></worksheet>';
             }
             function xlsxPackage(sheets, date) {
                 const st = xStyles();
                 const sheetFiles = sheets.map((sh, i) => ({ name: 'xl/worksheets/sheet' + (i + 1) + '.xml', data: sheetXml(sh, st, i === 0) }));
                 const absRef = r => r.replace(/([A-Z]+)(\d+)/g, '$$$1$$$2');
-                const defined = sheets.map((sh, i) => sh.filter ? '<definedName name="_xlnm._FilterDatabase" localSheetId="' + i + '" hidden="1">\'' + esc(sh.name) + '\'!' + absRef(sh.filter) + '</definedName>' : '').join('');
+                const defined = sheets.map((sh, i) =>
+                    (sh.filter ? '<definedName name="_xlnm._FilterDatabase" localSheetId="' + i + '" hidden="1">\'' + esc(sh.name) + '\'!' + absRef(sh.filter) + '</definedName>' : '') +
+                    (sh.printArea ? '<definedName name="_xlnm.Print_Area" localSheetId="' + i + '">\'' + esc(sh.name) + '\'!' + absRef(sh.printArea) + '</definedName>' : '')).join('');
                 const files = [
                     { name: '[Content_Types].xml', data: XML_HEAD + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>' +
                         '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' +
@@ -2511,66 +2719,172 @@ Authorization inquiries: derliang@gmail.com
             const X_HEAD = { bold: true, fill: 'F2F2F2', border: 'thin', h: 'center' };
             const xGroupCell = (g, useColor) => { const c = colorOf(g, useColor); return { v: '第 ' + (g + 1) + ' 組', s: { bold: true, fill: c.soft, color: c.ink, border: 'thin', h: 'center' } }; };
             const numOrText = v => { const n = Number(v); return v !== '' && Number.isFinite(n) ? n : v; };
-            /* 每組一欄、只有姓名（「不含成績」或名單沒成績時的「分組名單」） */
-            function groupMatrixSheet(P, name) {
-                const mx = maxSize(P.groups), rows = [P.groups.map((_, g) => xGroupCell(g, P.opt.color))];
-                const mem = P.groups.map(g => sortedMembers(g, P.roster));
-                for (let k = 0; k < mx; k++) rows.push(mem.map(m => {
-                    const i = m[k];
-                    if (i == null) return { v: '', s: { border: 'thin' } };
-                    const st = P.roster[i];
-                    return { v: (P.multi && st.cls ? String(st.cls).trim() + ' ' : '') + st.name, s: { border: 'thin' } };
-                }));
-                const cols = P.groups.map(() => 16), sh = { name, rows, cols, freeze: true, landscape: true, fitWidth: true };
-                addSkippedRow(sh, P, cols.length);
-                return sh;
+
+            /* ── Excel 一頁：版面用 pt 估算。欄寬 w（字元）→ 像素 7w+5 → pt ×0.75；A4 邊界左右 0.4 吋、上下 0.5 吋 ── */
+            const colPt = w => (7 * w + 5) * 0.75;
+            const xUnits = s => { let t = 0; for (const ch of String(s == null ? '' : s)) t += ch.codePointAt(0) >= 0x2E80 || (ch.codePointAt(0) >= 0xFF00 && ch.codePointAt(0) <= 0xFFEF) ? 2 : 1; return t; };
+            const XPAGE = { portrait: { w: 595.3 - 57.6, h: 841.9 - 72 }, landscape: { w: 841.9 - 57.6, h: 595.3 - 72 } };
+            const XROW = 17, XGAPC = 2;
+            /* 在 (pw, ph) 的紙上，內容 wPt×hPt 會縮到幾倍；取 ≤1.4（小內容不必放太大）作為挑版面的依據 */
+            const xScale = (wPt, hPt, o) => Math.min(XPAGE[o].w / wPt, XPAGE[o].h / hPt);
+            const xAspect = (wPt, hPt, o) => Math.abs(Math.log((wPt / hPt) / (XPAGE[o].w / XPAGE[o].h)));
+            function xBetter(a, b) { // a 比 b 好？（縮放愈大愈好，差不到 1% 時看比例，再看欄數少）
+                if (!b) return true;
+                const sa = Math.round(Math.min(a.s, 1.4) * 100), sb = Math.round(Math.min(b.s, 1.4) * 100);
+                if (sa !== sb) return sa > sb;
+                return a.asp < b.asp;
             }
-            /* 名單最後加一行「未分組：姓名、姓名…」（合併成整列寬、自動換行；沒有人就不加）。空一列，免得被篩選或凍結範圍吃掉 */
-            function addSkippedRow(sh, P, nCols) {
-                if (!P.skippedText) return;
-                const ri = sh.rows.length + 1, last = Math.max(0, nCols - 1);
-                while (sh.rows.length < ri) sh.rows.push([]);
-                sh.rows.push([{ v: P.skippedText, s: { wrap: true, v: 'top', color: '4F493D' }}]);
-                const width = sh.cols.slice(0, nCols).reduce((t, w) => t + w, 0) || 16;
-                const vis = Array.from(P.skippedText).reduce((t, ch) => t + (ch.charCodeAt(0) > 255 ? 2 : 1), 0);
-                (sh.merges = sh.merges || []).push('A' + (ri + 1) + ':' + ref(last, ri));
-                (sh.heights = sh.heights || {})[ri] = 16.5 * Math.max(1, Math.ceil(vis / (width * 0.85))) + 3;
+            /* 分組方塊（一組一個）：k 個一列、由左到右、由上到下。回傳 { cols 欄寬, rows [{h, cells:[ [colIdx, cell] ]}], merges [[c1,r1,c2,r2]], wPt, hPt } */
+            function xlBlock(P, withSc, k) {
+                const members = P.groups.map(g => sortedMembers(g, P.roster)), all = [].concat.apply([], members);
+                const avgs = groupAverages(P.groups, P.roster), G = P.groups.length;
+                const nameTxt = i => (!withSc && P.multi && P.roster[i].cls ? String(P.roster[i].cls).trim() + ' ' : '') + P.roster[i].name;
+                const nameW = Math.max(9, all.reduce((m, i) => Math.max(m, xUnits(nameTxt(i))), 0) + 2);
+                const cw = (withSc ? (P.multi ? [6.5] : []).concat([6, nameW, 9]) : [nameW]);
+                const cardW = cw.length, cols = [], rows = [], merges = [];
+                for (let j = 0; j < k; j++) { if (j) cols.push(XGAPC); cw.forEach(w => cols.push(w)); }
+                const nRows = Math.ceil(G / k);
+                let r0 = 0;
+                for (let cr = 0; cr < nRows; cr++) {
+                    const ids = []; for (let j = 0; j < k; j++) { const gi = cr * k + j; if (gi < G) ids.push(gi); }
+                    const h = ids.reduce((m, gi) => Math.max(m, members[gi].length), 0) + 1;
+                    const rr = []; for (let t = 0; t < h; t++) rr.push({ h: XROW, cells: [] });
+                    ids.forEach((gi, j) => {
+                        const c0 = j * (cardW + 1), col = colorOf(gi, P.opt.color), hs = { bold: true, fill: col.soft, color: col.ink, border: 'thin' };
+                        if (withSc) {
+                            rr[0].cells.push([c0, { v: '第 ' + (gi + 1) + ' 組', s: Object.assign({ h: 'left' }, hs) }]);
+                            for (let c = 1; c < cardW - 1; c++) rr[0].cells.push([c0 + c, { v: '', s: hs }]);
+                            rr[0].cells.push([c0 + cardW - 1, { v: P.opt.showAvg !== false ? '平均 ' + fmtAvg(avgs[gi]) : '', s: Object.assign({ h: 'right', size: 10 }, hs) }]);
+                            merges.push([c0, r0, c0 + cardW - 2, r0]);
+                        } else rr[0].cells.push([c0, { v: '第 ' + (gi + 1) + ' 組', s: Object.assign({ h: 'center' }, hs) }]);
+                        for (let t = 0; t < h - 1; t++) {
+                            const i = members[gi][t], row = rr[t + 1];
+                            if (i == null) { for (let c = 0; c < cardW; c++) row.cells.push([c0 + c, { v: '', s: { border: 'thin' } }]); continue; }
+                            const st = P.roster[i];
+                            if (!withSc) { row.cells.push([c0, { v: nameTxt(i), s: { border: 'thin' } }]); continue; }
+                            let c = 0;
+                            if (P.multi) row.cells.push([c0 + c++, { v: String(st.cls || '').trim(), s: { border: 'thin', h: 'center', size: 10, color: '4F493D' } }]);
+                            row.cells.push([c0 + c++, { v: numOrText(noOf(st, i)), s: { border: 'thin', h: 'center', color: '4F493D' } }]);
+                            row.cells.push([c0 + c++, { v: st.name, s: { border: 'thin' } }]);
+                            const s = toScore(st.score);
+                            row.cells.push([c0 + c, { v: s == null ? '' : s, s: { border: 'thin', h: 'right' } }]);
+                        }
+                    });
+                    rr.forEach(x => rows.push(x)); r0 += h;
+                }
+                return { cols, rows, merges, wPt: cols.reduce((t, w) => t + colPt(w), 0), hPt: rows.length * XROW };
             }
-            /* 2 分組名單 Excel */
+            /* 挑最好的方向與欄數（每個區塊各自挑 k；並排時兩區塊一起算） */
+            function xlPlanGroup(P, pages, extraH) {
+                const dual = pages.length > 1, G = P.groups.length;
+                const ks = []; for (let k = 1; k <= Math.min(G, 12); k++) ks.push(k);
+                let best = null;
+                ['landscape', 'portrait'].forEach(o => {
+                    const sizes = pages.map(wsc => ks.map(k => { const b = xlBlock(P, wsc, k); return { k, b }; }));
+                    const combos = dual ? sizes[0].flatMap(a => sizes[1].map(b => [a, b])) : sizes[0].map(a => [a]);
+                    combos.forEach(cb => {
+                        const wPt = cb.reduce((t, x, i) => t + x.b.wPt + (i ? colPt(XGAPC + 1) : 0), 0), hPt = Math.max.apply(null, cb.map(x => x.b.hPt)) + extraH;
+                        const cand = { o, ks: cb.map(x => x.k), blocks: cb.map(x => x.b), wPt, hPt, s: xScale(wPt, hPt, o), asp: xAspect(wPt, hPt, o) };
+                        if (xBetter(cand, best)) best = cand;
+                    });
+                });
+                return best;
+            }
+            /* 2 分組名單 Excel：一張工作表、一頁（兩種都選時左右並排）。可排序的資料表放在列印範圍之外（右側）。 */
             function buildGroupXlsx(ctx) {
                 const P = prep(ctx), pages = groupPages(P.info, P.opt);
                 if (!pages.length) throw new Error('請至少選一頁（含成績或不含成績）');
-                const sheets = [];
-                if (!P.info.hasScores) sheets.push(groupMatrixSheet(P, '分組名單'));
-                else pages.forEach(withSc => {
-                    if (!withSc) { sheets.push(groupMatrixSheet(P, '不含成績')); return; }
-                    const head = ['組別'].concat(P.multi ? ['班級'] : []).concat(['座號', '姓名', '成績']);
-                    const rows = [head.map(t => ({ v: t, s: X_HEAD }))], cols = [10].concat(P.multi ? [8] : []).concat([8, 12, 8]);
-                    P.groups.forEach((g, gi) => sortedMembers(g, P.roster).forEach(i => {
-                        const st = P.roster[i], r = [xGroupCell(gi, P.opt.color)];
-                        if (P.multi) r.push({ v: String(st.cls || '').trim(), s: { border: 'thin', h: 'center' } });
-                        r.push({ v: numOrText(noOf(st, i)), s: { border: 'thin', h: 'center' } }, { v: st.name, s: { border: 'thin' } });
-                        const s = toScore(st.score);
-                        r.push({ v: s == null ? '' : s, s: { border: 'thin' } });
-                        rows.push(r);
-                    }));
-                    const W = head.length, sh = { name: '含成績', rows, cols, freeze: true, filter: 'A1:' + ref(W - 1, rows.length - 1), landscape: true, fitWidth: true };
-                    if (P.opt.showAvg !== false) {
-                        cols.push(3, 10, 8);
-                        const avgs = groupAverages(P.groups, P.roster);
-                        const put = (ri, cells) => { while (rows.length <= ri) rows.push([]); const r = rows[ri]; while (r.length < W) r.push(null); r.push(null); cells.forEach(c => r.push(c)); };
-                        put(0, [{ v: '組別', s: X_HEAD }, { v: '平均', s: X_HEAD }]);
-                        avgs.forEach((a, gi) => put(gi + 1, [xGroupCell(gi, P.opt.color), { v: a == null ? '' : a, s: { border: 'thin', num: '0.0' } }]));
+                const dual = pages.length > 1, avgs = groupAverages(P.groups, P.roster), total = P.groups.reduce((t, g) => t + g.length, 0);
+                const noteTxt = '共 ' + total + ' 人' + (pages.indexOf(true) >= 0 && P.opt.showAvg !== false ? '　各組平均最高與最低相差 ' + spreadOf(avgs).toFixed(1) + ' 分' : '');
+                const HEAD = (dual ? 3 : 2); // 標題、副標題、（並排時）面板標籤
+                const plan = xlPlanGroup(P, pages, (HEAD + 1) * XROW + 8 + (P.skippedText ? XROW * 2 : 0));
+                // 組裝：欄寬、每列
+                const cols = [], rows = [], merges = [], heights = {};
+                const at = (r, c, cell) => { while (rows.length <= r) rows.push([]); const row = rows[r]; while (row.length <= c) row.push(null); row[c] = cell; };
+                let colOff = 0, blockEnd = 0;
+                plan.blocks.forEach((b, bi) => {
+                    if (bi) { cols.push(XGAPC + 1); colOff += 1; }
+                    b.cols.forEach(w => cols.push(w));
+                    b.rows.forEach((r, ri) => { heights[HEAD + ri] = r.h; r.cells.forEach(([c, cell]) => at(HEAD + ri, colOff + c, cell)); });
+                    b.merges.forEach(m => merges.push(ref(colOff + m[0], HEAD + m[1]) + ':' + ref(colOff + m[2], HEAD + m[3])));
+                    if (dual) {
+                        const t = pages[bi] ? '含成績・老師用' : '不含成績・可發給學生';
+                        at(2, colOff, { v: t, s: { bold: true, size: 10, color: pages[bi] ? '1D3F8F' : '333333', fill: pages[bi] ? 'E6EEFB' : 'F2F2F2', h: 'center' } });
+                        for (let c = 1; c < b.cols.length; c++) at(2, colOff + c, { v: '', s: { fill: pages[bi] ? 'E6EEFB' : 'F2F2F2' } });
+                        if (b.cols.length > 1) merges.push(ref(colOff, 2) + ':' + ref(colOff + b.cols.length - 1, 2)); heights[2] = 18;
                     }
-                    addSkippedRow(sh, P, W);
-                    sheets.push(sh);
+                    colOff += b.cols.length;
                 });
-                return xlsxPackage(sheets, P.d);
+                const W = cols.length, bodyRows = Math.max.apply(null, plan.blocks.map(b => b.rows.length));
+                at(0, 0, { v: titlePrefix(P.info) + '分組名單', s: { bold: true, size: 14 } }); merges.push(ref(0, 0) + ':' + ref(W - 1, 0)); heights[0] = 24;
+                at(1, 0, { v: groupSubtitle(P, ctx), s: { color: '6F6858', size: 10 } }); merges.push(ref(0, 1) + ':' + ref(W - 1, 1)); heights[1] = 17;
+                let lastRow = HEAD + bodyRows;
+                at(lastRow, 0, { v: noteTxt, s: { color: '4F493D', size: 10 } }); merges.push(ref(0, lastRow) + ':' + ref(W - 1, lastRow)); heights[lastRow] = 20;
+                if (P.skippedText) {
+                    lastRow++;
+                    const width = cols.reduce((t, w) => t + w, 0), vis = xUnits(P.skippedText);
+                    at(lastRow, 0, { v: P.skippedText, s: { wrap: true, v: 'top', color: '4F493D', size: 10 } }); merges.push(ref(0, lastRow) + ':' + ref(W - 1, lastRow));
+                    heights[lastRow] = 14 * Math.max(1, Math.ceil(vis / (width * 0.9))) + 3;
+                }
+                // 列印範圍外：含成績時，右邊放可排序的資料表（組別、班級、座號、姓名、成績）與各組平均
+                if (pages.indexOf(true) >= 0) {
+                    const c0 = W + 1, head = ['組別'].concat(P.multi ? ['班級'] : []).concat(['座號', '姓名', '成績']);
+                    cols.push(3); [10].concat(P.multi ? [8] : []).concat([8, 12, 8]).forEach(w => cols.push(w));
+                    let r = 0;
+                    head.forEach((t, i) => at(r, c0 + i, { v: t, s: X_HEAD }));
+                    P.groups.forEach((g, gi) => sortedMembers(g, P.roster).forEach(i => {
+                        r++; const st = P.roster[i]; let c = 0;
+                        at(r, c0 + c++, xGroupCell(gi, P.opt.color));
+                        if (P.multi) at(r, c0 + c++, { v: String(st.cls || '').trim(), s: { border: 'thin', h: 'center' } });
+                        at(r, c0 + c++, { v: numOrText(noOf(st, i)), s: { border: 'thin', h: 'center' } });
+                        at(r, c0 + c++, { v: st.name, s: { border: 'thin' } });
+                        const s = toScore(st.score); at(r, c0 + c, { v: s == null ? '' : s, s: { border: 'thin' } });
+                    }));
+                    if (P.opt.showAvg !== false) {
+                        const a0 = c0 + head.length + 1; cols.push(3, 10, 8);
+                        at(0, a0, { v: '組別', s: X_HEAD }); at(0, a0 + 1, { v: '平均', s: X_HEAD });
+                        avgs.forEach((a, gi) => { at(gi + 1, a0, xGroupCell(gi, P.opt.color)); at(gi + 1, a0 + 1, { v: a == null ? '' : a, s: { border: 'thin', num: '0.0' } }); });
+                    }
+                }
+                const sh = { name: dual ? '分組名單' : (pages[0] ? '含成績' : (P.info.hasScores ? '不含成績' : '分組名單')), rows, cols, merges, heights, landscape: plan.o === 'landscape', fitOne: true, printArea: 'A1:' + ref(W - 1, lastRow), xlScale: plan.s };
+                return xlsxPackage([sh], P.d);
             }
-            /* 4 座位表 Excel：「座位表」一格一個座位＋「座位清單」一人一列 */
+            /* 排座位模式的 Excel（舊匯出）：一張工作表、一頁。layout＝每列字串陣列、kinds＝每列種類（text 標題說明／grid 座位列／label 排別列／front 講台列），list＝學生清單（放列印範圍之外，下方）。 */
+            function gridXlsx(layout, kinds, list, nCols, date) {
+                const W = Math.max(1, nCols), rows = [], merges = [], heights = {}, cols = [];
+                const LBLS = { fill: 'F2F2F2', color: '555555', h: 'center', size: 10, border: 'thin', wrap: true };
+                let gridN = 0;
+                layout.forEach(k => { if (k.length > 1) gridN++; });
+                const nameU = Math.max.apply(null, [8].concat([].concat.apply([], layout.filter(r => r.length > 1)).map(xUnits)));
+                for (let i = 0; i < W; i++) cols.push(i === 0 ? 12 : Math.max(10, Math.min(16, nameU + 2)));
+                layout.forEach((r, ri) => {
+                    const kind = kinds[ri] || (r.length > 1 ? 'grid' : 'text');
+                    if (kind === 'text') {
+                        rows.push([{ v: r[0] || '', s: { bold: ri === 0, size: ri === 0 ? 14 : 11 } }]);
+                        if (W > 1) merges.push(ref(0, ri) + ':' + ref(W - 1, ri));
+                        heights[ri] = ri === 0 ? 24 : 18;
+                    } else if (kind === 'front') {
+                        const row = [{ v: r[0] || '', s: { fill: '262626', color: 'FFFFFF', bold: true, h: 'center' } }];
+                        for (let c = 1; c < W; c++) row.push({ v: '', s: { fill: '262626' } });
+                        rows.push(row); if (W > 1) merges.push(ref(0, ri) + ':' + ref(W - 1, ri)); heights[ri] = 26;
+                    } else if (kind === 'label') { rows.push(r.map(v => ({ v, s: LBLS }))); heights[ri] = 20; }
+                    else { rows.push(r.map((v, ci) => ({ v, s: ci === 0 ? LBLS : { border: 'thin', h: 'center', wrap: true, bold: true } }))); heights[ri] = 32; }
+                });
+                const printRows = rows.length, wPt = cols.reduce((s, w) => s + colPt(w), 0), hPt = rows.reduce((s, _, ri) => s + (heights[ri] || 16.5), 0);
+                const orient = xScale(wPt, hPt, 'landscape') >= xScale(wPt, hPt, 'portrait') ? 'landscape' : 'portrait';
+                const R = printRows + 2;
+                while (rows.length < R) rows.push([]);
+                list.forEach((row, i) => { rows[R + i] = row.map((v, ci) => ({ v, s: i === 0 ? X_HEAD : { border: 'thin' } })); });
+                while (cols.length < (list[0] || []).length) cols.push(12);
+                return xlsxPackage([{ name: '教室佈局圖', rows, cols, merges, heights, landscape: orient === 'landscape', fitOne: true, printArea: 'A1:' + ref(W - 1, printRows - 1) }], date || new Date());
+            }
+            /* 4 座位表 Excel：一張工作表、一頁（座位表）；每人一列的座位清單放在列印範圍之外（下方） */
             function buildSeatXlsx(ctx) {
                 const P = prep(ctx), seat = ctx.seat, M = [], merges = [], heights = {}, cw = [];
                 const addMerge = (c1, r1, c2, r2) => { if (c2 > c1 || r2 > r1) merges.push(ref(c1, r1) + ':' + ref(c2, r2)); }; // 單格不合併
+                // 名字最長幾個字元寬決定座位欄寬（最少 12、最多 16），免得人名被切
+                const nameU = Math.max.apply(null, P.roster.map(s => xUnits((P.multi && s.cls ? String(s.cls).trim() + ' ' : '') + s.name)).concat([6]));
+                const SW_ = Math.max(12, Math.min(16, nameU + 3));
                 const seatCell = (g, coord, st) => {
                     const c = colorOf(g, P.opt.color);
                     return { v: '第 ' + (g + 1) + ' 組' + (P.opt.coord && coord ? '　' + coord : '') + '\n' + (P.multi && st.cls ? String(st.cls).trim() + ' ' : '') + st.name, s: { fill: c.soft, color: c.ink, border: 'thin', h: 'center', wrap: true } };
@@ -2583,16 +2897,16 @@ Authorization inquiries: derliang@gmail.com
                     return [{ v: coord, s: { border: 'thin', h: 'center' } }, xGroupCell(g, P.opt.color), { v: numOrText(noOf(st, i)), s: { border: 'thin', h: 'center' } }]
                         .concat(P.multi ? [{ v: String(st.cls || '').trim(), s: { border: 'thin', h: 'center' } }] : []).concat([{ v: st.name, s: { border: 'thin' } }]);
                 };
-                let list;
-                const title = (t, W) => { M.push([{ v: titlePrefix(P.info) + t, s: { bold: true, size: 14 } }]); addMerge(0, 0, W - 1, 0); };
-                const sub = (t, W) => { M.push([{ v: t, s: { color: '6F6858', size: 10 } }]); addMerge(0, 1, W - 1, 1); };
+                let list, W = 1;
+                const title = (t, W) => { M.push([{ v: titlePrefix(P.info) + t, s: { bold: true, size: 14 } }]); addMerge(0, 0, W - 1, 0); heights[0] = 24; };
+                const sub = (t, W) => { M.push([{ v: t, s: { color: '6F6858', size: 10 } }]); addMerge(0, 1, W - 1, 1); heights[1] = 17; };
                 if (seat.mode === 'trad') {
                     const map = seat.map || tradSeatMap(seat.cfg, P.groups), cfg = map.cfg, C = cfg.cols, D = cfg.depth;
-                    const aisles = new Set((cfg.aisleAfter || []).filter(a => a >= 1 && a < C)), W = 1 + C + aisles.size;
+                    const aisles = new Set((cfg.aisleAfter || []).filter(a => a >= 1 && a < C)); W = 1 + C + aisles.size;
                     title('座位表（傳統座位）', W);
                     sub('從講台往教室看：左到右是第 1 排到第 ' + C + ' 排，下方是前面', W);
                     cw.push(8);
-                    for (let c = 1; c <= C; c++) { cw.push(14); if (aisles.has(c)) cw.push(2.5); }
+                    for (let c = 1; c <= C; c++) { cw.push(SW_); if (aisles.has(c)) cw.push(2.5); }
                     for (let d = D; d >= 1; d--) {
                         const r = [{ v: '位置 ' + d, s: LBL }];
                         for (let c = 1; c <= C; c++) {
@@ -2616,7 +2930,7 @@ Authorization inquiries: derliang@gmail.com
                     const map = seat.map || tableSeatMap(seat.tables, P.groups), perRow = Math.max(1, seat.perRow || 2), trs = [];
                     map.tables.forEach(x => { const r = Math.floor(x.index / perRow); (trs[r] = trs[r] || []).push(x); });
                     const widthOf = x => Math.max(x.top.length, x.bot.length, 1);
-                    const W = trs.reduce((m, tr) => Math.max(m, tr.reduce((t, x, j) => t + widthOf(x) + (j ? 1 : 0), 0)), 1);
+                    W = trs.reduce((m, tr) => Math.max(m, tr.reduce((t, x, j) => t + widthOf(x) + (j ? 1 : 0), 0)), 1);
                     title('座位表（分組座位）', W);
                     sub('從講台往教室看：下方是前面。圓桌、六邊形桌在表格裡以上下兩排表示', W);
                     const cell = s => (!s ? null : (s.id == null ? empty(s.lbl) : seatCell(s.g, s.lbl, P.roster[s.id])));
@@ -2637,17 +2951,49 @@ Authorization inquiries: derliang@gmail.com
                     }
                     M.push([{ v: '講台（前方）', s: { fill: '262626', color: 'FFFFFF', bold: true, h: 'center' } }]);
                     addMerge(0, M.length - 1, W - 1, M.length - 1);
-                    for (let i = 0; i < W; i++) cw.push(14);
+                    for (let i = 0; i < W; i++) cw.push(SW_);
                     const L = [listHead('座位（桌-座）')];
                     map.tables.forEach(x => x.top.concat(x.bot).filter(Boolean).sort((p, q) => p.seq - q.seq).forEach(s => { if (s.id != null) L.push(listRow(s.lbl, s.g, s.id)); }));
                     list = L;
                 }
-                const listCols = [14, 10, 8].concat(P.multi ? [8] : []).concat([12]);
-                const sheets = [
-                    { name: '座位表', rows: M, cols: cw, merges, heights, landscape: true, fitWidth: true },
-                    { name: '座位清單', rows: list, cols: listCols, freeze: true, filter: 'A1:' + ref(listCols.length - 1, list.length - 1) }
-                ];
-                return xlsxPackage(sheets, P.d);
+                cw[0] = Math.max(cw[0], 12);
+                const printRows = M.length, wPt = cw.reduce((t, w) => t + colPt(w), 0), hPt = M.reduce((t, _, ri) => t + (heights[ri] || 16.5), 0);
+                const orient = xScale(wPt, hPt, 'landscape') >= xScale(wPt, hPt, 'portrait') ? 'landscape' : 'portrait';
+                // 座位清單放在列印範圍下方（空兩列）；借用座位表「夠寬」的欄（跳過走道窄欄）
+                const R = printRows + 2, wide = [];
+                cw.forEach((w, i) => { if (w >= 8) wide.push(i); });
+                while (wide.length < list[0].length) { cw.push(14); wide.push(cw.length - 1); }
+                while (M.length < R) M.push([]);
+                list.forEach((row, i) => { const out = []; row.forEach((cell, j) => { out[wide[j]] = cell; }); M[R + i] = out; });
+                const sh = { name: '座位表', rows: M, cols: cw, merges, heights, landscape: orient === 'landscape', fitOne: true, printArea: 'A1:' + ref(W - 1, printRows - 1), xlScale: Math.min(xScale(wPt, hPt, orient), 9) };
+                return xlsxPackage([sh], P.d);
+            }
+
+            /* 匯出前的版面預估（不產生檔案）：回傳 { docx: { font, small }, xlsx: { font, small } }。
+             * font＝預估的實際字級（pt）；small＝小於 F_MIN（7 pt），畫面要先提示「字會縮小，仍在一頁」。 */
+            function fitReport(kind, ctx) {
+                const P = prep(ctx), r = {};
+                if (kind === 'group') {
+                    const pages = groupPages(P.info, P.opt), pl = planGroupWord(P, pages);
+                    r.docx = { font: pl.f, orient: pl.orient };
+                    const xp = xlPlanGroup(P, pages, ((pages.length > 1 ? 3 : 2) + 1) * XROW + 8);
+                    r.xlsx = { font: 11 * Math.min(xp.s, 1), orient: xp.o };
+                } else if (ctx.seat.mode === 'trad') {
+                    const map = ctx.seat.map || tradSeatMap(ctx.seat.cfg, P.groups), pl = planSeatTrad(P, map);
+                    r.docx = { font: pl.f, orient: 'landscape' };
+                    const cfg = map.cfg, aisles = (cfg.aisleAfter || []).filter(a => a >= 1 && a < cfg.cols).length;
+                    const wPt = colPt(8) + cfg.cols * colPt(14) + aisles * colPt(2.5), hPt = (cfg.depth * 36 + 17 + 24 + 16.5 * 3);
+                    r.xlsx = { font: 11 * Math.min(1, Math.max(xScale(wPt, hPt, 'landscape'), xScale(wPt, hPt, 'portrait'))), orient: 'landscape' };
+                } else {
+                    const map = ctx.seat.map || tableSeatMap(ctx.seat.tables, P.groups), pl = planSeatTable(P, map, ctx.seat.image && ctx.seat.image.data ? ctx.seat.image : null);
+                    r.docx = { font: pl.f, orient: 'landscape' };
+                    const perRow = Math.max(1, ctx.seat.perRow || 2), rowsN = Math.ceil(map.tables.length / perRow);
+                    const wSeats = Math.max.apply(null, map.tables.map(x => Math.max(x.top.length, x.bot.length, 1))) * perRow + (perRow - 1);
+                    const wPt = wSeats * colPt(14), hPt = rowsN * 4 * 36 + 60;
+                    r.xlsx = { font: 11 * Math.min(1, Math.max(xScale(wPt, hPt, 'landscape'), xScale(wPt, hPt, 'portrait'))), orient: 'landscape' };
+                }
+                ['docx', 'xlsx'].forEach(k => { r[k].small = r[k].font < F_MIN; });
+                return r;
             }
 
             /* 一站式：buildDownload('group'|'seat', 'docx'|'xlsx', ctx) → { bytes, fileName, mime } */
@@ -2661,7 +3007,7 @@ Authorization inquiries: derliang@gmail.com
                 GROUP_COLORS, GRAY, METHOD_LABELS, LAYOUT_LABELS, MIME,
                 makeRng, shuffle, toScore, analyzeRoster, missingScores, studentKey, formatDate, formatTime, fileName, titlePrefix,
                 groupSizes, resolveGroupCount, sizeText, pastPairSet, repeatPairs, avoidNotice, randomGroups, scoreGroups, groupRoster, groupAverages, spreadOf,
-                tradSeatMap, tableSeatMap, groupPages,
+                tradSeatMap, tableSeatMap, groupPages, fitReport, gridXlsx, emOf, planGroupWord, planSeatTrad, planSeatTable, F_MIN,
                 crc32, zip, buildGroupDocx, buildGroupXlsx, buildSeatDocx, buildSeatXlsx, buildDownload
             };
         })(typeof window !== 'undefined' ? window : globalThis);
@@ -4139,10 +4485,27 @@ root.ScoreImport = {
         const right = st === 'busy' ? '<span class="spin" aria-hidden="true"></span>' : (st === 'done' ? ic('check') : ic('down'));
         return '<button type="button" class="fbtn' + (st === 'done' ? ' done' : '') + '" data-a="dl" data-v="' + kind + ':' + fmt + '"' + (dis ? ' aria-disabled="true"' : '') + (st === 'busy' ? ' aria-busy="true"' : '') + '><span class="fi ' + (w ? 'w' : 'x') + '" aria-hidden="true">' + (w ? 'W' : 'X') + '</span><b>' + (st === 'done' ? '再下載一次' : '下載 ' + (w ? 'Word 文件' : 'Excel 活頁簿')) + '</b><span class="fgo">' + right + '</span><small>' + sub + '</small></button>';
     }
+    /* 一頁為限：人數太多、字會縮到 7 pt 以下時，下載前先提醒（仍然只印一頁）。算不出來就不提示。 */
+    function fitHint(kind) {
+        try {
+            if (!S.groups.length || dlInfo(kind).dis) return '';
+            const D = S.D, ctx = { roster: S.gRoster, groups: S.groups, method: 'random', date: new Date(), options: { withScore: D.pS, withoutScore: D.pN, showAvg: D.avg, color: D.color, coord: D.coord } };
+            if (kind === 'seat') {
+                if (S.smode === 'trad') ctx.seat = { mode: 'trad', cfg: tradCfg() };
+                else { ensureTbl(); const ex = canvasSVG(tblMap(), -1, true); ctx.seat = { mode: 'table', tables: tblList(), perRow: S.tbl.cols, image: { data: [1], width: ex.W, height: ex.H } }; }
+            }
+            const r = GL.fitReport(kind, ctx), bad = [];
+            if (r.docx.small) bad.push('Word 約 ' + (Math.round(r.docx.font * 2) / 2) + ' pt');
+            if (r.xlsx.small) bad.push('Excel 約 ' + (Math.round(r.xlsx.font * 2) / 2) + ' pt');
+            if (!bad.length) return '';
+            return '<div class="alert" style="margin-bottom:10px" role="status">' + ic('warn') + '<div><b>人數很多，字會縮得比較小</b>每份檔案都只印一頁，所以 ' + esc(bad.join('、')) + '（印出來偏小）。想印大一點：' + (kind === 'group' ? '只選一種頁面，或減少組數。' : '減少排數、桌數或人數。') + '</div></div>';
+        } catch (e) { return ''; }
+    }
     function dlInner(kind) {
         const isG = kind === 'group', d = dlInfo(kind), D = S.D, mode = S.smode;
         let h = '<div class="card-h"><h3>下載</h3><span class="sp"></span><span class="hint">' + (isG ? '分組名單' : '座位表') + '</span></div>';
         if (d.dis) h += '<div class="alert" style="margin-bottom:10px">' + ic('warn') + '<div>' + d.why + '</div></div>';
+        h += fitHint(kind);
         h += '<div class="dl">' + fbtn(kind, 'docx', d.dis) + fbtn(kind, 'xlsx', d.dis) + '</div>';
         if (S.dlSt[kind + ':docx'] === 'done' || S.dlSt[kind + ':xlsx'] === 'done') h += '<p class="hint" role="status">已存到瀏覽器的「下載」資料夾。</p>';
         const opt = (t, s, key, label) => '<div class="opt"><div><b>' + t + '</b>' + (s ? '<span class="hint">' + s + '</span>' : '') + '</div>' + gsw(D[key], 'dlopt', label, key) + '</div>';
@@ -4152,7 +4515,7 @@ root.ScoreImport = {
         } else {
             h += opt('保留組別顏色', '關閉變成黑白灰底，適合黑白印表機', 'color', '保留組別顏色') + opt('顯示座標', '每個座位的「' + (mode === 'tbl' ? '桌-座' : '排-位置') + '」', 'coord', '顯示座標');
         }
-        return h + '<p class="hint" style="margin-top:6px">檔案在你的電腦上產生，名單不會上傳。要 PDF：用 Word 開啟後另存。</p>';
+        return h + '<p class="hint" style="margin-top:6px">每份檔案都排成一頁，直接列印即可。檔案在你的電腦上產生，名單不會上傳。要 PDF：用 Word 開啟後另存。</p>';
     }
     const dlCard = kind => '<div class="card" data-dl="' + kind + '">' + dlInner(kind) + '</div>';
     function renderDl() { document.querySelectorAll('#groupView [data-dl]').forEach(x => { x.innerHTML = dlInner(x.getAttribute('data-dl')); }); }
@@ -4475,7 +4838,7 @@ root.ScoreImport = {
 })();
     </script>
     <script>
-        const APP_VERSION = "v3.6.1";
+        const APP_VERSION = "v3.7.0";
         /* 版號只寫在 APP_VERSION；<title> 與頁首徽章由程式產生，不要在 HTML 靜態文字寫版號 */
         document.title = `座位小幫手 ${APP_VERSION}`;
 
@@ -7534,16 +7897,17 @@ root.ScoreImport = {
         }
 
         function buildExcelBlob() {
-            let layoutData = [];
+            let layoutData = [], kinds = [];
+            const put = (row, kind) => { layoutData.push(row); kinds.push(kind || (row.length > 1 ? 'grid' : 'text')); };
 
-            if (displaySettings.export.classroomName) layoutData.push([classroomName]);
-            if (displaySettings.export.schoolName && schoolName) layoutData.push([schoolName]);
-            if (displaySettings.export.schoolYear && schoolYear) layoutData.push([`${schoolYear}學年度`]);
-            if (displaySettings.export.semester && semester) layoutData.push([semester]);
-            if (displaySettings.export.className && className) layoutData.push([className]);
-            if (displaySettings.export.advisorName && advisorName) layoutData.push([`導師：${advisorName}`]);
-            if (displaySettings.export.rearDoor && rearDoor) layoutData.push([rearDoor]);
-            if (displaySettings.export.exportDate) layoutData.push([`匯出日期：${new Date().toLocaleDateString('zh-TW')}`]);
+            if (displaySettings.export.classroomName) put([classroomName]);
+            if (displaySettings.export.schoolName && schoolName) put([schoolName]);
+            if (displaySettings.export.schoolYear && schoolYear) put([`${schoolYear}學年度`]);
+            if (displaySettings.export.semester && semester) put([semester]);
+            if (displaySettings.export.className && className) put([className]);
+            if (displaySettings.export.advisorName && advisorName) put([`導師：${advisorName}`]);
+            if (displaySettings.export.rearDoor && rearDoor) put([rearDoor]);
+            if (displaySettings.export.exportDate) put([`匯出日期：${new Date().toLocaleDateString('zh-TW')}`]);
 
             // 1. 深位從大到小 (gridConfig.rows 倒數到 1)
             for (let w = gridConfig.rows; w >= 1; w--) {
@@ -7560,24 +7924,24 @@ root.ScoreImport = {
                         row.push("");
                     }
                 }
-                layoutData.push(row);
+                put(row);
             }
 
             // 2. 橫排標題列在深位 1 下方
             if (displaySettings.export.rowLabels) {
                 let header = ["深位 \\ 橫排"];
                 for (let p = 1; p <= gridConfig.cols; p++) header.push(`第 ${p} 排`);
-                layoutData.push(header);
+                put(header, 'label');
             }
 
             // 3. 大屏列在最下方
             if (displaySettings.export.frontLabel) {
                 let screenRow = [frontLabel || "大屏"];
                 for (let p = 1; p <= gridConfig.cols; p++) screenRow.push("");
-                layoutData.push(screenRow);
+                put(screenRow, 'front');
             }
-            if (displaySettings.export.frontDoor && frontDoor) layoutData.push([frontDoor]);
-            if (displaySettings.export.seatMapNote && seatMapNote) layoutData.push([seatMapNote]);
+            if (displaySettings.export.frontDoor && frontDoor) put([frontDoor]);
+            if (displaySettings.export.seatMapNote && seatMapNote) put([seatMapNote]);
 
             const showAtt = displaySettings.export.attendance;
             let listData = [showAtt ? ["學生姓名", "狀態", "第八節", "第九節"] : ["學生姓名", "狀態"]];
@@ -7595,15 +7959,8 @@ root.ScoreImport = {
                 }
             });
 
-            const wb = XLSX.utils.book_new();
-            const wsLayout = XLSX.utils.aoa_to_sheet(layoutData);
-            wsLayout['!cols'] = Array(gridConfig.cols + 1).fill({ wch: 14 });
-            XLSX.utils.book_append_sheet(wb, wsLayout, "教室佈局圖");
-
-            const wsList = XLSX.utils.aoa_to_sheet(listData);
-            XLSX.utils.book_append_sheet(wb, wsList, "學生清單");
-
-            const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+            // 一頁為限（v3.7.0）：佈局圖一頁，學生清單放在列印範圍下方；不再用 SheetJS 產檔（它寫不出列印設定）
+            const wbout = window.GroupLogic.gridXlsx(layoutData, kinds, listData, gridConfig.cols + 1, new Date());
             return new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
         }
 
@@ -7816,7 +8173,27 @@ root.ScoreImport = {
             const totalColumns = gridConfig.cols + 1;
             const tableWidth = 10200;
             const cellWidth = Math.floor(tableWidth / totalColumns);
-            const rowHeight = Math.max(560, Math.min(1240, Math.floor(8680 / gridConfig.rows)));
+            // 一頁為限（v3.7.0）：列高「固定」並依列數、表頭行數算出，字級依欄寬縮小，內容再多也不會跨頁
+            const ex = displaySettings.export, em = window.GroupLogic.emOf, textW = (s, pt, spacingPt) => em(s) * pt + (spacingPt || 0) * String(s || '').length;
+            const innerW = tableWidth / 20;
+            const lineCnt = (s, pt, sp) => Math.max(1, Math.ceil(textW(s, pt, sp) / innerW));
+            const metaText = [ex.schoolYear && schoolYear ? `${schoolYear}學年度` : '', ex.semester && semester ? semester : '', ex.className && className ? className : '', ex.advisorName && advisorName ? `導師 ${advisorName}` : ''].filter(Boolean).join('　');
+            let headPt = 0;
+            if (ex.schoolName && schoolName) headPt += lineCnt(schoolName, 24) * 24 * 1.45 + 4.5;
+            if (ex.classroomName) headPt += lineCnt(classroomName || '座位表', 36, 9) * 36 * 1.45 + 6;
+            if (metaText) headPt += lineCnt(metaText, 24) * 24 * 1.45 + 2;
+            if (ex.exportDate) headPt += 10 * 1.45 + 4;
+            if (ex.rearDoor && rearDoor) headPt += lineCnt(rearDoor, 11) * 11 * 1.45 + 1.5;
+            if (ex.frontDoor && frontDoor) headPt += lineCnt(frontDoor, 11) * 11 * 1.45 + 2;
+            if (ex.seatMapNote && seatMapNote) headPt += lineCnt(seatMapNote, 10) * 10 * 1.45 + 1.5;
+            const labelRowTw = ex.rowLabels ? 640 : 0, frontRowTw = ex.frontLabel ? 760 : 0;
+            const availTw = Math.floor((841.9 - 2 * 42.5 - headPt - 90) * 20) - labelRowTw - frontRowTw;
+            const rowHeight = Math.max(260, Math.min(1240, Math.floor(availTw / gridConfig.rows)));
+            const seatTexts = seating.map(s => (s && s.name) ? getExportStudentText(students.find(st => st.name === s.name || st.displayName === s.name), s.name) : '').filter(Boolean);
+            const cellPt = cellWidth / 20 - 5, maxNameEm = Math.max(2, seatTexts.reduce((m, x) => Math.max(m, em(x)), 0));
+            let seatPt = Math.min(12, cellPt / (maxNameEm + 0.2), rowHeight / 20 / 1.5);
+            if (seatPt < 7) seatPt = Math.max(5, Math.min(8, rowHeight / 20 / 2.7)); // 太窄：縮小並允許姓名換成兩行
+            const seatSize = Math.max(10, Math.floor(seatPt * 2));
             const thinBorder = { style: BorderStyle.SINGLE, size: 6, color: '000000' };
             const hiddenBorder = { style: BorderStyle.SINGLE, size: 1, color: 'FFFFFF' };
 
@@ -7875,26 +8252,26 @@ root.ScoreImport = {
             const tableRows = [];
             for (let w = gridConfig.rows; w >= 1; w--) {
                 const cells = [makeCell([
-                    makeParagraph(displaySettings.export.rowLabels ? String(w) : '', { size: 28, bold: true })
+                    makeParagraph(displaySettings.export.rowLabels ? String(w) : '', { size: Math.min(28, seatSize + 4), bold: true })
                 ])];
 
                 for (let p = 1; p <= gridConfig.cols; p++) {
                     const idx = getIdx(p, w);
                     const seat = seating[idx];
-                    let paragraphs = [makeParagraph('', { size: 24 })];
+                    let paragraphs = [makeParagraph('', { size: seatSize })];
                     let fill;
                     let borders;
 
                     if (seat === 'disabled') {
                         if (displaySettings.export.disabledSeats) {
-                            paragraphs = [makeParagraph('禁排', { size: 22, bold: true, color: 'E11D48' })];
+                            paragraphs = [makeParagraph('禁排', { size: Math.min(22, seatSize), bold: true, color: 'E11D48' })];
                             fill = 'FFE4E6';
                         } else if (!displaySettings.export.emptySeats) {
                             borders = { top: hiddenBorder, bottom: hiddenBorder, left: hiddenBorder, right: hiddenBorder };
                         }
                     } else if (seat?.name) {
                         const student = students.find(st => st.name === seat.name || st.displayName === seat.name);
-                        paragraphs = [makeParagraph(getExportStudentText(student, seat.name), { size: 24, bold: true })];
+                        paragraphs = [makeParagraph(getExportStudentText(student, seat.name), { size: seatSize, bold: true })];
                     } else if (!displaySettings.export.emptySeats) {
                         borders = { top: hiddenBorder, bottom: hiddenBorder, left: hiddenBorder, right: hiddenBorder };
                     }
@@ -7902,7 +8279,7 @@ root.ScoreImport = {
                     cells.push(makeCell(paragraphs, { fill, borders }));
                 }
                 tableRows.push(new TableRow({
-                    height: { value: rowHeight, rule: HeightRule.ATLEAST },
+                    height: { value: rowHeight, rule: HeightRule.EXACT },
                     children: cells
                 }));
             }
@@ -7910,17 +8287,17 @@ root.ScoreImport = {
             if (displaySettings.export.rowLabels) {
                 const labelCells = [makeCell([makeParagraph('', { size: 22 })])];
                 for (let p = 1; p <= gridConfig.cols; p++) {
-                    labelCells.push(makeCell([makeParagraph(`第 ${p} 排`, { size: 22, bold: true })]));
+                    labelCells.push(makeCell([makeParagraph(`第 ${p} 排`, { size: Math.min(22, seatSize), bold: true })]));
                 }
                 tableRows.push(new TableRow({
-                    height: { value: 900, rule: HeightRule.ATLEAST },
+                    height: { value: labelRowTw, rule: HeightRule.EXACT },
                     children: labelCells
                 }));
             }
 
             if (displaySettings.export.frontLabel) {
                 tableRows.push(new TableRow({
-                    height: { value: 1000, rule: HeightRule.ATLEAST },
+                    height: { value: frontRowTw, rule: HeightRule.EXACT },
                     children: [makeCell([
                         makeParagraph(frontLabel || '講台／大屏', {
                             size: 48, bold: true, color: 'FFFFFF', characterSpacing: 100

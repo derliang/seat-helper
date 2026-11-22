@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>下載檔一頁為限（模擬頁，假資料）</title>
+<style>
+  :root { --bg:#F5F2EA; --card:#FFFFFF; --text:#22201B; --text-2:#6F6858; --line:#D9D3C3; --accent:#1D3F8F; --warn-bg:#FDF1D8; --warn-ink:#7A4A06; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.6 "Microsoft JhengHei", system-ui, sans-serif; }
+  main { max-width:1100px; margin:0 auto; padding:24px 16px 48px; }
+  h1 { font-size:22px; margin:0 0 4px; } h2 { font-size:17px; margin:32px 0 8px; } p.s { color:var(--text-2); margin:0 0 12px; }
+  .row { display:flex; flex-wrap:wrap; gap:20px; align-items:flex-start; }
+  .paper { background:#fff; border:1px solid var(--line); box-shadow:0 1px 4px #0002; padding:14px; }
+  .portrait { width:300px; aspect-ratio:210/297; } .landscape { width:440px; aspect-ratio:297/210; }
+  .cap { font-size:12px; color:var(--text-2); margin-top:6px; }
+  .tag { display:inline-block; font-size:10px; font-weight:700; padding:0 6px; border-radius:2px; background:#E6EEFB; color:#1D3F8F; } .tag.n { background:#F2F2F2; color:#333; }
+  .cards { display:grid; grid-template-columns:repeat(4,1fr); gap:5px; margin:4px 0 6px; }
+  .c { border:1px solid #BDBDBD; font-size:6.5px; line-height:1.5; } .c b { display:block; padding:0 3px; background:var(--h,#E6EEFB); color:var(--i,#1D3F8F); }
+  .c i { display:block; font-style:normal; padding:0 3px; border-top:1px solid #E6E6E6; }
+  .cut { border-top:1px dashed #9E9E9E; margin:6px 0; }
+  .seats { display:grid; grid-template-columns:repeat(8,1fr); gap:1px; font-size:7px; text-align:center; }
+  .seats span { padding:3px 0; border:1px solid #BDBDBD; background:var(--h,#E6EEFB); } .seats .e { background:#fff; border-style:dashed; color:#9E9E9E; }
+  .stage { background:#262626; color:#fff; text-align:center; font-size:8px; margin-top:2px; padding:2px; }
+  .alert { display:flex; gap:10px; background:var(--warn-bg); color:var(--warn-ink); border:1px solid #F2D08A; border-radius:8px; padding:10px 12px; font-size:14px; max-width:480px; }
+  .alert b { display:block; }
+  table { border-collapse:collapse; font-size:13px; background:#fff; } td, th { border:1px solid var(--line); padding:4px 10px; text-align:left; }
+</style>
+</head>
+<body>
+<main>
+  <h1>下載檔一頁為限（模擬頁）</h1>
+  <p class="s">所有 Word／Excel 下載檔都只印一頁；內容多就縮字級、改分欄，不分頁。以下全是假資料，示意版面規則（見 DESIGN.md §12）。</p>
+
+  <h2>① 分組名單 Word：兩種名單並排在同一頁（直式上下疊，中間虛線可剪開）</h2>
+  <div class="row">
+    <div>
+      <div class="paper portrait">
+        <b style="font-size:12px">分組名單</b><br><span style="font-size:7px;color:#6F6858">S 型分組・16 組・每組 4 人</span>
+        <div style="text-align:center;margin-top:4px"><span class="tag">含成績・老師用</span></div>
+        <div class="cards">
+          <div class="c"><b>第 1 組　平均 59.3</b><i>3A 1 王小明　53</i><i>3A 2 李小華　75</i><i>3A 3 張小美　58</i><i>3A 4 陳大文　51</i></div>
+          <div class="c" style="--h:#E4F5EC;--i:#0B5B3A"><b>第 5 組　平均 75.0</b><i>3A 17 邱品睿　86</i><i>3A 18 廖若涵　72</i><i>3A 19 賴冠廷　68</i><i>3A 20 徐子晴　74</i></div>
+          <div class="c" style="--h:#FDF1D8;--i:#7A4A06"><b>第 9 組　平均 78.3</b><i>3B 1 周柏宇　82</i><i>3B 2 葉芷瑄　81</i><i>3B 3 蘇冠霖　90</i><i>3B 4 莊雅涵　60</i></div>
+          <div class="c" style="--h:#FCE7EC;--i:#9A1B3D"><b>第 13 組　平均 69.0</b><i>3B 17 江承翰　90</i><i>3B 18 呂欣怡　53</i><i>3B 19 何宥辰　75</i><i>3B 20 蕭語嫣　58</i></div>
+        </div>
+        <div class="cut"></div>
+        <div style="text-align:center"><span class="tag n">不含成績・可發給學生</span></div>
+        <div class="cards">
+          <div class="c"><b>第 1 組</b><i>3A 1 王小明</i><i>3A 2 李小華</i><i>3A 3 張小美</i><i>3A 4 陳大文</i></div>
+          <div class="c" style="--h:#E4F5EC;--i:#0B5B3A"><b>第 5 組</b><i>3A 17 邱品睿</i><i>3A 18 廖若涵</i><i>3A 19 賴冠廷</i><i>3A 20 徐子晴</i></div>
+          <div class="c" style="--h:#FDF1D8;--i:#7A4A06"><b>第 9 組</b><i>3B 1 周柏宇</i><i>3B 2 葉芷瑄</i><i>3B 3 蘇冠霖</i><i>3B 4 莊雅涵</i></div>
+          <div class="c" style="--h:#FCE7EC;--i:#9A1B3D"><b>第 13 組</b><i>3B 17 江承翰</i><i>3B 18 呂欣怡</i><i>3B 19 何宥辰</i><i>3B 20 蕭語嫣</i></div>
+        </div>
+      </div>
+      <div class="cap">64 人 16 組：直式 A4、字級約 8 pt。只選一種頁面時，該頁佔滿整頁、字級約 12 pt。</div>
+    </div>
+    <div>
+      <table>
+        <tr><th>情境</th><th>Word 字級</th><th>Excel 實際字級</th></tr>
+        <tr><td>64 人 16 組，兩種名單</td><td>8 pt</td><td>10.7 pt</td></tr>
+        <tr><td>64 人 16 組，只含成績</td><td>12 pt</td><td>11 pt</td></tr>
+        <tr><td>100 人 25 組，兩種名單</td><td>6 pt（提示）</td><td>7.7 pt</td></tr>
+        <tr><td>200 人 40 組，兩種名單</td><td>3.5 pt（提示）</td><td>6 pt（提示）</td></tr>
+      </table>
+      <div class="cap">字級低於 7 pt 仍排在一頁，並在下載卡提示。</div>
+    </div>
+  </div>
+
+  <h2>② 傳統座位 Word：A4 橫式，列高固定、字級依欄寬縮</h2>
+  <div class="paper landscape">
+    <b style="font-size:12px">座位表</b>
+    <div class="seats" style="margin-top:4px">
+      <span>第1組</span><span>第1組</span><span style="--h:#E4F5EC">第2組</span><span style="--h:#E4F5EC">第2組</span><span style="--h:#FDF1D8">第3組</span><span style="--h:#FDF1D8">第3組</span><span class="e">7-1</span><span class="e">8-1</span>
+      <span>第1組</span><span>第1組</span><span style="--h:#E4F5EC">第2組</span><span style="--h:#E4F5EC">第2組</span><span style="--h:#FDF1D8">第3組</span><span style="--h:#FDF1D8">第3組</span><span class="e">7-2</span><span class="e">8-2</span>
+    </div>
+    <div class="stage">講台（前方）</div>
+  </div>
+  <div class="cap">組別標籤依欄寬降級：「第N組 排-位置」→「第N組」→「N」。</div>
+
+  <h2>③ 下載卡的字級提示</h2>
+  <div class="alert"><span aria-hidden="true">⚠</span><div><b>人數很多，字會縮得比較小</b>每份檔案都只印一頁，所以 Word 約 6.5 pt、Excel 約 6 pt（印出來偏小）。想印大一點：只選一種頁面，或減少組數。</div></div>
+</main>
+</body>
+</html>
