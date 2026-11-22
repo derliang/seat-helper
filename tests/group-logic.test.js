@@ -386,35 +386,53 @@ const onePageSeats = [
     { mode: 'table', tables: Array.from({ length: 16 }, () => ({ n: 4, shape: 'rect' })), perRow: 4, image: true }
 ];
 
-test('一頁為限：分組名單 Word 每一件事恰好一個區段（一頁）、沒有手動分頁、方塊列高固定', () => {
-    [[8, 2, {}], [30, 5, { cls: 'one' }], [64, 16, { cls: 'multi' }], [120, 12, { cls: 'multi' }], [64, 16, { scores: false }]].forEach(([n, g, ro]) => {
+test('一件事一頁：分組名單 Word 每件事從新的一頁開始，排得下就一頁、沒有手動分頁、方塊列高固定', () => {
+    [[8, 2, {}], [30, 5, { cls: 'one' }], [64, 16, { cls: 'multi' }], [100, 25, { cls: 'multi' }], [64, 16, { scores: false }]].forEach(([n, g, ro]) => {
         [{}, { withoutScore: false }, { withScore: false }, { color: false, showAvg: false }].forEach(op => {
-            const c = oneCtx(n, g, ro, op), pages = GL.groupPages({ hasScores: ro.scores !== false }, Object.assign({ withScore: true, withoutScore: true }, op)).length;
+            const c = oneCtx(n, g, ro, op), things = GL.groupPages({ hasScores: ro.scores !== false }, Object.assign({ withScore: true, withoutScore: true }, op)).length;
             const d = docText(openPackage(GL, GL.buildGroupDocx(c)));
-            assert.equal((d.match(/<w:sectPr>/g) || []).length, pages, n + '人 ' + JSON.stringify(op));
+            assert.equal((d.match(/<w:sectPr>/g) || []).length, things, n + '人 ' + JSON.stringify(op) + '：這些情境每件事剛好一頁');
             assert.ok(!/w:pageBreakBefore|<w:br w:type="page"\/>/.test(d), '沒有手動分頁');
-            assert.ok(/w:hRule="exact"/.test(d) && !/w:hRule="atLeast"/.test(d), '列高固定，內容不會把頁面撐長');
+            assert.ok(/w:hRule="exact"/.test(d) && !/w:hRule="atLeast"/.test(d), '列高固定');
         });
     });
 });
 
-test('一頁為限：每一頁各自算字級；64 人 16 組每頁都不低於 7pt，人數極多時提示', () => {
+test('一件事一頁：字級降到可讀下限（8pt）仍放不下才分頁，每一組整組留在同一頁、不會斷在中間', () => {
+    const c = oneCtx(300, 30, { cls: 'multi' }), rep = GL.fitReport('group', c);
+    assert.ok(rep.docx.pages > 2 && rep.docx.small, '300 人 30 組兩件事合計超過兩頁：' + JSON.stringify(rep.docx));
+    assert.ok(rep.docx.font >= GL.F_MIN, '字級不低於可讀下限 ' + GL.F_MIN);
+    const d = docText(openPackage(GL, GL.buildGroupDocx(c)));
+    assert.equal((d.match(/<w:sectPr>/g) || []).length, rep.docx.pages, '區段數＝預估頁數');
+    for (let g = 1; g <= 30; g++) assert.equal((d.match(new RegExp('>第 ' + g + ' 組<', 'g')) || []).length, 2, '第 ' + g + ' 組在含成績、不含成績各出現一次（整組在同一頁）');
+    assert.ok(d.includes('（1／') && d.includes('（接下一頁）'));
+    // 單件事也一樣：150 人 30 組只含成績 → 字級 8、兩頁
+    const one = GL.fitReport('group', oneCtx(150, 30, { cls: 'multi' }, { withoutScore: false }));
+    assert.ok(one.docx.pages >= 2 && one.docx.font === GL.F_MIN, JSON.stringify(one.docx));
+});
+
+test('一件事一頁：64 人 16 組每件事都是一頁，字級不低於 8pt', () => {
     const r = GL.fitReport('group', oneCtx(64, 16, { cls: 'multi' }));
+    assert.equal(JSON.stringify(r.docx.perThing), '[1,1]'); assert.equal(JSON.stringify(r.xlsx.perThing), '[1,1]');
     assert.ok(r.docx.font >= GL.F_MIN && r.xlsx.font >= GL.F_MIN, JSON.stringify(r));
-    const big = GL.fitReport('group', oneCtx(300, 30, { cls: 'multi' }));
-    assert.ok(big.docx.small || big.xlsx.small, '人數極多時要提示字會縮小：' + JSON.stringify(big));
+    assert.ok(!r.docx.small && !r.xlsx.small);
 });
 
-test('一頁為限：分組名單 Excel 每件事一張工作表、各自 fit 1×1、有列印範圍，且各選項都成立', () => {
-    [[8, 2, {}], [64, 16, { cls: 'multi' }], [200, 20, { cls: 'one' }], [30, 5, { scores: false }]].forEach(([n, g, ro]) => {
+test('一件事一頁：分組名單 Excel 每件事一張工作表；排得下用「縮成一頁」，排不下改成縮放＋在方塊列之間手動分頁', () => {
+    [[8, 2, {}], [64, 16, { cls: 'multi' }], [100, 25, { cls: 'one' }], [30, 5, { scores: false }]].forEach(([n, g, ro]) => {
         [{}, { withoutScore: false }, { withScore: false }, { showAvg: false }].forEach(op => {
-            const pages = GL.groupPages({ hasScores: ro.scores !== false }, Object.assign({ withScore: true, withoutScore: true }, op)).length;
+            const things = GL.groupPages({ hasScores: ro.scores !== false }, Object.assign({ withScore: true, withoutScore: true }, op)).length;
             const pk = openPackage(GL, GL.buildGroupXlsx(oneCtx(n, g, ro, op)));
-            for (let i = 1; i <= pages; i++) assert.ok(pk.text.get('xl/worksheets/sheet' + i + '.xml').includes('fitToWidth="1" fitToHeight="1"'));
-            assert.ok(!pk.files.has('xl/worksheets/sheet' + (pages + 1) + '.xml'));
-            assert.equal((pk.text.get('xl/workbook.xml').match(/_xlnm\.Print_Area/g) || []).length, pages);
+            for (let i = 1; i <= things; i++) assert.ok(pk.text.get('xl/worksheets/sheet' + i + '.xml').includes('fitToWidth="1" fitToHeight="1"'));
+            assert.ok(!pk.files.has('xl/worksheets/sheet' + (things + 1) + '.xml'));
+            assert.equal((pk.text.get('xl/workbook.xml').match(/_xlnm\.Print_Area/g) || []).length, things);
         });
     });
+    const big = openPackage(GL, GL.buildGroupXlsx(oneCtx(300, 30, { cls: 'multi' })));
+    const s1 = big.text.get('xl/worksheets/sheet1.xml');
+    assert.ok(/<pageSetup [^>]*scale="\d+"/.test(s1) && !s1.includes('fitToPage') && s1.includes('<rowBreaks '), '分頁用縮放＋手動分頁（fitToPage 會忽略手動分頁）');
+    const brks = [...s1.matchAll(/<brk id="(\d+)"/g)].map(m => Number(m[1]));
+    assert.ok(brks.length >= 1 && brks.every((v, i) => i === 0 || v > brks[i - 1]));
 });
 
 test('一頁為限：座位表 Word（傳統座位、方桌／長桌／六邊形桌）一個區段、橫式、無分頁；Excel 一張工作表 fit 1×1', () => {
