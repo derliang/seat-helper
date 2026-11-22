@@ -32,38 +32,41 @@
   <h1>下載檔一頁為限（模擬頁）</h1>
   <p class="s">所有 Word／Excel 下載檔都只印一頁；內容多就縮字級、改分欄，不分頁。以下全是假資料，示意版面規則（見 DESIGN.md §12）。</p>
 
-  <h2>① 分組名單 Word：兩種名單並排在同一頁（直式上下疊，中間虛線可剪開）</h2>
+  <h2>① 分組名單 Word／Excel：含成績、不含成績是兩件事，各自一頁；放不下 8 pt 才分頁（不切開任何一組）</h2>
   <div class="row">
     <div>
       <div class="paper portrait">
-        <b style="font-size:12px">分組名單</b><br><span style="font-size:7px;color:#6F6858">S 型分組・16 組・每組 4 人</span>
-        <div style="text-align:center;margin-top:4px"><span class="tag">含成績・老師用</span></div>
+        <b style="font-size:12px">分組名單</b> <span class="tag">含成績・老師用</span><br><span style="font-size:7px;color:#6F6858">S 型分組・16 組・每組 4 人</span>
         <div class="cards">
           <div class="c"><b>第 1 組　平均 59.3</b><i>3A 1 王小明　53</i><i>3A 2 李小華　75</i><i>3A 3 張小美　58</i><i>3A 4 陳大文　51</i></div>
-          <div class="c" style="--h:#E4F5EC;--i:#0B5B3A"><b>第 5 組　平均 75.0</b><i>3A 17 邱品睿　86</i><i>3A 18 廖若涵　72</i><i>3A 19 賴冠廷　68</i><i>3A 20 徐子晴　74</i></div>
-          <div class="c" style="--h:#FDF1D8;--i:#7A4A06"><b>第 9 組　平均 78.3</b><i>3B 1 周柏宇　82</i><i>3B 2 葉芷瑄　81</i><i>3B 3 蘇冠霖　90</i><i>3B 4 莊雅涵　60</i></div>
-          <div class="c" style="--h:#FCE7EC;--i:#9A1B3D"><b>第 13 組　平均 69.0</b><i>3B 17 江承翰　90</i><i>3B 18 呂欣怡　53</i><i>3B 19 何宥辰　75</i><i>3B 20 蕭語嫣　58</i></div>
-        </div>
-        <div class="cut"></div>
-        <div style="text-align:center"><span class="tag n">不含成績・可發給學生</span></div>
-        <div class="cards">
-          <div class="c"><b>第 1 組</b><i>3A 1 王小明</i><i>3A 2 李小華</i><i>3A 3 張小美</i><i>3A 4 陳大文</i></div>
-          <div class="c" style="--h:#E4F5EC;--i:#0B5B3A"><b>第 5 組</b><i>3A 17 邱品睿</i><i>3A 18 廖若涵</i><i>3A 19 賴冠廷</i><i>3A 20 徐子晴</i></div>
-          <div class="c" style="--h:#FDF1D8;--i:#7A4A06"><b>第 9 組</b><i>3B 1 周柏宇</i><i>3B 2 葉芷瑄</i><i>3B 3 蘇冠霖</i><i>3B 4 莊雅涵</i></div>
-          <div class="c" style="--h:#FCE7EC;--i:#9A1B3D"><b>第 13 組</b><i>3B 17 江承翰</i><i>3B 18 呂欣怡</i><i>3B 19 何宥辰</i><i>3B 20 蕭語嫣</i></div>
+          <div class="c" style="--h:#E4F5EC;--i:#0B5B3A"><b>第 2 組　平均 71.3</b><i>3A 5 林小安　54</i><i>3A 6 黃志豪　67</i><i>3A 7 吳雅婷　90</i><i>3A 8 劉冠宇　74</i></div>
+          <div class="c" style="--h:#FDF1D8;--i:#7A4A06"><b>第 3 組　平均 71.8</b><i>3A 9 蔡佳穎　68</i><i>3A 10 楊承恩　72</i><i>3A 11 許婉如　86</i><i>3A 12 鄭宇軒　61</i></div>
+          <div class="c" style="--h:#FCE7EC;--i:#9A1B3D"><b>第 4 組　平均 85.3</b><i>3A 13 謝語彤　95</i><i>3A 14 郭柏翰　90</i><i>3A 15 洪慧君　95</i><i>3A 16 曾思穎　61</i></div>
         </div>
       </div>
-      <div class="cap">64 人 16 組：直式 A4、字級約 8 pt。只選一種頁面時，該頁佔滿整頁、字級約 12 pt。</div>
+      <div class="cap">第 1 頁：含成績・老師用（Excel：「含成績」工作表）。只選這一種時只有這一頁。</div>
+    </div>
+    <div>
+      <div class="paper portrait">
+        <b style="font-size:12px">分組名單</b> <span class="tag n">不含成績・可發給學生</span><br><span style="font-size:7px;color:#6F6858">S 型分組・16 組・每組 4 人</span>
+        <div class="cards">
+          <div class="c"><b>第 1 組</b><i>3A 1 王小明</i><i>3A 2 李小華</i><i>3A 3 張小美</i><i>3A 4 陳大文</i></div>
+          <div class="c" style="--h:#E4F5EC;--i:#0B5B3A"><b>第 2 組</b><i>3A 5 林小安</i><i>3A 6 黃志豪</i><i>3A 7 吳雅婷</i><i>3A 8 劉冠宇</i></div>
+          <div class="c" style="--h:#FDF1D8;--i:#7A4A06"><b>第 3 組</b><i>3A 9 蔡佳穎</i><i>3A 10 楊承恩</i><i>3A 11 許婉如</i><i>3A 12 鄭宇軒</i></div>
+          <div class="c" style="--h:#FCE7EC;--i:#9A1B3D"><b>第 4 組</b><i>3A 13 謝語彤</i><i>3A 14 郭柏翰</i><i>3A 15 洪慧君</i><i>3A 16 曾思穎</i></div>
+        </div>
+      </div>
+      <div class="cap">第 2 頁：不含成績・可發給學生（Excel：「不含成績」工作表）。不並排、沒有中間虛線。</div>
     </div>
     <div>
       <table>
-        <tr><th>情境</th><th>Word 字級</th><th>Excel 實際字級</th></tr>
-        <tr><td>64 人 16 組，兩種名單</td><td>8 pt</td><td>10.7 pt</td></tr>
-        <tr><td>64 人 16 組，只含成績</td><td>12 pt</td><td>11 pt</td></tr>
-        <tr><td>100 人 25 組，兩種名單</td><td>6 pt（提示）</td><td>7.7 pt</td></tr>
-        <tr><td>200 人 40 組，兩種名單</td><td>3.5 pt（提示）</td><td>6 pt（提示）</td></tr>
+        <tr><th>情境（每一頁）</th><th>Word 字級</th><th>Excel 實際字級</th></tr>
+        <tr><td>64 人 16 組，含成績頁</td><td>12 pt</td><td>11 pt</td></tr>
+        <tr><td>64 人 16 組，不含成績頁</td><td>12 pt</td><td>11 pt</td></tr>
+        <tr><td>150 人 30 組，含成績</td><td>8 pt、分 2 頁</td><td>8.5 pt、1 頁</td></tr>
+        <tr><td>300 人 30 組，兩件事</td><td>8 pt、各 2 頁（共 4 頁）</td><td>8.4 pt、共 4 頁</td></tr>
       </table>
-      <div class="cap">字級低於 7 pt 仍排在一頁，並在下載卡提示。</div>
+      <div class="cap">字級不低於 8 pt；放不下就分頁，每一組整組在同一頁，頁底寫「（接下一頁）」。</div>
     </div>
   </div>
 
@@ -79,7 +82,7 @@
   <div class="cap">組別標籤依欄寬降級：「第N組 排-位置」→「第N組」→「N」。</div>
 
   <h2>③ 下載卡的字級提示</h2>
-  <div class="alert"><span aria-hidden="true">⚠</span><div><b>人數很多，字會縮得比較小</b>每份檔案都只印一頁，所以 Word 約 6.5 pt、Excel 約 6 pt（印出來偏小）。想印大一點：只選一種頁面，或減少組數。</div></div>
+  <div class="alert"><span aria-hidden="true">⚠</span><div><b>人數很多，一頁放不下</b>含成績、不含成績各自從新的一頁開始；字級不縮到 8 pt 以下，放不下就分頁，所以 Word 共 4 頁、Excel 共 4 頁，每一組都不會被切在兩頁中間。想少幾頁：只選一種頁面，或減少組數。</div></div>
 </main>
 </body>
 </html>

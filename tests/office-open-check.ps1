@@ -2,7 +2,7 @@
 # 用法：pwsh -NoProfile -File tests\office-open-check.ps1 [-OutDir 路徑] [-Pdf]
 #（用 PowerShell 7；Windows PowerShell 5.1 會把本檔的中文讀成亂碼）
 # 會先用 node 產生樣本檔（虛構名單），逐一開啟：Word 回報頁數、Excel 回報工作表名稱；-Pdf 另存 PDF 供目視檢查版面。
-# v3.7.0 起：每一份 Word／Excel 都必須「只印一頁」——Word 頁數不是 1、Excel 匯出的 PDF 頁數不是 1，都算失敗。
+# v3.7.0 起：每一件事都必須「只印一頁」。有成績的分組名單是兩件事（含成績、不含成績），共 2 頁；其餘（沒成績的分組名單、座位表）1 頁。頁數不符就算失敗（Word 看頁數、Excel 看匯出的 PDF 頁數）。
 param([string]$OutDir = (Join-Path $env:TEMP 'seat-helper-group-samples'), [switch]$Pdf)
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path -Parent $PSScriptRoot
@@ -12,6 +12,7 @@ $env:GROUP_SAMPLES_DIR = $OutDir
 node --test (Join-Path $repo 'tests\group-logic.test.js') | Out-Null
 if ($LASTEXITCODE -ne 0) { throw 'node 測試失敗，先修測試' }
 $fail = 0
+function ExpectedPages($name) { if ($name -match "分組名單" -and $name -notmatch "^noscore-") { return 2 } return 1 }
 $word = New-Object -ComObject Word.Application
 $word.Visible = $false; $word.DisplayAlerts = 0
 try {
@@ -22,7 +23,8 @@ try {
             $pages = $doc.ComputeStatistics(2)
             if ($Pdf) { $doc.ExportAsFixedFormat(($f.FullName + '.pdf'), 17) }
             $doc.Close($false)
-            if ($pages -ne 1) { throw "頁數是 $pages，必須是 1" }
+            $want = ExpectedPages $f.Name
+            if ($pages -ne $want) { throw "頁數是 $pages，必須是 $want" }
             "OK   Word  頁數 $pages  $($f.Name)"
         } catch { $fail++; "FAIL Word  $($f.Name)：$($_.Exception.Message)" }
     }
@@ -43,7 +45,8 @@ try {
             $xPages = ([regex]::Matches($xt, '/Types*/Page(?![sw])')).Count
             if (-not $Pdf) { Remove-Item $pdfPath -Force }
             $wb.Close($false)
-            if ($xPages -ne 1) { throw "列印成 $xPages 頁，必須是 1" }
+            $want = ExpectedPages $f.Name
+            if ($xPages -ne $want) { throw "列印成 $xPages 頁，必須是 $want" }
             "OK   Excel 工作表 $names  列印 $xPages 頁  $($f.Name)"
         } catch { $fail++; "FAIL Excel $($f.Name)：$($_.Exception.Message)" }
     }
