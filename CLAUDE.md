@@ -21,3 +21,7 @@
 ## 去識別化（使用者 2026-11-19 硬規則）
 
 - 任何檔案、程式碼、測試資料、文件、commit 訊息、PR 說明，一律不得出現作者的真實中文姓名或所屬學校名稱；署名只用公開代號 derliang，學校一律寫「○○中學」。commit 作者名一律用 derliang。寫入前自查，違者退回。
+
+## 本機 pre-push
+
+- push 前會自動執行 `node --test tests/*.test.js`（約 2 秒，離線；沒安裝 jsdom／xlsx 的測試項目會略過），沒過就擋下 push。不含 `tests/office-open-check.ps1`（需要 Office）。新 clone 先執行 `git config core.hooksPath .githooks` 啟用。
