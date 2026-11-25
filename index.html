@@ -730,15 +730,74 @@ Authorization inquiries: derliang@gmail.com
             position: absolute; left: 12px; right: 12px; bottom: 12px; z-index: 8; border: 1px solid var(--ns-line); background: var(--ns-soft); color: var(--ns-ink);
             border-radius: var(--r-md); padding: 10px 14px; font-size: 13px; font-weight: 700; box-shadow: var(--shadow-2);
         }
-        .height-layout { display: grid; grid-template-columns: minmax(260px, .42fr) minmax(0, 1fr); gap: 16px; align-items: start; }
-        .height-data-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 8px; padding: 12px; }
-        .height-data-card { container-type: inline-size; min-width: 0; display: grid; grid-template-columns: 40px minmax(0, 1fr) 82px auto; align-items: center; gap: 8px; border-radius: var(--r-md); background: var(--surface); border: 1px solid var(--line); padding: 8px; }
-        .height-data-card.is-empty { opacity: .7; }
-        .height-card-seat, .height-card-name, .height-card-value { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .height-card-seat { font-size: clamp(.82rem, 8cqw, 1rem); text-align: center; font-weight: 700; color: var(--text-3); font-variant-numeric: tabular-nums; }
-        .height-card-name { font-size: clamp(.88rem, 8cqw, 1.12rem); text-overflow: clip; font-weight: 700; }
-        .height-card-value { font-size: clamp(.82rem, 8cqw, 1rem); text-align: center; font-weight: 800; color: var(--accent-ink); font-variant-numeric: tabular-nums; }
-        .height-card-value.none { color: var(--text-3); font-weight: 500; }
+        /* 後台學生名單（DESIGN.md §13）：表格直接編輯；八九節三選項＝不上8·9／不上9／部分天數 */
+        .ro-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; }
+        .ro-sum { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: 12px; color: var(--text-3); }
+        .ro-sum .grp { display: inline-flex; align-items: center; gap: 6px; }
+        .ro-sum .total { font-weight: 800; color: var(--text); font-size: 13px; }
+        .ro-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+        .ro-tab { border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; background: var(--surface); }
+        .ro-r { display: grid; grid-template-columns: 56px minmax(96px, 1fr) 80px 460px 36px; gap: 10px; align-items: center; padding: 6px 12px; border-bottom: 1px solid var(--line); }
+        .ro-r:last-child { border-bottom: 0; }
+        .ro-h { background: var(--sunken); font-size: 12px; font-weight: 700; color: var(--text-3); min-height: 36px; padding-top: 0; padding-bottom: 0; }
+        .ro-h span { text-align: center; }
+        .ro-h span.l { text-align: left; }
+        .ro-in { width: 100%; min-width: 0; min-height: 34px; padding: 4px 8px; border-radius: var(--r-sm); border: 1px solid transparent; background: transparent; font-weight: 700; font-size: 14px; color: var(--text); }
+        .ro-in:hover { border-color: var(--line-2); background: var(--sunken); }
+        .ro-in:focus { outline: 2px solid var(--accent); outline-offset: 0; background: var(--surface); }
+        .ro-in.num { text-align: center; font-variant-numeric: tabular-nums; -moz-appearance: textfield; appearance: textfield; }
+        .ro-in.num::-webkit-outer-spin-button, .ro-in.num::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .ro-in.no { color: var(--text-3); }
+        .ro-in.ht { color: var(--accent-ink); }
+        .ro-in::placeholder { color: var(--text-3); font-weight: 500; }
+        .ro-att { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; }
+        .ro-days { display: inline-flex; align-items: center; gap: 6px; }
+        .ro-sep { width: 1px; height: 24px; background: var(--line-2); margin: 0 4px; flex: none; }
+        .ro-cap { font-size: 12px; font-weight: 700; color: var(--text-3); white-space: nowrap; }
+        .att-opt { min-width: 72px; height: 34px; padding: 0 10px; flex: none; border-radius: var(--r-sm); border: 1px solid var(--line-2); background: var(--sunken); color: var(--text-2); font-weight: 800; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; white-space: nowrap; }
+        .att-opt[aria-pressed="true"] { background: var(--att-fill); border-color: var(--att-fill); color: var(--att-on); }
+        .att-opt svg, .att-opt i { width: 14px; height: 14px; }
+        .att-opt:disabled, .ro-att .dchip:disabled { opacity: .45; cursor: not-allowed; }
+        .att-opt:focus-visible, .ro-att .dchip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+        .ro-r > .ro-m { display: none; }
+        .ro-m-no { text-align: center; font-weight: 700; color: var(--text-3); font-variant-numeric: tabular-nums; }
+        .ro-m-nm { font-weight: 700; font-size: 15px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .ro-m-ht { font-weight: 800; font-size: 13px; color: var(--accent-ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .ro-m-ht.none { color: var(--text-3); font-weight: 500; }
+        .ro-form { display: grid; grid-template-columns: 72px minmax(0, 1fr) 88px; gap: 10px; }
+        .ro-attbox { display: flex; flex-direction: column; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--sunken); }
+        .ro-attbox .ro-att { flex-wrap: wrap; }
+        .ro-attbox .ro-sep { display: none; }
+        .ro-attbox .ro-days { width: 100%; }
+        .ro-foot { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+        .ro-foot .spacer { flex: 1 1 auto; }
+        .ro-fmt { font-size: 12px; color: var(--text-2); background: var(--sunken); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 8px 12px; line-height: 1.8; }
+        .ro-fmt b { color: var(--text); }
+        .ro-pv { border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; }
+        .ro-pv .p { display: grid; grid-template-columns: 40px minmax(0, 1fr) 52px 96px 64px; gap: 8px; align-items: center; padding: 6px 10px; border-bottom: 1px solid var(--line); font-size: 13px; }
+        .ro-pv .p:last-child { border-bottom: 0; }
+        .ro-pv .p.h { background: var(--sunken); font-size: 12px; color: var(--text-3); font-weight: 700; }
+        .ro-pv .p.err { background: var(--danger-soft); }
+        .ro-pv .n { text-align: center; color: var(--text-3); font-variant-numeric: tabular-nums; }
+        .ro-pv .nm { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .ro-pv .errline { grid-column: 1 / -1; padding-left: 48px; margin-top: -2px; font-size: 12px; font-weight: 700; color: var(--danger-ink); }
+        .chip.upd { background: var(--accent-soft); border-color: var(--accent-line); color: var(--accent-ink); }
+        .ro-modal { max-width: 600px; }
+        /* 平板與手機：每人一張卡，第一行座號姓名身高與編輯鈕，第二行起八九節（按鈕 44px） */
+        @media (max-width: 899px) {
+            .ro-h { display: none; }
+            .ro-r { grid-template-columns: 28px minmax(0, 1fr) auto 44px; grid-template-areas: "no nm ht ed" "att att att att"; gap: 8px; padding: 10px 12px; }
+            .ro-r > .ro-in, .ro-r > .ro-del { display: none; }
+            .ro-r > .ro-m { display: block; }
+            .ro-m-no { grid-area: no; } .ro-m-nm { grid-area: nm; } .ro-m-ht { grid-area: ht; }
+            .ro-r > .ro-edit { display: grid; grid-area: ed; width: 44px; height: 44px; }
+            .ro-r > .ro-att { grid-area: att; flex-wrap: wrap; }
+            .ro-r .att-opt { flex: 1 1 0; height: 44px; }
+            .ro-r .ro-sep { display: none; }
+            .ro-r .ro-days { width: 100%; }
+            .ro-r .ro-days .dchip, .ro-attbox .dchip { width: 44px; height: 44px; }
+            .ro-attbox .att-opt { height: 44px; flex: 1 1 0; }
+        }
         .mini-btn { width: 36px; height: 36px; border-radius: var(--r-sm); display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-ink); }
         .mini-btn.danger { background: var(--danger-soft); color: var(--danger-ink); }
         .mini-btn svg, .mini-btn i { width: 16px; height: 16px; }
@@ -774,7 +833,7 @@ Authorization inquiries: derliang@gmail.com
             .admin { grid-template-columns: minmax(0, 1fr); }
             .anav { display: none; }
             .chipnav { display: flex; }
-            .disp-layout, .height-layout { grid-template-columns: minmax(0, 1fr); }
+            .disp-layout { grid-template-columns: minmax(0, 1fr); }
         }
         @media (max-width: 639px) {
             #mainView { padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
@@ -835,8 +894,9 @@ Authorization inquiries: derliang@gmail.com
             .pref { grid-template-columns: auto minmax(0, 1fr); }
             .pref select.input { grid-column: 2; }
             .sound-row { grid-template-columns: 1fr; }
-            .height-data-card { grid-template-columns: 40px minmax(0, 1fr) 70px auto; }
-            .height-data-grid { grid-template-columns: minmax(0, 1fr); }
+            .ro-form { grid-template-columns: 64px minmax(0, 1fr) 76px; }
+            .ro-actions { margin-left: 0; width: 100%; display: grid; grid-template-columns: 1fr 1fr; }
+            .ro-actions .btn { min-height: 44px; padding: 0 10px; }
             .modal { top: auto; bottom: 0; left: 0; transform: none; width: 100%; max-width: none; max-height: 90vh; border-radius: var(--r-xl) var(--r-xl) 0 0; padding-bottom: env(safe-area-inset-bottom, 0px); }
             #drawStatusBanner { padding: 12px; }
             .banner-in { gap: 8px; padding: 0 4px; }
@@ -1486,16 +1546,16 @@ Authorization inquiries: derliang@gmail.com
             <button onclick="toggleTheme()" class="icon-btn js-theme-btn" title="切換深色／淺色主題" aria-label="切換深色／淺色主題"><i data-lucide="moon"></i></button>
         </header>
         <nav class="chipnav" id="adminChipNav" aria-label="後台目錄">
-            <a href="#adm-profile" aria-current="true">基本資料</a><a href="#displaySettingsSection">座位表顯示</a><a href="#adm-prefs">抽籤偏好</a><a href="#adm-ritual">抽籤儀式</a><a href="#adm-height">身高資料</a><a href="#wordTemplateSection">Word 模板</a><a href="#jsonBackupSection">備份</a><a href="#adm-pin">後台 PIN</a>
+            <a href="#adm-profile" aria-current="true">基本資料</a><a href="#adm-roster">學生名單</a><a href="#displaySettingsSection">座位表顯示</a><a href="#adm-prefs">抽籤偏好</a><a href="#adm-ritual">抽籤儀式</a><a href="#wordTemplateSection">Word 模板</a><a href="#jsonBackupSection">備份</a><a href="#adm-pin">後台 PIN</a>
         </nav>
         <main class="main">
             <div class="admin">
                 <nav class="anav" id="adminSideNav" aria-label="後台目錄">
                     <a href="#adm-profile" aria-current="true"><i data-lucide="school"></i>基本資料</a>
+                    <a href="#adm-roster"><i data-lucide="users"></i>學生名單</a>
                     <a href="#displaySettingsSection"><i data-lucide="layout-template"></i>座位表顯示</a>
                     <a href="#adm-prefs"><i data-lucide="sparkles"></i>抽籤偏好</a>
                     <a href="#adm-ritual"><i data-lucide="audio-lines"></i>抽籤儀式</a>
-                    <a href="#adm-height"><i data-lucide="ruler"></i>身高資料</a>
                     <a href="#wordTemplateSection"><i data-lucide="file-type-2"></i>Word 模板</a>
                     <a href="#jsonBackupSection"><i data-lucide="archive"></i>備份</a>
                     <a href="#adm-pin"><i data-lucide="lock-keyhole"></i>後台 PIN</a>
@@ -1525,6 +1585,21 @@ Authorization inquiries: derliang@gmail.com
                             <label class="label full">備註<input id="seatMapNoteInput" type="text" maxlength="100" oninput="syncBasicInfoInputs()" class="input" placeholder="例如：下次 8/26 抽、8/31 換"></label>
                         </div>
                         <div class="row"><button type="button" onclick="saveClassroomName()" class="btn btn-primary">儲存基本資料</button><p id="classroomNameStatus" class="status-text is-ok"></p></div>
+                    </section>
+
+                    <!-- 學生名單（含身高、第八九節；與主畫面同一份名單，DESIGN.md §13） -->
+                    <section id="adm-roster" class="card asec">
+                        <div class="asec-h"><span class="asec-ic"><i data-lucide="users"></i></span><div class="grow"><h2>學生名單（僅後台）</h2><p>座號、姓名、身高與第八、九節是固定資料；排好座位會自動帶入。</p></div></div>
+                        <div class="ro-bar">
+                            <div id="rosterSummary" class="ro-sum"></div>
+                            <div class="ro-actions">
+                                <button type="button" onclick="openRosterPaste()" class="btn"><i data-lucide="clipboard-paste"></i>從 Excel 貼上</button>
+                                <button type="button" onclick="openRosterEditor(-1)" class="btn btn-primary"><i data-lucide="user-plus"></i>新增學生</button>
+                            </div>
+                        </div>
+                        <div id="rosterTable"></div>
+                        <p class="hint">亮起來＝不上。「不上8·9」會連同第九節一起鎖住；「不上9」＝第九節五天都不上；只有幾天不上就點星期。改完立即儲存，主畫面的需求表與座位表同步更新。</p>
+                        <p id="heightImportStatus" class="status-text is-muted"></p>
                     </section>
 
                     <!-- 座位表顯示內容 -->
@@ -1636,33 +1711,6 @@ Authorization inquiries: derliang@gmail.com
                         <div id="phaseSoundSettings" class="alist" style="gap:8px"></div>
                     </section>
 
-                    <!-- 身高資料 -->
-                    <section id="adm-height" class="card asec">
-                        <div class="asec-h"><span class="asec-ic"><i data-lucide="ruler"></i></span><div class="grow"><h2>身高資料（僅後台）</h2><p>貼上「座號、身高」兩欄；系統會自動用座號配對姓名。</p></div></div>
-                        <div class="height-layout">
-                            <div class="alist" style="gap:12px">
-                                <textarea id="heightImportInput" class="input" style="height:112px" placeholder="座號　身高&#10;1　145&#10;2　168" aria-label="身高資料"></textarea>
-                                <div class="row">
-                                    <button type="button" onclick="importHeightData()" class="btn btn-primary grow">匯入身高</button>
-                                    <button type="button" onclick="clearHeightData()" class="btn btn-danger" title="清除身高資料" aria-label="清除身高資料"><i data-lucide="trash-2"></i>清除</button>
-                                </div>
-                                <div class="inset-box">
-                                    <b style="font-size:13px">手動新增／更新</b>
-                                    <div class="row" style="flex-wrap:nowrap">
-                                        <input id="manualHeightSeatInput" type="number" min="1" step="1" class="input" placeholder="座號" aria-label="座號">
-                                        <input id="manualHeightValueInput" type="number" min="80" max="250" step="0.1" class="input" placeholder="身高" aria-label="身高">
-                                        <button type="button" onclick="addManualHeightData()" class="btn">新增</button>
-                                    </div>
-                                </div>
-                                <p id="heightImportStatus" class="status-text is-muted"></p>
-                            </div>
-                            <div class="list-box">
-                                <div class="list-box-h"><span>已匯入身高</span><button type="button" onclick="sortHeightData()" class="btn btn-sm">依座號排序</button></div>
-                                <div id="heightDataList" class="height-data-grid"></div>
-                            </div>
-                        </div>
-                    </section>
-
                     <!-- Word 模板 -->
                     <section id="wordTemplateSection" class="card asec">
                         <div class="asec-h"><span class="asec-ic"><i data-lucide="file-type-2"></i></span><div class="grow"><h2>Word 模板管理</h2><p>下載內建模板修改後，可上傳成為目前瀏覽器的自訂模板</p></div></div>
@@ -1733,6 +1781,40 @@ Authorization inquiries: derliang@gmail.com
     <div id="historyModal" class="modal hidden" role="dialog" aria-labelledby="historyTitle">
         <div class="modal-h"><h3 id="historyTitle"><i data-lucide="history"></i> 歷史紀錄</h3><button onclick="closeHistory()" class="icon-btn" aria-label="關閉"><i data-lucide="x"></i></button></div>
         <div id="historyList" class="modal-b"></div>
+    </div>
+
+    <!-- 後台學生名單：從 Excel 貼上（先預覽再套用；只更新與新增，不刪除） -->
+    <div id="rosterPasteModal" class="modal ro-modal hidden" role="dialog" aria-labelledby="rosterPasteTitle">
+        <div class="modal-h"><h3 id="rosterPasteTitle"><i data-lucide="clipboard-paste"></i> 從 Excel 貼上</h3><button onclick="closeRosterModals()" class="icon-btn" aria-label="關閉"><i data-lucide="x"></i></button></div>
+        <div class="modal-b">
+            <div class="ro-fmt">一行一位，欄位依序：<b>座號　姓名　身高　八九節</b>（身高、八九節可空白，空白的欄位不會改動原本的資料）<br>八九節寫：<b>無89</b>、<b>無9</b>、<b>無9 一三</b>（只寫不上的星期）。座號已在名單裡的會更新，沒有的會新增；不會刪除任何人。</div>
+            <textarea id="rosterPasteInput" class="input" style="height:120px;tab-size:8" placeholder="1	林小明	168	&#10;2	陳小華	155	無9 一三" aria-label="貼上名單" oninput="previewRosterPaste()"></textarea>
+            <div id="rosterPastePreview"></div>
+            <p id="rosterPasteStatus" class="status-text is-muted"></p>
+        </div>
+        <div class="modal-f ro-foot"><button type="button" onclick="closeRosterModals()" class="btn">取消</button><button type="button" id="rosterPasteApply" onclick="applyRosterPaste()" class="btn btn-primary" disabled>套用</button></div>
+    </div>
+
+    <!-- 後台學生名單：新增／編輯一位學生（手機上點鉛筆開啟） -->
+    <div id="rosterEditModal" class="modal hidden" role="dialog" aria-labelledby="rosterEditTitle">
+        <div class="modal-h"><h3 id="rosterEditTitle"><i data-lucide="user-plus"></i> 新增學生</h3><button onclick="closeRosterModals()" class="icon-btn" aria-label="關閉"><i data-lucide="x"></i></button></div>
+        <div class="modal-b">
+            <div class="ro-form">
+                <label class="label">座號<input id="rosterEditSeat" type="number" min="1" step="1" inputmode="numeric" class="input"></label>
+                <label class="label">姓名<input id="rosterEditName" type="text" maxlength="20" class="input"></label>
+                <label class="label">身高<input id="rosterEditHeight" type="number" min="80" max="250" step="0.1" inputmode="decimal" class="input" placeholder="選填"></label>
+            </div>
+            <div class="ro-attbox"><span class="ro-cap">第八、九節（亮起來＝不上）</span><div id="rosterEditAtt" class="ro-att"></div></div>
+            <p id="rosterEditStatus" class="status-text is-error"></p>
+        </div>
+        <div class="modal-f ro-foot"><button type="button" id="rosterEditDelete" onclick="askDeleteRosterStudent(rosterEditIndex)" class="btn btn-danger hidden"><i data-lucide="trash-2"></i>刪除學生</button><span class="spacer"></span><button type="button" onclick="closeRosterModals()" class="btn">取消</button><button type="button" id="rosterEditSave" onclick="saveRosterEditor()" class="btn btn-primary">新增</button></div>
+    </div>
+
+    <!-- 後台學生名單：刪除確認 -->
+    <div id="rosterDeleteModal" class="modal hidden" role="dialog" aria-labelledby="rosterDeleteTitle">
+        <div class="modal-h"><h3 id="rosterDeleteTitle"><i data-lucide="user-minus"></i> 刪除學生</h3><button onclick="closeRosterModals()" class="icon-btn" aria-label="關閉"><i data-lucide="x"></i></button></div>
+        <div class="modal-b"><p id="rosterDeleteText"></p></div>
+        <div class="modal-f ro-foot"><button type="button" onclick="closeRosterModals()" class="btn">取消</button><button type="button" onclick="confirmDeleteRosterStudent()" class="btn btn-danger"><i data-lucide="trash-2"></i>刪除學生</button></div>
     </div>
 
     <div id="shareModal" class="modal hidden" role="dialog" aria-labelledby="shareModalTitle">
@@ -4882,8 +4964,105 @@ root.ScoreImport = {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
     </script>
+    <script id="roster-logic">
+        /* 後台學生名單的純邏輯（不碰 DOM，tests/roster-logic.test.js 直接測）。規範見 docs/design/DESIGN.md §13。
+           第八、九節資料只有兩欄：skip8（不上第八節，必然也不上第九節）與 skip9（第九節不上的星期 1–5）。 */
+        var RosterLogic = (function () {
+            var DAYS = ['一', '二', '三', '四', '五'];
+            function days(list) {
+                var out = [];
+                (Array.isArray(list) ? list : []).forEach(function (d) { d = Number(d); if (d >= 1 && d <= 5 && Math.floor(d) === d && out.indexOf(d) < 0) out.push(d); });
+                return out.sort(function (a, b) { return a - b; });
+            }
+            // 三個選項：s8＝不上8·9、all9＝不上9（第九節五天）、d1–d5＝部分天數。不上8·9 時第九節鎖住，只能先取消不上8·9。
+            function toggle(state, key) {
+                var s8 = !!(state && state.skip8), s9 = days(state && state.skip9);
+                if (key === 's8') return { skip8: !s8, skip9: s9 };
+                if (s8) return { skip8: true, skip9: s9 };
+                if (key === 'all9') return { skip8: false, skip9: s9.length === 5 ? [] : [1, 2, 3, 4, 5] };
+                var m = /^d([1-5])$/.exec(key || '');
+                if (!m) return { skip8: s8, skip9: s9 };
+                var d = Number(m[1]);
+                return { skip8: false, skip9: s9.indexOf(d) >= 0 ? s9.filter(function (x) { return x !== d; }) : days(s9.concat([d])) };
+            }
+            // 貼上與顯示用的文字：無89／無9／無9 一三／空字串
+            function attText(skip8, skip9) {
+                var s9 = days(skip9);
+                if (skip8) return '無89';
+                if (s9.length === 5) return '無9';
+                if (s9.length) return '無9 ' + s9.map(function (d) { return DAYS[d - 1]; }).join('');
+                return '';
+            }
+            function halfWidth(t) {
+                return String(t == null ? '' : t).replace(/[０-９．]/g, function (c) { return c === '．' ? '.' : String.fromCharCode(c.charCodeAt(0) - 0xFEE0); });
+            }
+            // 解析八九節文字；空白回 null（不改動），看不懂回 undefined
+            function parseAtt(text) {
+                var t = halfWidth(text).replace(/[\s　]+/g, '');
+                if (!t) return null;
+                if (/^(無|不上)?8[·・.、,，和與及+]?9節?都?(不上)?$/.test(t) || /^(無|不上)八九節?$/.test(t)) return { skip8: true, skip9: [] };
+                var m = /^(?:無|不上)(?:9|九|第九)節?(.*)$/.exec(t);
+                if (!m) return undefined;
+                var rest = m[1].replace(/[:：、,，]/g, '').replace(/星期|週/g, '');
+                if (!rest || rest === '全' || rest === '全部') return { skip8: false, skip9: [1, 2, 3, 4, 5] };
+                var list = [];
+                for (var i = 0; i < rest.length; i++) {
+                    var c = rest.charAt(i), k = DAYS.indexOf(c);
+                    if (k < 0 && /[1-5]/.test(c)) k = Number(c) - 1;
+                    if (k < 0) return undefined;
+                    list.push(k + 1);
+                }
+                return { skip8: false, skip9: days(list) };
+            }
+            function toNum(v) {
+                var t = halfWidth(v).trim();
+                return t && /^\d+(\.\d+)?$/.test(t) ? Number(t) : NaN;
+            }
+            // 解析從 Excel 貼上的名單：座號、姓名、身高、八九節（身高、八九節可省略；空白＝不改動原本的資料）。
+            // existing 是目前名單 [{seatNo}]，依座號比對決定「更新」或「新增」；只更新與新增，不刪除。
+            function parsePaste(raw, existing) {
+                var bySeat = {};
+                (existing || []).forEach(function (s) { bySeat[s.seatNo] = true; });
+                var rows = [], seen = {};
+                String(raw || '').replace(/\r/g, '').split('\n').forEach(function (line, idx) {
+                    if (!line.trim()) return;
+                    var cols;
+                    if (line.indexOf('\t') >= 0) cols = line.split('\t').map(function (c) { return c.trim(); });
+                    else {
+                        var tk = line.trim().split(/[,，\s　]+/);
+                        cols = [tk[0], tk[1] || ''];
+                        var rest = tk.slice(2);
+                        cols.push(rest.length && !/^(無|不上)/.test(rest[0]) ? rest.shift() : '');
+                        cols.push(rest.join(' '));
+                    }
+                    if (/座號|姓名/.test(line) && isNaN(toNum(cols[0]))) return; // 標題列
+                    var row = { line: idx + 1, seatNo: toNum(cols[0]), name: (cols[1] || '').trim(), heightText: (cols[2] || '').trim(), attText: (cols[3] || '').trim() };
+                    var err = '';
+                    if (!(row.seatNo >= 1) || Math.floor(row.seatNo) !== row.seatNo) err = '座號「' + (cols[0] || '') + '」不是正整數';
+                    else if (!row.name) err = '沒有姓名';
+                    else if (seen[row.seatNo]) err = '座號 ' + row.seatNo + ' 重複貼了兩次';
+                    if (!err && row.heightText) {
+                        var h = toNum(row.heightText);
+                        if (isNaN(h)) err = '身高「' + row.heightText + '」不是數字';
+                        else if (h < 80 || h > 250) err = '身高要在 80 到 250 公分之間';
+                        else row.height = Math.round(h * 10) / 10;
+                    }
+                    if (!err) {
+                        var a = parseAtt(row.attText);
+                        if (a === undefined) err = '八九節「' + row.attText + '」看不懂，請寫無89、無9 或無9 一三';
+                        else if (a) { row.skip8 = a.skip8; row.skip9 = a.skip9; }
+                    }
+                    if (err) { row.action = 'error'; row.error = err; }
+                    else { seen[row.seatNo] = true; row.action = bySeat[row.seatNo] ? 'update' : 'add'; }
+                    rows.push(row);
+                });
+                return rows;
+            }
+            return { DAYS: DAYS, days: days, toggle: toggle, attText: attText, parseAtt: parseAtt, parsePaste: parsePaste };
+        })();
+    </script>
     <script>
-        const APP_VERSION = "v3.7.1";
+        const APP_VERSION = "v3.8.0";
         /* 版號只寫在 APP_VERSION；<title> 與頁首徽章由程式產生，不要在 HTML 靜態文字寫版號 */
         document.title = `座位小幫手 ${APP_VERSION}`;
 
@@ -4944,7 +5123,7 @@ root.ScoreImport = {
 
         // 後台目錄：捲動時標示目前所在的設定區塊
         function initAdminNav() {
-            const ids = ['adm-profile', 'displaySettingsSection', 'adm-prefs', 'adm-ritual', 'adm-height', 'wordTemplateSection', 'jsonBackupSection', 'adm-pin'];
+            const ids = ['adm-profile', 'adm-roster', 'displaySettingsSection', 'adm-prefs', 'adm-ritual', 'wordTemplateSection', 'jsonBackupSection', 'adm-pin'];
             const links = [...document.querySelectorAll('#adminSideNav a, #adminChipNav a')];
             const update = () => {
                 if (document.getElementById('adminView').classList.contains('hidden')) return;
@@ -5883,7 +6062,8 @@ root.ScoreImport = {
             refreshDrawBaseUI();
         }
 
-        function updateDrawPreferencesUI() {
+        // skipRoster：名單表格正在編輯時不重畫，避免游標跳走
+        function updateDrawPreferencesUI(skipRoster = false) {
             document.getElementById('avoidSameSeatToggle').checked = drawPreferences.avoidSameSeat;
             document.getElementById('avoidSameSeatPriority').value = drawPreferences.avoidSameSeatPriority;
             document.getElementById('avoidRepeatEdgeToggle').checked = drawPreferences.avoidRepeatEdge;
@@ -5903,7 +6083,7 @@ root.ScoreImport = {
             document.getElementById('separateStudentsToggle').checked = drawPreferences.separateStudents;
             document.getElementById('separateStudentsPriority').value = drawPreferences.separateStudentsPriority;
             renderSeparationPairUI();
-            renderHeightDataList();
+            if (!skipRoster) renderRosterAdmin();
             document.getElementById('autoSaveHistoryToggle').checked = autoSaveHistory;
             renderDrawBaseUI();
         }
@@ -6059,142 +6239,350 @@ root.ScoreImport = {
             return [...students].sort((a, b) => Number(a.seatNo) - Number(b.seatNo));
         }
 
-        function renderHeightDataList() {
-            const list = document.getElementById('heightDataList');
-            if (!list) return;
-            list.replaceChildren();
-            const roster = getStudentsBySeatNo();
-            if (!roster.length) {
-                const empty = document.createElement('div');
-                empty.className = 'empty-st';
-                empty.style.gridColumn = '1 / -1';
-                empty.textContent = '匯入學生名單後即可管理身高。';
-                list.appendChild(empty);
-                return;
-            }
-            roster.forEach(student => {
-                const hasHeight = Number.isFinite(student.height);
-                const heightText = hasHeight ? `${student.height} cm` : '尚未設定';
-                const row = document.createElement('div');
-                const safeName = escapeHtml(student.name);
-                row.className = `height-data-card${hasHeight ? '' : ' is-empty'}`;
-                row.innerHTML = `
-                    <div class="height-card-seat">${student.noSeatNo ? '–' : student.seatNo}</div>
-                    <div class="height-card-name">${safeName}</div>
-                    <div class="height-card-value${hasHeight ? '' : ' none'}">${heightText}</div>
-                    <div class="row" style="gap:4px;flex-wrap:nowrap;justify-content:flex-end">
-                        <button type="button" onclick="editHeightData(${student.seatNo})" class="mini-btn" title="編輯身高" aria-label="編輯 ${safeName} 身高"><i data-lucide="pencil"></i></button>
-                        <button type="button" onclick="deleteHeightData(${student.seatNo})" class="mini-btn danger${hasHeight ? '' : ' is-disabled'}" ${hasHeight ? '' : 'disabled'} title="刪除身高" aria-label="刪除 ${safeName} 身高"><i data-lucide="trash-2"></i></button>
-                    </div>
-                `;
-                list.appendChild(row);
-            });
-            requestAnimationFrame(fitHeightDataNames);
-            if (typeof lucide !== 'undefined') lucide.createIcons();
+        /* ---------- 後台學生名單（DESIGN.md §13）----------
+           與主畫面同一份 students；身高、第八九節都在這裡維護。八九節三選項的規則在 RosterLogic.toggle。 */
+        let rosterEditIndex = -1;            // 對話框編輯的學生索引；-1＝新增
+        let rosterEditAtt = { skip8: false, skip9: [] };
+        let rosterDeleteIndex = -1;
+        let rosterPasteRows = [];
+
+        const rosterLabel = (s) => `${s.noSeatNo ? '' : s.seatNo + ' '}${s.name}`;
+
+        // 八九節三選項的按鈕；scope 是學生索引（表格列）或 'edit'（新增／編輯對話框）
+        function rosterAttHtml(state, scope, who = '') {
+            const s8 = !!state.skip8;
+            const s9 = s8 ? [1, 2, 3, 4, 5] : RosterLogic.days(state.skip9);
+            const all = s8 || s9.length === 5;
+            const call = (k) => scope === 'edit' ? `toggleRosterEditAtt('${k}')` : `toggleRosterAtt(${scope}, '${k}')`;
+            const lock = s8 ? ' disabled title="不上第八節，第九節一定也不上"' : '';
+            const check = '<i data-lucide="check"></i>';
+            return `<button type="button" class="att-opt" data-k="s8" aria-pressed="${s8}" onclick="${call('s8')}" aria-label="${who}不上第八、九節">${s8 ? check : ''}不上8·9</button>`
+                + `<button type="button" class="att-opt" data-k="all9" aria-pressed="${all}"${lock} onclick="${call('all9')}" aria-label="${who}第九節五天都不上">${all && !s8 ? check : ''}不上9</button>`
+                + `<span class="ro-sep"></span><span class="ro-days"><span class="ro-cap">部分天數</span><span class="days9">`
+                + DAY_NAMES.map((d, k) => `<button type="button" class="dchip" data-k="d${k + 1}" aria-pressed="${s9.includes(k + 1)}"${lock} onclick="${call('d' + (k + 1))}" aria-label="${who}週${d}第九節不上">${d}</button>`).join('')
+                + '</span></span>';
         }
 
-        function fitHeightDataNames() {
-            document.querySelectorAll('#heightDataList .height-card-name').forEach(el => {
-                el.style.fontSize = '';
-                let fontSize = parseFloat(getComputedStyle(el).fontSize);
-                while (el.scrollWidth > el.clientWidth + 1 && fontSize > 8) {
-                    fontSize -= 0.5;
-                    el.style.fontSize = `${fontSize}px`;
-                }
-            });
+        function renderRosterSummary() {
+            const box = document.getElementById('rosterSummary');
+            if (!box) return;
+            if (!students.length) { box.innerHTML = ''; return; }
+            const c = attendanceCounts();
+            box.innerHTML = `<span class="total">共 ${students.length} 人</span>`
+                + `<span class="grp">${attSampleHtml('both')}${c.both} 人</span>`
+                + `<span class="grp">${attSampleHtml('nine')}${c.nine} 人</span>`
+                + `<span class="grp">${attSampleHtml('part')}${c.part} 人</span>`;
         }
 
-        function syncHeightDataState(message = '') {
-            saveData();
-            updateHeightDataStatus(message);
-            updateDrawPreferencesUI();
+        function rosterRowHtml(s, i) {
+            const nm = escapeHtml(s.name);
+            const who = escapeHtml(rosterLabel(s)) + ' ';
+            const hasH = Number.isFinite(s.height);
+            return `<div class="ro-r" id="ro-row-${i}">
+                <input class="ro-in num no" type="number" min="1" step="1" inputmode="numeric" value="${s.seatNo}" aria-label="${nm} 的座號" onchange="editRosterField(${i}, 'seatNo', this)">
+                <input class="ro-in" type="text" maxlength="20" value="${nm}" aria-label="座號 ${s.seatNo} 的姓名" onchange="editRosterField(${i}, 'name', this)">
+                <input class="ro-in num ht" type="number" min="80" max="250" step="0.1" inputmode="decimal" value="${hasH ? s.height : ''}" placeholder="未填" aria-label="${nm} 的身高" onchange="editRosterField(${i}, 'height', this)">
+                <div class="ro-att">${rosterAttHtml(s, i, who)}</div>
+                <button type="button" class="mini-btn danger ro-del" onclick="askDeleteRosterStudent(${i})" title="刪除學生" aria-label="刪除 ${who}"><i data-lucide="trash-2"></i></button>
+                <span class="ro-m ro-m-no">${s.noSeatNo ? '–' : s.seatNo}</span>
+                <span class="ro-m ro-m-nm">${nm}</span>
+                <span class="ro-m ro-m-ht${hasH ? '' : ' none'}">${hasH ? `${s.height} cm` : '身高未填'}</span>
+                <button type="button" class="mini-btn ro-m ro-edit" onclick="openRosterEditor(${i})" aria-label="編輯 ${who}"><i data-lucide="pencil"></i></button>
+            </div>`;
         }
 
-        function importHeightData() {
-            const input = document.getElementById('heightImportInput');
-            const lines = input.value.replace(/\r/g, '').split('\n').map(line => line.trim()).filter(Boolean);
+        function renderRosterAdmin() {
+            const box = document.getElementById('rosterTable');
+            if (!box) return;
+            renderRosterSummary();
             if (!students.length) {
-                updateHeightDataStatus('請先在抽籤頁匯入學生名單。');
+                box.className = '';
+                box.innerHTML = `<div class="empty-st"><i data-lucide="users"></i><b>還沒有學生名單</b><span>從 Excel 貼上整班，或一位一位新增；也可以回主畫面步驟 1 匯入。</span>
+                    <div class="row" style="justify-content:center"><button type="button" onclick="openRosterEditor(-1)" class="btn"><i data-lucide="user-plus"></i>新增學生</button><button type="button" onclick="openRosterPaste()" class="btn btn-primary"><i data-lucide="clipboard-paste"></i>從 Excel 貼上</button></div></div>`;
+                initIcons();
                 return;
             }
-            let updatedCount = 0;
-            let skippedCount = 0;
-            lines.forEach(line => {
-                if (/座號|學號|身高/.test(line)) return;
-                const values = line.split(/[\t,，\s]+/).map(value => value.trim()).filter(Boolean);
-                const seatNo = Number(values[0]);
-                const height = Number(values[1]);
-                const student = students.find(item => item.seatNo === seatNo);
-                if (!Number.isInteger(seatNo) || !student || !Number.isFinite(height) || height < 80 || height > 250) {
-                    skippedCount++;
-                    return;
-                }
-                student.height = height;
-                updatedCount++;
-            });
-            if (!updatedCount) {
-                updateHeightDataStatus(lines.length ? '沒有可匯入的資料，請確認座號與身高格式。' : '請貼上座號與身高。');
-                renderHeightDataList();
-                return;
+            const order = students.map((s, i) => i).sort((a, b) => Number(students[a].seatNo) - Number(students[b].seatNo));
+            box.className = 'ro-tab';
+            box.innerHTML = '<div class="ro-r ro-h"><span>座號</span><span class="l">姓名</span><span>身高</span><span class="l">第八、九節（亮起來＝不上）</span><span></span></div>'
+                + order.map(i => rosterRowHtml(students[i], i)).join('');
+            initIcons();
+        }
+
+        // 檢查一位學生的座號、姓名、身高；i 是正在改的學生（新增時 -1）
+        function rosterError(i, seatNo, name, height, noSeatNo) {
+            if (!Number.isInteger(seatNo) || seatNo < 1) return '座號要是 1 以上的整數。';
+            const other = students.find((s, k) => k !== i && s.seatNo === seatNo);
+            if (other) return `座號 ${seatNo} 已經是 ${other.name}。`;
+            if (!name) return '姓名不能空白。';
+            if (name.length > 20) return '姓名最多 20 個字。';
+            const display = noSeatNo ? name : `${seatNo}${name}`;
+            if (students.some((s, k) => k !== i && (s.displayName || s.name) === display)) return `名單裡已經有「${display}」，請加上座號區分。`;
+            if (height !== null && height !== undefined && (!Number.isFinite(height) || height < 80 || height > 250)) return '身高要在 80 到 250 公分之間。';
+            return '';
+        }
+
+        // 改一位學生的座號／姓名／身高；同步座位表上的名字、分開名單的座號與八九節姓名記憶。回傳錯誤訊息或空字串
+        function updateRosterStudent(i, patch) {
+            const s = students[i];
+            if (!s) return '找不到這位學生。';
+            const seatNo = patch.seatNo !== undefined ? patch.seatNo : s.seatNo;
+            const name = patch.name !== undefined ? String(patch.name).trim() : s.name;
+            const height = patch.height !== undefined ? patch.height : (Number.isFinite(s.height) ? s.height : null);
+            const err = rosterError(i, seatNo, name, height, s.noSeatNo);
+            if (err) return err;
+            const oldSeat = s.seatNo, oldName = s.name, oldDisplay = s.displayName || s.name;
+            s.seatNo = seatNo;
+            s.name = name;
+            s.displayName = s.noSeatNo ? name : `${seatNo}${name}`;
+            if (height === null) delete s.height; else s.height = Math.round(height * 10) / 10;
+            if (oldDisplay !== s.displayName) {
+                const nameShared = students.some(o => o !== s && (o.displayName === oldName || o.name === oldName));
+                seating.forEach(seat => {
+                    if (seat && typeof seat === 'object' && (seat.name === oldDisplay || (!nameShared && seat.name === oldName))) seat.name = s.displayName;
+                });
             }
-            input.value = '';
-            syncHeightDataState(`已匯入 ${updatedCount} 位學生的身高${skippedCount ? `，略過 ${skippedCount} 筆無效資料` : ''}。`);
-        }
-
-        function addManualHeightData() {
-            const seatNo = Number(document.getElementById('manualHeightSeatInput').value);
-            const height = Number(document.getElementById('manualHeightValueInput').value);
-            const student = students.find(item => item.seatNo === seatNo);
-            if (!student || !Number.isFinite(height) || height < 80 || height > 250) {
-                updateHeightDataStatus('請輸入已在名單中的座號，以及 80 到 250 公分的身高。');
-                return;
+            if (oldSeat !== seatNo) {
+                drawPreferences.separationPairs = drawPreferences.separationPairs.map(pair => pair.map(no => no === oldSeat ? seatNo : no));
             }
-            student.height = Math.round(height * 10) / 10;
-            document.getElementById('manualHeightSeatInput').value = '';
-            document.getElementById('manualHeightValueInput').value = '';
-            syncHeightDataState(`已更新 ${student.noSeatNo ? '' : student.seatNo + ' '}${student.name} 的身高。`);
-        }
-
-        function editHeightData(seatNo) {
-            const student = students.find(item => item.seatNo === seatNo);
-            if (!student) return;
-            const value = prompt(`請輸入 ${student.noSeatNo ? '' : student.seatNo + ' '}${student.name} 的身高（公分）`, Number.isFinite(student.height) ? student.height : '');
-            if (value === null) return;
-            const height = Number(value);
-            if (!Number.isFinite(height) || height < 80 || height > 250) {
-                updateHeightDataStatus('身高需介於 80 到 250 公分。');
-                return;
+            if (oldName !== name) {
+                if (!students.some(o => o !== s && o.name === oldName)) delete attendanceMemory[oldName];
+                setAttendance(s, s.skip8, s.skip9);
             }
-            student.height = Math.round(height * 10) / 10;
-            syncHeightDataState(`已更新 ${student.noSeatNo ? '' : student.seatNo + ' '}${student.name} 的身高。`);
+            return '';
         }
 
-        function deleteHeightData(seatNo) {
-            const student = students.find(item => item.seatNo === seatNo);
-            if (!student || !Number.isFinite(student.height)) return;
-            if (!confirm(`確定要刪除 ${student.noSeatNo ? '' : student.seatNo + ' '}${student.name} 的身高資料嗎？`)) return;
-            delete student.height;
-            drawPreferences.considerHeight = false;
-            syncHeightDataState(`已刪除 ${student.noSeatNo ? '' : student.seatNo + ' '}${student.name} 的身高資料。`);
+        function addRosterStudent(d) {
+            const noSeatNo = students.length > 0 && students.every(s => s.noSeatNo) ? true : undefined;
+            const height = d.height === undefined ? null : d.height;
+            const err = rosterError(-1, d.seatNo, d.name, height, noSeatNo);
+            if (err) return err;
+            const s = {
+                id: students.reduce((max, x) => Math.max(max, Number(x.id) || 0), -1) + 1,
+                seatNo: d.seatNo,
+                name: d.name,
+                noSeatNo,
+                displayName: noSeatNo ? d.name : `${d.seatNo}${d.name}`,
+                tags: new Set(),
+                currentPos: null,
+                skip8: false,
+                skip9: []
+            };
+            if (height !== null) s.height = Math.round(height * 10) / 10;
+            students.push(s);
+            if (d.skip8 !== undefined) setAttendance(s, d.skip8, d.skip9);
+            else applyAttendanceFromMemory(s);
+            return '';
         }
 
-        function sortHeightData() {
-            students.sort((a, b) => Number(a.seatNo) - Number(b.seatNo));
-            // 需求表的按鈕用陣列索引，重排後要立刻重繪，否則回主頁會點錯人
+        // 名單改動後同步主畫面、抽籤偏好與後台；fullTable＝重畫整張表（排序可能改變），否則只更新統計
+        function afterRosterChange(fullTable = true) {
+            syncStudentPositions();
+            saveData();
             updateUI();
-            syncHeightDataState('已依座號重新排序身高資料。');
+            if (typeof refreshDrawBaseUI === 'function') refreshDrawBaseUI();
+            updateDrawPreferencesUI(true);
+            updateHeightDataStatus();
+            if (fullTable) renderRosterAdmin(); else renderRosterSummary();
         }
 
-        function clearHeightData() {
-            if (!students.some(student => Number.isFinite(student.height))) {
-                updateHeightDataStatus();
-                renderHeightDataList();
+        window.editRosterField = (i, field, input) => {
+            const s = students[i];
+            if (!s) return;
+            const restore = () => { input.value = field === 'height' ? (Number.isFinite(s.height) ? s.height : '') : s[field]; };
+            if (guardDrawing()) { restore(); return; }
+            const raw = input.value.trim();
+            const patch = field === 'seatNo' ? { seatNo: Number(raw) } : field === 'name' ? { name: raw } : { height: raw === '' ? null : Number(raw) };
+            const err = updateRosterStudent(i, patch);
+            if (err) { showToast(err, true); restore(); return; }
+            // 改座號可能改變排序才重畫整張表；改姓名、身高時保留游標所在的欄位
+            afterRosterChange(field === 'seatNo');
+            if (field !== 'seatNo') {
+                const row = document.getElementById(`ro-row-${i}`);
+                if (row) {
+                    const hasH = Number.isFinite(s.height);
+                    row.querySelector('.ro-m-nm').textContent = s.name;
+                    const ht = row.querySelector('.ro-m-ht');
+                    ht.textContent = hasH ? `${s.height} cm` : '身高未填';
+                    ht.classList.toggle('none', !hasH);
+                }
+            }
+        };
+
+        window.toggleRosterAtt = (i, key) => {
+            const s = students[i];
+            if (!s || guardDrawing()) return;
+            const next = RosterLogic.toggle(s, key);
+            setAttendance(s, next.skip8, next.skip9);
+            const box = document.getElementById(`ro-row-${i}`)?.querySelector('.ro-att');
+            if (box) {
+                const hadFocus = box.contains(document.activeElement);
+                box.innerHTML = rosterAttHtml(s, i, escapeHtml(rosterLabel(s)) + ' ');
+                initIcons();
+                if (hadFocus) box.querySelector(`[data-k="${key}"]`)?.focus();
+            }
+            renderRosterSummary();
+            saveData();
+            updateUI();
+        };
+
+        function showRosterModal(id) {
+            ['rosterPasteModal', 'rosterEditModal', 'rosterDeleteModal'].forEach(m => document.getElementById(m).classList.add('hidden'));
+            document.getElementById('modalOverlay').classList.remove('hidden');
+            document.getElementById(id).classList.remove('hidden');
+            initIcons();
+        }
+
+        window.closeRosterModals = () => {
+            const ids = ['rosterPasteModal', 'rosterEditModal', 'rosterDeleteModal'];
+            if (!ids.some(id => !document.getElementById(id).classList.contains('hidden'))) return;
+            ids.forEach(id => document.getElementById(id).classList.add('hidden'));
+            document.getElementById('modalOverlay').classList.add('hidden');
+        };
+
+        function renderRosterEditAtt() {
+            document.getElementById('rosterEditAtt').innerHTML = rosterAttHtml(rosterEditAtt, 'edit');
+            initIcons();
+        }
+
+        window.openRosterEditor = (i) => {
+            if (guardDrawing()) return;
+            const s = students[i];
+            rosterEditIndex = s ? i : -1;
+            rosterEditAtt = s ? { skip8: s.skip8, skip9: s.skip9.slice() } : { skip8: false, skip9: [] };
+            document.getElementById('rosterEditTitle').innerHTML = s
+                ? `<i data-lucide="pencil"></i> 編輯 ${escapeHtml(rosterLabel(s))}`
+                : '<i data-lucide="user-plus"></i> 新增學生';
+            document.getElementById('rosterEditSeat').value = s ? s.seatNo : students.reduce((max, x) => Math.max(max, Number(x.seatNo) || 0), 0) + 1;
+            document.getElementById('rosterEditName').value = s ? s.name : '';
+            document.getElementById('rosterEditHeight').value = s && Number.isFinite(s.height) ? s.height : '';
+            document.getElementById('rosterEditDelete').classList.toggle('hidden', !s);
+            document.getElementById('rosterEditSave').textContent = s ? '儲存' : '新增';
+            document.getElementById('rosterEditStatus').textContent = '';
+            renderRosterEditAtt();
+            showRosterModal('rosterEditModal');
+            if (!s) setTimeout(() => document.getElementById('rosterEditName').focus(), 50);
+        };
+
+        window.toggleRosterEditAtt = (key) => {
+            rosterEditAtt = RosterLogic.toggle(rosterEditAtt, key);
+            renderRosterEditAtt();
+            document.querySelector(`#rosterEditAtt [data-k="${key}"]`)?.focus();
+        };
+
+        window.saveRosterEditor = () => {
+            if (guardDrawing()) return;
+            const seatNo = Number(document.getElementById('rosterEditSeat').value);
+            const name = document.getElementById('rosterEditName').value.trim();
+            const hRaw = document.getElementById('rosterEditHeight').value.trim();
+            const height = hRaw === '' ? null : Number(hRaw);
+            const status = document.getElementById('rosterEditStatus');
+            let err;
+            if (rosterEditIndex >= 0) {
+                err = updateRosterStudent(rosterEditIndex, { seatNo, name, height });
+                if (!err) setAttendance(students[rosterEditIndex], rosterEditAtt.skip8, rosterEditAtt.skip9);
+            } else {
+                err = addRosterStudent({ seatNo, name, height, skip8: rosterEditAtt.skip8, skip9: rosterEditAtt.skip9 });
+            }
+            if (err) { status.textContent = err; return; }
+            const done = rosterEditIndex >= 0 ? '已更新' : '已新增';
+            closeRosterModals();
+            afterRosterChange(true);
+            showToast(`${done} ${seatNo} ${name}`);
+        };
+
+        window.askDeleteRosterStudent = (i) => {
+            const s = students[i];
+            if (!s || guardDrawing()) return;
+            rosterDeleteIndex = i;
+            document.getElementById('rosterDeleteTitle').innerHTML = `<i data-lucide="user-minus"></i> 刪除 ${escapeHtml(rosterLabel(s))}？`;
+            const [p, w] = String(s.currentPos || '').split('-');
+            document.getElementById('rosterDeleteText').textContent = s.currentPos
+                ? `這位同學目前坐在第 ${p} 排第 ${w} 個位置，刪除後這個座位會空出來。身高與第八、九節標示一併刪除。`
+                : '身高與第八、九節標示一併刪除。';
+            showRosterModal('rosterDeleteModal');
+        };
+
+        window.confirmDeleteRosterStudent = () => {
+            const s = students[rosterDeleteIndex];
+            if (!s) { closeRosterModals(); return; }
+            if (guardDrawing()) return;
+            const display = s.displayName || s.name;
+            seating = seating.map(seat => (seat && typeof seat === 'object' && seat.name === display) ? null : seat);
+            drawPreferences.separationPairs = drawPreferences.separationPairs.filter(pair => !pair.includes(s.seatNo));
+            students.splice(rosterDeleteIndex, 1);
+            if (!students.some(o => o.name === s.name)) delete attendanceMemory[s.name];
+            rosterDeleteIndex = -1;
+            closeRosterModals();
+            afterRosterChange(true);
+            showToast(`已刪除 ${rosterLabel(s)}`);
+        };
+
+        window.openRosterPaste = () => {
+            if (guardDrawing()) return;
+            document.getElementById('rosterPasteInput').value = '';
+            previewRosterPaste();
+            showRosterModal('rosterPasteModal');
+            setTimeout(() => document.getElementById('rosterPasteInput').focus(), 50);
+        };
+
+        window.previewRosterPaste = () => {
+            rosterPasteRows = RosterLogic.parsePaste(document.getElementById('rosterPasteInput').value, students);
+            const box = document.getElementById('rosterPastePreview');
+            const status = document.getElementById('rosterPasteStatus');
+            const btn = document.getElementById('rosterPasteApply');
+            const ok = rosterPasteRows.filter(r => r.action !== 'error');
+            const bad = rosterPasteRows.length - ok.length;
+            const upd = ok.filter(r => r.action === 'update').length;
+            btn.disabled = !ok.length;
+            btn.textContent = ok.length ? `套用 ${ok.length} 筆` : '套用';
+            if (!rosterPasteRows.length) {
+                box.innerHTML = '';
+                status.className = 'status-text is-muted';
+                status.textContent = '貼上後會先列出每一行的結果，確認無誤再套用。';
                 return;
             }
-            if (!confirm('確定要清除所有學生身高資料嗎？')) return;
-            students.forEach(student => delete student.height);
-            drawPreferences.considerHeight = false;
-            syncHeightDataState('身高資料已全部清除。');
+            const attCell = (r) => r.skip8 === undefined ? '<span class="hint">不改</span>' : (attStampHtml({ skip8: r.skip8, skip9: r.skip9 }) || '<span class="hint">全上</span>');
+            const result = (r) => r.action === 'update' ? '<span class="chip upd">更新</span>' : r.action === 'add' ? '<span class="chip ok">新增</span>' : '<span class="chip bad">看不懂</span>';
+            box.innerHTML = '<div class="ro-pv"><div class="p h"><span class="n">座號</span><span>姓名</span><span>身高</span><span>八九節</span><span>結果</span></div>'
+                + rosterPasteRows.map(r => `<div class="p${r.action === 'error' ? ' err' : ''}"><span class="n">${Number.isFinite(r.seatNo) ? r.seatNo : '?'}</span><span class="nm">${escapeHtml(r.name) || '—'}</span><span>${r.height !== undefined ? r.height : (r.heightText ? escapeHtml(r.heightText) : '<span class="hint">不改</span>')}</span><span>${r.action === 'error' ? escapeHtml(r.attText) : attCell(r)}</span><span>${result(r)}</span>${r.action === 'error' ? `<span class="errline">第 ${r.line} 行：${escapeHtml(r.error)}</span>` : ''}</div>`).join('')
+                + '</div>';
+            status.className = 'status-text';
+            status.innerHTML = ok.length
+                ? `可套用 ${ok.length} 筆：更新 ${upd}、新增 ${ok.length - upd}。${bad ? `<span class="is-error">${bad} 行看不懂，不會套用。</span>` : ''}`
+                : '<span class="is-error">沒有可套用的資料，請確認格式。</span>';
+        };
+
+        window.applyRosterPaste = () => {
+            if (guardDrawing()) return;
+            const failed = [];
+            let updated = 0, added = 0;
+            rosterPasteRows.filter(r => r.action !== 'error').forEach(r => {
+                const i = students.findIndex(s => s.seatNo === r.seatNo);
+                if (i >= 0) {
+                    const patch = { name: r.name };
+                    if (r.height !== undefined) patch.height = r.height;
+                    const err = updateRosterStudent(i, patch);
+                    if (err) { failed.push(`第 ${r.line} 行：${err}`); return; }
+                    if (r.skip8 !== undefined) setAttendance(students[i], r.skip8, r.skip9);
+                    updated++;
+                } else {
+                    const err = addRosterStudent({ seatNo: r.seatNo, name: r.name, height: r.height, skip8: r.skip8, skip9: r.skip9 });
+                    if (err) { failed.push(`第 ${r.line} 行：${err}`); return; }
+                    added++;
+                }
+            });
+            closeRosterModals();
+            afterRosterChange(true);
+            showToast(`已套用：更新 ${updated} 人、新增 ${added} 人${failed.length ? `；${failed.length} 行沒套用` : ''}`, failed.length > 0);
+            if (failed.length) alert(`以下沒有套用：\n${failed.join('\n')}`);
+        };
+
+        // 全班就座時的提示：第八、九節依名單自動蓋章（座位表有顯示章時才提）
+        function attendanceAutoNote() {
+            if (!displaySettings.preview.attendance || !isEveryStudentSeated()) return '';
+            const c = attendanceCounts(), n = c.both + c.nine + c.part;
+            return n ? `第八、九節依學生名單自動標示 ${n} 人。` : '';
         }
 
         function renderSeparationPairUI() {
@@ -7329,7 +7717,7 @@ root.ScoreImport = {
                 playPhaseSound(phaseId);
                 await finishDrawCeremony(phaseId, targets.length);
                 saveData();
-                autoSaveHistoryIfComplete();
+                autoSaveHistoryIfComplete(true);
             } finally {
                 document.getElementById('drawStatusBanner').style.display = 'none';
                 isDrawing = false;
@@ -7357,7 +7745,7 @@ root.ScoreImport = {
                 playPhaseSound('final');
                 await finishDrawCeremony('final', targets.length);
                 saveData();
-                autoSaveHistoryIfComplete();
+                autoSaveHistoryIfComplete(true);
             } finally {
                 document.getElementById('drawStatusBanner').style.display = 'none';
                 isDrawing = false;
@@ -7455,10 +7843,12 @@ root.ScoreImport = {
             return students.length > 0 && students.every(student => student.currentPos);
         }
 
-        function autoSaveHistoryIfComplete() {
-            if (!autoSaveHistory || !isEveryStudentSeated()) return;
-            const record = pushHistoryRecord('auto');
-            if (record) showToast(`全班座位已自動存入歷史紀錄 #${drawHistory.length}`);
+        // announceAttendance：抽籤完成時順便告知第八、九節已依學生名單自動蓋章（§13）
+        function autoSaveHistoryIfComplete(announceAttendance = false) {
+            const attNote = announceAttendance ? attendanceAutoNote() : '';
+            const record = autoSaveHistory && isEveryStudentSeated() ? pushHistoryRecord('auto') : null;
+            if (record) showToast(`全班座位已自動存入歷史紀錄 #${drawHistory.length}。${attNote}`);
+            else if (attNote) showToast(`全班已就座。${attNote}`);
         }
 
         function saveHistory() {
@@ -7706,8 +8096,11 @@ root.ScoreImport = {
                 alert(`名單裡有重複的「${dupLabel}」，沒有座號無法分辨。請勾選「自動貼上座號」，或在名單前加上座號。`);
                 return;
             }
+            // 名單沒附身高時，依姓名帶回原本名單（後台學生名單）裡的身高（§13）
+            const oldHeights = new Map(students.filter(s => Number.isFinite(s.height)).map(s => [s.name, s.height]));
             students = roster.map((item, i) => {
-                const { seatNo, name, height } = item;
+                const { seatNo, name } = item;
+                const height = Number.isFinite(item.height) ? item.height : oldHeights.get(name);
                 // 第八、九節標示依姓名自動帶回，不必重複標示
                 return applyAttendanceFromMemory({
                     id: i,
@@ -8515,6 +8908,7 @@ root.ScoreImport = {
             closePicker();
             closeHistory();
             closeShareModal();
+            closeRosterModals();
         }
 
         function openShareSaveModal() {
