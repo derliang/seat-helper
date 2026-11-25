@@ -753,7 +753,8 @@ Authorization inquiries: derliang@gmail.com
         .ro-days { display: inline-flex; align-items: center; gap: 6px; }
         .ro-sep { width: 1px; height: 24px; background: var(--line-2); margin: 0 4px; flex: none; }
         .ro-cap { font-size: 12px; font-weight: 700; color: var(--text-3); white-space: nowrap; }
-        .att-opt { min-width: 72px; height: 34px; padding: 0 10px; flex: none; border-radius: var(--r-sm); border: 1px solid var(--line-2); background: var(--sunken); color: var(--text-2); font-weight: 800; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; white-space: nowrap; }
+        /* 固定寬度：按下時多出打勾也不會把後面的星期推歪，各列對齊（§13 第 4 輪） */
+        .att-opt { width: 92px; height: 34px; padding: 0 8px; flex: none; border-radius: var(--r-sm); border: 1px solid var(--line-2); background: var(--sunken); color: var(--text-2); font-weight: 800; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; white-space: nowrap; }
         .att-opt[aria-pressed="true"] { background: var(--att-fill); border-color: var(--att-fill); color: var(--att-on); }
         .att-opt svg, .att-opt i { width: 14px; height: 14px; }
         .att-opt:disabled, .ro-att .dchip:disabled { opacity: .45; cursor: not-allowed; }
