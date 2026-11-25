@@ -295,15 +295,14 @@ Authorization inquiries: derliang@gmail.com
         /* 需求表「第8·9節」模式：亮起來＝不上；沒上第八節時第九節五天自動鎖定 */
         .student-table.m-att tr { grid-template-columns: 30px minmax(0, 1fr) 222px; }
         .student-table.m-att .t-stamp { display: none; }
-        .att-ctl { display: flex; gap: 8px; align-items: center; }
-        .att-ctl .cap-s { display: none; }
-        .att-ctl .th-8 { width: 62px; flex: none; text-align: center; }
-        .mk8 { width: 62px; height: 34px; flex: none; border-radius: 8px; border: 1px solid var(--line-2); background: var(--sunken); color: var(--text-2); font-weight: 800; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
-        .mk8[aria-pressed="true"] { background: var(--att-fill); border-color: var(--att-fill); color: var(--att-on); }
-        .mk8 svg, .mk8 i { width: 14px; height: 14px; }
-        .mk8:disabled, .mk8.is-disabled { opacity: .45; cursor: not-allowed; }
         .days9 { display: inline-flex; gap: 4px; }
         .student-table.m-att .dchip { width: 28px; }
+        /* 需求表「第8·9節」模式沿用後台的三選項（§13）：上行不上8·9／不上9，下行部分天數 */
+        .student-table.m-att .ro-att { flex-wrap: wrap; gap: 4px; padding: 6px 0; }
+        .student-table.m-att .ro-att .att-opt { flex: 1 1 0; min-width: 0; padding: 0 6px; }
+        .student-table.m-att .ro-sep { display: none; }
+        .student-table.m-att .ro-days { width: 100%; gap: 4px; }
+        .student-table.m-att .ro-days .days9 { gap: 4px; }
         .needs-mode { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
         .seg .cnt { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--att-fill); color: var(--att-on); font-size: 11px; display: inline-grid; place-items: center; font-variant-numeric: tabular-nums; margin-left: 6px; }
         .seg .cnt:empty { display: none; }
@@ -867,12 +866,10 @@ Authorization inquiries: derliang@gmail.com
             .tag-toggle { min-height: 44px; font-size: 13px; }
             .student-table.m-att tbody tr { grid-template-columns: 36px minmax(0, 1fr) auto; }
             .student-table.m-att .t-stamp { display: block; }
-            .att-ctl { align-items: flex-end; }
-            .att-ctl .cap-s { display: block; font-size: 11px; font-weight: 700; color: var(--text-3); margin-bottom: 3px; }
-            .att-ctl .col9 { flex: 1; min-width: 0; }
-            .mk8 { width: 64px; height: 44px; }
             .days9, .student-table.m-att .days9 { display: flex; gap: 2px; }
             .dchip, .student-table.m-att .dchip { flex: 1; min-width: 0; width: auto; height: 44px; }
+            .student-table.m-att .ro-att .att-opt { height: 44px; }
+            .student-table.m-att .ro-days .days9 { flex: 1; min-width: 0; }
             .brush-days .dchip { flex: none; width: 40px; }
             .brushbar { position: fixed; left: 8px; right: 8px; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); z-index: 70; background: var(--surface); box-shadow: var(--shadow-3); padding: 10px 12px; gap: 8px; }
             #seatMapScrollWrapper.marking { margin-bottom: 200px; }
@@ -5062,7 +5059,7 @@ root.ScoreImport = {
         })();
     </script>
     <script>
-        const APP_VERSION = "v3.8.0";
+        const APP_VERSION = "v3.8.1";
         /* 版號只寫在 APP_VERSION；<title> 與頁首徽章由程式產生，不要在 HTML 靜態文字寫版號 */
         document.title = `座位小幫手 ${APP_VERSION}`;
 
@@ -6822,18 +6819,13 @@ root.ScoreImport = {
                 const disAttr = isAssigned ? 'disabled' : '';
 
                 if (needsMode === 'att') {
-                    const locked = s.skip8;
-                    const eff = effectiveSkip9(s);
+                    // 與後台學生名單同一組三選項（不上8·9／不上9／部分天數，DESIGN.md §13），改的是同一份資料
                     const nm = escapeHtml(s.name);
-                    const chips = DAY_NAMES.map((dn, k) => `<button type="button" class="dchip${locked ? ' locked' : ''}" aria-pressed="${eff.includes(k + 1)}" ${locked ? 'disabled title="沒上第八節，第九節一定也沒上"' : ''} onclick="toggleSkip9Day(${i}, ${k + 1})" aria-label="${nm}週${dn}第九節不上">${dn}</button>`).join('');
                     tr.innerHTML = `
                     <td class="t-no">${seatNo}</td>
                     <td class="t-name">${nm}</td>
                     <td class="t-stamp">${attStampHtml(s)}</td>
-                    <td><div class="att-ctl">
-                        <div class="col8"><span class="cap-s">第八節</span><button type="button" class="mk8" aria-pressed="${s.skip8}" onclick="toggleSkip8(${i})" aria-label="${nm}第八節不上">${s.skip8 ? '<i data-lucide="check"></i>' : ''}不上</button></div>
-                        <div class="col9"><span class="cap-s">第九節　不上的日子${locked ? '（已鎖定）' : ''}</span><span class="days9">${chips}</span></div>
-                    </div></td>
+                    <td><div class="ro-att">${rosterAttHtml(s, i, nm)}</div></td>
                 `;
                 } else {
                 tr.innerHTML = `
@@ -7034,25 +7026,6 @@ root.ScoreImport = {
             saveData();
         };
 
-        window.toggleSkip8 = (i) => {
-            const s = students[i];
-            if (!s || guardDrawing()) return;
-            setAttendance(s, !s.skip8, s.skip9);
-            updateUI();
-            saveData();
-        };
-
-        window.toggleSkip9Day = (i, day) => {
-            const s = students[i];
-            if (!s || s.skip8 || guardDrawing()) return;
-            const list = s.skip9.slice();
-            const at = list.indexOf(day);
-            if (at >= 0) list.splice(at, 1); else list.push(day);
-            setAttendance(s, false, list);
-            updateUI();
-            saveData();
-        };
-
         window.toggleMarkMode = () => {
             if (!markMode && guardDrawing()) return;
             markMode = !markMode;
@@ -7110,7 +7083,7 @@ root.ScoreImport = {
             if (cnt) cnt.textContent = total ? String(total) : '';
             const head = document.getElementById('studentTableHead');
             if (head) head.innerHTML = needsMode === 'att'
-                ? '<tr><th>座號</th><th class="col-name">學生姓名</th><th class="t-stamp"></th><th><div class="att-ctl"><span class="th-8">第八節</span><span>第九節　不上的日子</span></div></th></tr>'
+                ? '<tr><th>座號</th><th class="col-name">學生姓名</th><th class="t-stamp"></th><th class="col-name">第八、九節（亮起來＝不上）</th></tr>'
                 : '<tr><th>座號</th><th class="col-name">學生姓名</th><th>目前座位</th><th>個別需求</th></tr>';
             document.getElementById('attModeHint')?.classList.toggle('hidden', needsMode !== 'att');
             const clearText = document.getElementById('btnClearNeedsText');
