@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>後台學生名單設計稿</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;800&family=Noto+Serif+TC:wght@600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@1.59.0/dist/umd/lucide.min.js"></script>
+<style>
+/* 座位小幫手 tokens（docs/design/DESIGN.md §2） */
+:root {
+  --bg:#F5F2EA; --surface:#FFFDF8; --sunken:#F1EDE3; --line:#E4DECF; --line-2:#CFC7B2;
+  --text:#22201B; --text-2:#4F493D; --text-3:#6F6858;
+  --accent:#274690; --accent-h:#1F3877; --on-accent:#FFFFFF; --accent-soft:#E8EDF8; --accent-ink:#1F3877; --accent-line:#B9C6E6;
+  --danger:#E11D48; --danger-soft:#FFF1F3; --danger-ink:#BE123C; --danger-line:#FECDD6;
+  --ok-ink:#047857; --warn-ink:#92400E;
+  --pri-soft:#ECFDF5; --pri-line:#A7F3D0; --pri-ink:#065F46; --pri-bar:#10B981;
+  --ns-soft:#FFFBEB; --ns-line:#FDE68A; --ns-ink:#92400E; --ns-bar:#F59E0B;
+  --rear-soft:#F1F5F9; --rear-line:#CBD5E1; --rear-ink:#334155; --rear-bar:#64748B;
+  --att-fill:#22201B; --att-on:#FFFDF8; --att-soft:#FFFDF8; --att-ink:#22201B; --att-line:#22201B;
+  --screen:#22201B; --on-screen:#FFFFFF;
+  --shadow-1:0 1px 2px rgba(34,32,27,.07),0 1px 1px rgba(34,32,27,.04); --shadow-2:0 6px 18px rgba(34,32,27,.09); --shadow-3:0 20px 50px rgba(34,32,27,.26);
+  --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:24px;
+  --font:"Noto Sans TC",system-ui,-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;
+  --font-display:"Noto Serif TC","Noto Sans TC","PingFang TC","Microsoft JhengHei",serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root {
+  --bg:#13120E; --surface:#1C1A15; --sunken:#17150F; --line:#302D24; --line-2:#433F33;
+  --text:#F1EDE2; --text-2:#CFC8B6; --text-3:#A0987F;
+  --accent:#3F63C4; --accent-h:#4C73D8; --accent-soft:#1B2540; --accent-ink:#AFC2F5; --accent-line:#33467E;
+  --danger-soft:#3A1522; --danger-ink:#FDA4AF; --danger-line:#6B2438; --ok-ink:#6EE7B7; --warn-ink:#FCD34D;
+  --pri-soft:#0B2E26; --pri-line:#0F6B52; --pri-ink:#A7F3D0; --pri-bar:#34D399;
+  --ns-soft:#33240A; --ns-line:#8A5A12; --ns-ink:#FDE68A; --ns-bar:#FBBF24;
+  --rear-soft:#1A2338; --rear-line:#3B4763; --rear-ink:#E2E8F0; --rear-bar:#94A3B8;
+  --att-fill:#F1EDE2; --att-on:#13120E; --att-soft:#1C1A15; --att-ink:#F1EDE2; --att-line:#F1EDE2;
+  --screen:#2B2820; --on-screen:#F1EDE2;
+  --shadow-1:0 1px 2px rgba(0,0,0,.4); --shadow-2:0 6px 18px rgba(0,0,0,.4); --shadow-3:0 20px 50px rgba(0,0,0,.6);
+  color-scheme: dark;
+}}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.5}
+h1,h2,h3,p{margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0;padding:0}
+svg.lucide{width:1.25em;height:1.25em;flex:none}
+.grow{flex:1 1 0;min-width:0}
+
+/* ---- 稿件外框 ---- */
+.doc{max-width:1360px;margin:0 auto;padding:24px 20px 64px;display:flex;flex-direction:column;gap:32px}
+.doc-h{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px 24px;justify-content:space-between}
+.doc-h h1{font-family:var(--font-display);font-size:24px}
+.doc-h .meta{color:var(--text-3);font-size:13px}
+.key{display:flex;flex-wrap:wrap;gap:8px}
+.key a{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--text-2);font-weight:700;font-size:13px;text-decoration:none}
+.key a b{color:var(--accent-ink)}
+.assume{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px 20px;font-size:14px;color:var(--text-2);line-height:1.8}
+.assume b{color:var(--text)}
+.assume ol{margin:6px 0 0;padding-left:20px}
+.variant{display:flex;flex-direction:column;gap:16px;scroll-margin-top:16px}
+.variant>h2{font-family:var(--font-display);font-size:20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.vno{display:inline-grid;place-items:center;min-width:40px;height:28px;padding:0 8px;border-radius:8px;background:var(--accent);color:var(--on-accent);font-family:var(--font);font-size:14px;font-weight:800}
+.rec{font-family:var(--font);font-size:12px;font-weight:800;padding:2px 10px;border-radius:999px;background:var(--pri-soft);border:1px solid var(--pri-line);color:var(--pri-ink)}
+.variant>p{color:var(--text-2);max-width:880px}
+.devices{display:grid;grid-template-columns:minmax(0,1fr) 390px;gap:24px;align-items:start}
+@media (max-width:1100px){.devices{grid-template-columns:minmax(0,1fr)}}
+.dev-cap{font-size:12px;font-weight:800;color:var(--text-3);margin-bottom:8px;letter-spacing:.04em}
+.frame-outer{overflow-x:auto;border-radius:var(--r-lg);border:1px solid var(--line-2);box-shadow:var(--shadow-2);background:var(--bg)}
+.frame-inner{transform-origin:0 0}
+.phone .frame-outer{max-width:390px;border-radius:28px}
+.shared{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:24px;align-items:start}
+.next{border-top:1px dashed var(--line-2);padding-top:16px;color:var(--text-2);font-size:14px}
+.next b{color:var(--text)}
+
+/* ---- 專案元件（取自 index.html） ---- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 16px;border-radius:var(--r-md);border:1px solid var(--line-2);background:var(--surface);color:var(--text);font-weight:700;font-size:14px;line-height:1.2;white-space:nowrap}
+.btn:hover{background:var(--sunken)}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn-primary:hover{background:var(--accent-h)}
+.btn-sm{min-height:34px;padding:0 12px;font-size:13px;border-radius:var(--r-sm)}
+.btn-danger{background:var(--danger-soft);border-color:var(--danger-line);color:var(--danger-ink)}
+.btn-ghost{border-color:transparent;background:transparent;color:var(--text-2)}
+.input{width:100%;min-height:42px;padding:8px 12px;border-radius:var(--r-md);border:1px solid var(--line-2);background:var(--surface);color:var(--text);font-size:14px}
+textarea.input{tab-size:8;resize:none;background:var(--sunken);line-height:1.6;font-variant-numeric:tabular-nums}
+.label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:var(--text-2);min-width:0}
+.hint{font-size:12px;color:var(--text-3)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow-1)}
+.appbar{display:flex;align-items:center;gap:12px;min-height:60px;padding:8px 24px;background:var(--surface);border-bottom:1px solid var(--line)}
+.appbar h1{font-family:var(--font-display);font-size:18px}
+.appbar .org{font-size:12px;color:var(--text-3)}
+.admin{display:grid;grid-template-columns:220px minmax(0,1fr);gap:24px;align-items:start;padding:24px}
+.anav{display:flex;flex-direction:column;gap:2px}
+.anav a{display:flex;align-items:center;gap:10px;min-height:40px;padding:0 12px;border-radius:var(--r-md);color:var(--text-2);font-weight:700;font-size:14px;text-decoration:none}
+.anav a svg{width:18px;height:18px}
+.anav a[aria-current="true"]{background:var(--accent-soft);color:var(--accent-ink)}
+.anav a .new{margin-left:auto;font-size:11px;font-weight:800;padding:0 6px;border-radius:6px;background:var(--accent);color:var(--on-accent)}
+.chipnav{display:flex;gap:6px;overflow-x:auto;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--line);scrollbar-width:none}
+.chipnav a{flex:none;min-height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--sunken);color:var(--text-2);font-weight:700;font-size:13px;display:inline-flex;align-items:center;text-decoration:none}
+.chipnav a[aria-current="true"]{background:var(--accent-soft);color:var(--accent-ink);border-color:var(--accent-line)}
+.asec{padding:24px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.asec-h{display:flex;align-items:center;gap:12px}
+.asec-ic{width:40px;height:40px;border-radius:var(--r-md);background:var(--accent-soft);color:var(--accent-ink);display:grid;place-items:center;flex:none}
+.asec-ic svg{width:20px;height:20px}
+.asec-h h2{font-size:17px;font-weight:700;font-family:var(--font-display);line-height:1.3}
+.asec-h p{font-size:12px;color:var(--text-3)}
+.asec.ghost{opacity:.55}
+.mini-btn{width:36px;height:36px;border-radius:var(--r-sm);display:grid;place-items:center;background:var(--accent-soft);color:var(--accent-ink)}
+.mini-btn.danger{background:var(--danger-soft);color:var(--danger-ink)}
+.mini-btn svg{width:16px;height:16px}
+.mk8{width:62px;height:34px;flex:none;border-radius:8px;border:1px solid var(--line-2);background:var(--sunken);color:var(--text-2);font-weight:800;font-size:13px;display:inline-flex;align-items:center;justify-content:center;gap:4px}
+.mk8[aria-pressed="true"]{background:var(--att-fill);border-color:var(--att-fill);color:var(--att-on)}
+.mk8 svg{width:14px;height:14px}
+.days9{display:inline-flex;gap:4px}
+.dchip{width:32px;height:34px;border-radius:8px;border:1px solid var(--line-2);background:var(--sunken);color:var(--text-2);font-weight:800;font-size:13px;display:grid;place-items:center}
+.dchip[aria-pressed="true"]{background:var(--att-fill);border-color:var(--att-fill);color:var(--att-on)}
+.dchip.locked{opacity:.45;cursor:not-allowed}
+.att{display:inline-flex;align-items:center;gap:2px;padding:0 7px;height:18px;border-radius:4px;border:1.5px solid var(--att-line);background:var(--att-soft);color:var(--att-ink);font-size:11px;font-weight:800;line-height:1;white-space:nowrap}
+.att-both{background:var(--att-fill);color:var(--att-on)}
+.att-part{border-style:dashed}
+.status-text{font-size:13px;font-weight:700}
+.is-ok{color:var(--ok-ink)} .is-error{color:var(--danger-ink)}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;border:1px solid var(--line);background:var(--sunken);color:var(--text-2);white-space:nowrap}
+.chip.ok{background:var(--pri-soft);border-color:var(--pri-line);color:var(--pri-ink)}
+.chip.upd{background:var(--accent-soft);border-color:var(--accent-line);color:var(--accent-ink)}
+.chip.bad{background:var(--danger-soft);border-color:var(--danger-line);color:var(--danger-ink)}
+.empty-st{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:32px 16px;border:1px dashed var(--line-2);border-radius:var(--r-md);background:var(--sunken);color:var(--text-2)}
+.empty-st svg{width:28px;height:28px;color:var(--text-3)}
+
+/* ---- 新元件：名單工具列與統計 ---- */
+.rs-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px}
+.rs-sum{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;font-size:12px;color:var(--text-3)}
+.rs-sum .grp{display:inline-flex;align-items:center;gap:6px}
+.rs-sum .total{font-weight:800;color:var(--text);font-size:13px}
+.rs-actions{display:flex;gap:8px;margin-left:auto}
+
+/* 1a 表格 */
+.rtab{border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;background:var(--surface)}
+.rtab .r{display:grid;grid-template-columns:52px minmax(120px,1fr) 84px 62px 176px 36px;gap:10px;align-items:center;padding:6px 12px;border-bottom:1px solid var(--line)}
+.rtab .r:last-child{border-bottom:0}
+.rtab .r.h{background:var(--sunken);font-size:12px;font-weight:700;color:var(--text-3);min-height:36px;padding-top:0;padding-bottom:0}
+.rtab .r.h span{text-align:center} .rtab .r.h span.l{text-align:left}
+.cell-in{width:100%;min-height:34px;padding:4px 8px;border-radius:8px;border:1px solid transparent;background:transparent;font-weight:700;font-size:14px}
+.cell-in:hover{border-color:var(--line-2);background:var(--sunken)}
+.cell-in:focus{outline:2px solid var(--accent);outline-offset:0;background:var(--surface)}
+.cell-in.num{text-align:center;font-variant-numeric:tabular-nums}
+.cell-in.no{color:var(--text-3)}
+.cell-in.ht{color:var(--accent-ink)}
+.cell-in.empty::placeholder{color:var(--text-3);font-weight:500}
+.rtab .more{padding:10px 12px;text-align:center;font-size:12px;color:var(--text-3);background:var(--sunken)}
+.rtab .r.row-new{background:var(--accent-soft)}
+/* 手機卡片列 */
+.mcard{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line)}
+.mcard:last-child{border-bottom:0}
+.mrow1{display:flex;align-items:center;gap:8px}
+.mrow1 .no{width:28px;text-align:center;font-weight:700;color:var(--text-3);font-variant-numeric:tabular-nums}
+.mrow1 .nm{font-weight:700;font-size:15px}
+.mrow1 .ht{font-weight:800;color:var(--accent-ink);font-variant-numeric:tabular-nums;font-size:13px}
+.mrow2{display:flex;align-items:center;gap:6px}
+.mrow2 .mk8{height:44px;width:56px}
+.mrow2 .dchip{width:40px;height:44px}
+
+/* 1b 清單＋面板 */
+.split{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}
+.lrow{display:grid;grid-template-columns:40px minmax(0,1fr) 56px 110px 20px;gap:8px;align-items:center;min-height:44px;padding:0 12px;border-bottom:1px solid var(--line);background:var(--surface);cursor:pointer}
+.lrow:last-child{border-bottom:0}
+.lrow:hover{background:var(--sunken)}
+.lrow[aria-selected="true"]{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.lrow .no{text-align:center;color:var(--text-3);font-weight:700;font-variant-numeric:tabular-nums}
+.lrow .nm{font-weight:700}
+.lrow .ht{text-align:center;color:var(--accent-ink);font-weight:800;font-variant-numeric:tabular-nums}
+.lrow .ht.none{color:var(--text-3);font-weight:500}
+.lrow svg{width:16px;height:16px;color:var(--text-3)}
+.panel{padding:18px;display:flex;flex-direction:column;gap:14px;border:1px solid var(--accent-line);border-radius:var(--r-md);background:var(--surface);box-shadow:var(--shadow-2)}
+.panel h3{font-family:var(--font-display);font-size:16px;display:flex;align-items:center;gap:8px}
+.form3{display:grid;grid-template-columns:72px minmax(0,1fr) 84px;gap:10px}
+.att-edit{display:flex;flex-direction:column;gap:8px;padding:12px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--sunken)}
+.att-edit .lbl{font-size:12px;font-weight:700;color:var(--text-2)}
+.att-edit .line{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sheet{border-radius:20px 20px 0 0;border:1px solid var(--line);border-bottom:0;background:var(--surface);box-shadow:var(--shadow-3);padding:8px 16px 16px;display:flex;flex-direction:column;gap:12px}
+.sheet .grab{width:40px;height:4px;border-radius:2px;background:var(--line-2);margin:4px auto 4px}
+.scrim{background:rgba(20,18,12,.45);height:120px}
+
+/* 共用：對話框 */
+.modal{border-radius:var(--r-xl);background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow-3);overflow:hidden;max-width:560px}
+.modal-h{display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid var(--line)}
+.modal-h h3{font-family:var(--font-display);font-size:17px}
+.modal-b{padding:16px 20px;display:flex;flex-direction:column;gap:12px}
+.modal-f{display:flex;justify-content:flex-end;gap:8px;padding:12px 20px;border-top:1px solid var(--line);background:var(--sunken)}
+.fmt{font-size:12px;color:var(--text-2);background:var(--sunken);border:1px solid var(--line);border-radius:var(--r-sm);padding:8px 12px;line-height:1.8}
+.fmt code{font-family:var(--font);font-weight:800;color:var(--text)}
+.pv{border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden}
+.pv .p{display:grid;grid-template-columns:36px minmax(0,1fr) 48px 96px 64px;gap:8px;align-items:center;padding:6px 10px;border-bottom:1px solid var(--line);font-size:13px}
+.pv .p:last-child{border-bottom:0}
+.pv .p.h{background:var(--sunken);font-size:12px;color:var(--text-3);font-weight:700}
+.pv .p.err{background:var(--danger-soft)}
+.pv .p .n{text-align:center;font-variant-numeric:tabular-nums;color:var(--text-3)}
+.errline{font-size:12px;color:var(--danger-ink);font-weight:700;grid-column:1/-1;padding-left:44px;margin-top:-2px}
+
+/* 共用：座位表 */
+.map{padding:16px;display:flex;flex-direction:column;gap:12px}
+.screen{background:var(--screen);color:var(--on-screen);text-align:center;font-size:12px;font-weight:800;letter-spacing:.4em;border-radius:6px;padding:4px 0}
+.seats{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.seat{min-height:70px;border-radius:10px;border:1px solid var(--line);background:var(--sunken);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:6px 4px}
+.seat .sn{font-size:11px;color:var(--text-3);font-weight:700}
+.seat .nm{font-weight:700;font-size:14px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;padding-top:10px;border-top:1px dashed var(--line-2);font-size:12px;font-weight:700;color:var(--text-2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.toast{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:var(--r-md);background:var(--pri-soft);border:1px solid var(--pri-line);color:var(--pri-ink);font-weight:700;font-size:13px}
+.brushnote{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:var(--r-md);background:var(--accent-soft);border:1px solid var(--accent-line);color:var(--accent-ink);font-size:13px;font-weight:700}
+
+/* 第 2 輪：三選項 */
+.opt{min-width:72px;height:34px;padding:0 10px;flex:none;border-radius:8px;border:1px solid var(--line-2);background:var(--sunken);color:var(--text-2);font-weight:800;font-size:13px;display:inline-flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap}
+.opt[aria-pressed="true"]{background:var(--att-fill);border-color:var(--att-fill);color:var(--att-on)}
+.opt svg{width:14px;height:14px}
+.opt.locked,.dchip.locked{opacity:.45;cursor:not-allowed}
+.ctl2{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.ctl2 .sep{width:1px;height:24px;background:var(--line-2);margin:0 4px}
+.ctl2 .cap{font-size:12px;font-weight:700;color:var(--text-3)}
+.rtab2 .r{grid-template-columns:52px minmax(120px,1fr) 84px 460px 36px}
+.rtab2 .ctl2{flex-wrap:nowrap}
+.rtab2 .r.h span.att-h{text-align:left}
+.m2 .ctl2 .opt{height:44px;min-width:0;flex:1 1 0}
+.m2 .ctl2 .dchip{width:44px;height:44px}
+.m2 .ctl2 .days-line{display:flex;align-items:center;gap:6px;width:100%}
+.map-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.map-row .arrow{color:var(--text-3);font-weight:800}
+.themebtn{display:inline-flex;align-items:center;gap:6px}
+.tag-new{font-size:11px;font-weight:800;padding:1px 6px;border-radius:6px;border:1px solid var(--accent-line);background:var(--accent-soft);color:var(--accent-ink);margin-left:6px;vertical-align:middle}
+</style>
+</head>
+<body>
+<div class="doc">
+  <header class="doc-h">
+    <div>
+      <h1>後台學生名單（含第八、九節）設計稿</h1>
+      <p class="meta">座位小幫手｜2026-11-25 定案（第 2 輪 2a）｜所有姓名、身高皆為假資料｜規範見 DESIGN.md §13</p>
+    </div>
+  </header>
+
+  <!-- ===================== 2a（第 2 輪） ===================== -->
+  <section class="variant" id="2a">
+    <h2><span class="vno">2a</span>學生名單（表格直接編輯，八九節三個選項） <span class="rec">定案</span></h2>
+    <p>依你的意見：每位學生的八九節一眼三選——<b>不上8·9</b>、<b>不上9</b>（第九節全週不上，一下完成，不必點一～五）、<b>部分天數</b>（點一～五）。不上8·9 時，不上9 與星期自動亮起並鎖住；點掉某一天時，不上9 自動變成部分天數。三種結果對應座位卡的三種章。表格裡的按鈕都可以直接點來試。</p>
+    <div class="devices">
+      <div>
+        <div class="dev-cap">桌機 1280</div>
+        <div class="frame-outer" data-w="1280"><div class="frame-inner" style="width:1280px">
+          <div class="appbar">
+            <button type="button" class="btn btn-sm"><i data-lucide="arrow-left"></i>返回抽籤</button>
+            <div class="grow"><h1>本機管理後台</h1><p class="org">所有設定只儲存在目前瀏覽器，可另外備份到雲端硬碟</p></div>
+          </div>
+          <div class="admin">
+            <nav class="anav" data-nav></nav>
+            <section class="card asec">
+              <div class="asec-h"><span class="asec-ic"><i data-lucide="users"></i></span><div class="grow"><h2>學生名單（僅後台）</h2><p>座號、姓名、身高與第八、九節是固定資料；排好座位會自動帶入。</p></div></div>
+              <div class="rs-bar">
+                <div class="rs-sum" data-sum></div>
+                <div class="rs-actions">
+                  <button type="button" class="btn"><i data-lucide="clipboard-paste"></i>從 Excel 貼上</button>
+                  <button type="button" class="btn btn-primary"><i data-lucide="user-plus"></i>新增學生</button>
+                </div>
+              </div>
+              <div class="rtab rtab2" data-table2="12"></div>
+              <p class="hint">亮起來＝不上。「不上8·9」會連同第九節一起鎖住；「不上9」＝第九節五天都不上；只有幾天不上就點星期。改完立即儲存，主畫面同步更新。</p>
+            </section>
+          </div>
+        </div></div>
+      </div>
+      <div class="phone">
+        <div class="dev-cap">手機 390</div>
+        <div class="frame-outer" data-w="390"><div class="frame-inner" style="width:390px">
+          <div class="appbar" style="padding:8px 16px;min-height:56px">
+            <button type="button" class="btn btn-sm"><i data-lucide="arrow-left"></i>返回</button>
+            <div class="grow"><h1 style="font-size:16px">本機管理後台</h1></div>
+          </div>
+          <nav class="chipnav" data-chipnav></nav>
+          <div style="padding:16px">
+            <section class="card asec" style="padding:16px">
+              <div class="asec-h"><span class="asec-ic"><i data-lucide="users"></i></span><div class="grow"><h2>學生名單</h2><p>固定資料；排好座位會自動帶入。</p></div></div>
+              <div class="rs-sum" data-sum></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <button type="button" class="btn" style="min-height:44px"><i data-lucide="clipboard-paste"></i>Excel 貼上</button>
+                <button type="button" class="btn btn-primary" style="min-height:44px"><i data-lucide="user-plus"></i>新增學生</button>
+              </div>
+              <div class="rtab" data-mobile2="5"></div>
+            </section>
+          </div>
+        </div></div>
+      </div>
+    </div>
+    <div class="shared">
+      <div>
+        <div class="dev-cap">新增學生（同樣三個選項）</div>
+        <div class="modal">
+          <div class="modal-h"><i data-lucide="user-plus"></i><h3 class="grow">新增學生</h3></div>
+          <div class="modal-b">
+            <div class="form3">
+              <label class="label">座號<input class="input" value="33" inputmode="numeric"></label>
+              <label class="label">姓名<input class="input" value="吳佳穎"></label>
+              <label class="label">身高<input class="input" placeholder="選填" inputmode="decimal"></label>
+            </div>
+            <div class="att-edit"><span class="lbl">第八、九節（亮起來＝不上）</span><div class="ctl2" data-one="[33,'吳佳穎',null,false,[1,2,3,4,5]]"></div></div>
+          </div>
+          <div class="modal-f"><button type="button" class="btn">取消</button><button type="button" class="btn btn-primary">新增</button></div>
+        </div>
+      </div>
+      <div>
+        <div class="dev-cap">三個選項與座位卡的章</div>
+        <div class="card" style="padding:16px;display:flex;flex-direction:column;gap:10px">
+          <div class="map-row"><span class="opt" aria-pressed="true">不上8·9</span><span class="arrow">→</span><span class="att att-both">無8·9</span><span class="hint">第八、九節都不上</span></div>
+          <div class="map-row"><span class="opt" aria-pressed="true">不上9</span><span class="arrow">→</span><span class="att att-nine">無9</span><span class="hint">第九節五天都不上</span></div>
+          <div class="map-row"><span class="days9"><span class="dchip" aria-pressed="true">一</span><span class="dchip" aria-pressed="false">二</span><span class="dchip" aria-pressed="true">三</span></span><span class="arrow">→</span><span class="att att-part">無9&nbsp;一三</span><span class="hint">只有點的那幾天不上</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 共用 ===================== -->
+  <section class="variant" id="shared">
+    <h2><span class="vno">其他</span>貼上、刪除、空白、座位表</h2>
+    <div class="shared">
+      <div>
+        <div class="dev-cap">A｜從 Excel 貼上（貼完先預覽，確認才套用）</div>
+        <div class="modal">
+          <div class="modal-h"><i data-lucide="clipboard-paste"></i><h3 class="grow">從 Excel 貼上</h3><button class="mini-btn" aria-label="關閉" style="background:transparent;color:var(--text-2)"><i data-lucide="x"></i></button></div>
+          <div class="modal-b">
+            <div class="fmt">一行一位，欄位依序：<code>座號　姓名　身高　八九節</code>（身高、八九節可空白）<br>八九節寫：<code>無89</code>、<code>無9</code>、<code>無9 一三</code>（只寫不上的星期）</div>
+            <textarea class="input" style="height:108px" aria-label="貼上名單">1	林家豪	168
+2	陳怡君	155	無9 一三
+3	張書維	172	無89
+7	黃柏翰	1六5
+33	吳佳穎	160	無9</textarea>
+            <div class="pv" data-preview></div>
+            <p class="status-text">可套用 4 筆：更新 3、新增 1。<span class="is-error">1 行看不懂，不會套用。</span></p>
+          </div>
+          <div class="modal-f"><button type="button" class="btn">取消</button><button type="button" class="btn btn-primary">套用 4 筆</button></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="dev-cap">C｜刪除學生（已排在座位上時）</div>
+        <div class="modal" style="max-width:420px">
+          <div class="modal-h"><i data-lucide="user-minus"></i><h3 class="grow">刪除 18 周宜臻？</h3></div>
+          <div class="modal-b"><p style="color:var(--text-2)">這位同學目前坐在 <b style="color:var(--text)">第 3 排第 2 個</b>，刪除後這個座位會空出來。身高與第八、九節標示一併刪除。</p></div>
+          <div class="modal-f"><button type="button" class="btn">取消</button><button type="button" class="btn btn-danger"><i data-lucide="trash-2"></i>刪除學生</button></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="dev-cap">D｜空白狀態（還沒有名單）</div>
+        <section class="card asec">
+          <div class="asec-h"><span class="asec-ic"><i data-lucide="users"></i></span><div class="grow"><h2>學生名單（僅後台）</h2><p>座號、姓名、身高與第八、九節是固定資料；排好座位會自動帶入。</p></div></div>
+          <div class="empty-st">
+            <i data-lucide="users"></i>
+            <b style="color:var(--text)">還沒有學生名單</b>
+            <span class="hint" style="font-size:13px">從 Excel 貼上整班，或一位一位新增；也可以回主畫面步驟 1 匯入。</span>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+              <button type="button" class="btn"><i data-lucide="user-plus"></i>新增學生</button>
+              <button type="button" class="btn btn-primary"><i data-lucide="clipboard-paste"></i>從 Excel 貼上</button>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div style="grid-column:1/-1">
+        <div class="dev-cap">E｜主畫面：排好座位後自動蓋章（不必點筆刷）</div>
+        <div class="card map">
+          <div class="toast"><i data-lucide="circle-check"></i>全班已就座。第八、九節依後台名單自動標示 7 人。</div>
+          <div class="screen">黑　板</div>
+          <div class="seats" data-seats></div>
+          <div class="legend"><span><span class="att att-both">無8·9</span>未參加第八、九節</span><span><span class="att att-nine">無9</span>未參加第九節</span><span><span class="att att-part">無9&nbsp;一三</span>指定星期未參加第九節</span></div>
+          <div class="brushnote"><i data-lucide="stamp"></i>「標示第八、九節」筆刷仍在，臨時調整會同步寫回後台學生名單。</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+const S = [
+  [1,'林家豪',168,false,[]],[2,'陳怡君',155,false,[1,3]],[3,'張書維',172,true,[]],[4,'李思妤',158,false,[]],
+  [5,'王冠宇',175,false,[1,2,3,4,5]],[6,'劉品妍',null,false,[]],[7,'黃柏翰',165,false,[]],[8,'許雅筑',161,true,[]],
+  [9,'鄭宇翔',170,false,[2]],[10,'蔡欣怡',152,false,[]],[11,'楊承恩',178,false,[1,2,3,4,5]],[12,'謝佩珊',157,false,[]],
+  [13,'郭子豪',169,false,[]],[14,'洪詩涵',160,true,[]],[15,'曾柏宇',173,false,[]],
+];
+const D = ['一','二','三','四','五'];
+const ic = n => `<i data-lucide="${n}"></i>`;
+function stamp(s){ const [, , , s8, s9] = s; if (s8) return '<span class="att att-both">無8·9</span>';
+  if (s9.length === 5) return '<span class="att att-nine">無9</span>';
+  if (s9.length) return `<span class="att att-part">無9&nbsp;${s9.map(d=>D[d-1]).join('')}</span>`; return ''; }
+function attCtl(s, big){ const [, , , s8, s9] = s; const eff = s8 ? [1,2,3,4,5] : s9;
+  return `<button type="button" class="mk8" aria-pressed="${s8}" onclick="tg(this)">${s8?ic('check'):''}不上</button>` +
+    `<span class="days9">${D.map((d,k)=>`<button type="button" class="dchip${s8?' locked':''}" aria-pressed="${eff.includes(k+1)}" ${s8?'disabled':''} onclick="tg(this)">${d}</button>`).join('')}</span>`; }
+function tg(b){ b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') !== 'true'); }
+function counts(){ let a=0,b=0,c=0; S.forEach(s=>{ if(s[3])a++; else if(s[4].length===5)b++; else if(s[4].length)c++; }); return [a,b,c]; }
+const NAV = [['school','基本資料'],['users','學生名單',1],['layout-template','座位表顯示'],['sliders-horizontal','抽籤偏好'],['sparkles','抽籤儀式'],['file-type-2','Word 模板'],['archive','備份'],['lock-keyhole','後台 PIN']];
+document.querySelectorAll('[data-nav]').forEach(n => n.innerHTML = NAV.map(([i,t,cur]) => `<a href="#" ${cur?'aria-current="true"':''}>${ic(i)}${t}${cur?'<span class="new">新</span>':''}</a>`).join(''));
+document.querySelectorAll('[data-chipnav]').forEach(n => n.innerHTML = NAV.map(([,t,cur]) => `<a href="#" ${cur?'aria-current="true"':''}>${t}</a>`).join(''));
+document.querySelectorAll('[data-sum]').forEach(n => { const [a,b,c] = counts(); n.innerHTML =
+  `<span class="total">共 32 人</span><span class="grp"><span class="att att-both">無8·9</span>${a} 人</span><span class="grp"><span class="att att-nine">無9</span>${b} 人</span><span class="grp"><span class="att att-part">無9&nbsp;一三</span>${c} 人</span>`; });
+document.querySelectorAll('[data-table]').forEach(n => { const k = +n.dataset.table;
+  n.innerHTML = `<div class="r h"><span>座號</span><span class="l">姓名</span><span>身高</span><span>第八節</span><span class="l">第九節　不上的日子</span><span></span></div>` +
+    S.slice(0,k).map(s => `<div class="r"><input class="cell-in num no" value="${s[0]}" aria-label="座號"><input class="cell-in" value="${s[1]}" aria-label="姓名"><input class="cell-in num ht${s[2]?'':' empty'}" value="${s[2]??''}" placeholder="未填" aria-label="身高"><span>${attCtl(s).split('<span class="days9">')[0]}</span><span class="days9">${attCtl(s).split('<span class="days9">')[1]}<button type="button" class="mini-btn danger" aria-label="刪除 ${s[1]}">${ic('trash-2')}</button></div>`).join('') +
+    `<div class="more">…以下還有 ${32-k} 人</div>`; });
+document.querySelectorAll('[data-mobile]').forEach(n => { const k = +n.dataset.mobile;
+  n.innerHTML = S.slice(0,k).map(s => `<div class="mcard"><div class="mrow1"><span class="no">${s[0]}</span><span class="nm grow">${s[1]}</span><span class="ht">${s[2]?s[2]+' cm':'<span class="hint">身高未填</span>'}</span><button type="button" class="mini-btn" style="width:44px;height:44px" aria-label="編輯 ${s[1]}">${ic('pencil')}</button></div><div class="mrow2">${attCtl(s)}</div></div>`).join('') +
+    `<div class="more" style="padding:10px;text-align:center;font-size:12px;color:var(--text-3);background:var(--sunken)">…以下還有 ${32-k} 人</div>`; });
+document.querySelectorAll('[data-list]').forEach(n => { const k = +n.dataset.list; const c = n.dataset.compact;
+  n.innerHTML = (c ? '' : `<div class="lrow" style="min-height:36px;background:var(--sunken);font-size:12px;font-weight:700;color:var(--text-3);cursor:default"><span style="text-align:center">座號</span><span>姓名</span><span style="text-align:center">身高</span><span>第八、九節</span><span></span></div>`) +
+    S.slice(0,k).map((s,i) => `<div class="lrow" aria-selected="${i===1}"><span class="no">${s[0]}</span><span class="nm">${s[1]}</span><span class="ht${s[2]?'':' none'}">${s[2]??'—'}</span><span>${stamp(s)}</span>${ic('chevron-right')}</div>`).join('') +
+    `<div class="more" style="padding:10px;text-align:center;font-size:12px;color:var(--text-3);background:var(--sunken)">…以下還有 ${32-k} 人</div>`; });
+const editBody = s => `<div class="form3"><label class="label">座號<input class="input" value="${s[0]}"></label><label class="label">姓名<input class="input" value="${s[1]}"></label><label class="label">身高<input class="input" value="${s[2]??''}"></label></div>
+  <div class="att-edit"><span class="lbl">第八、九節（亮起來＝不上）</span><div class="line"><span class="hint" style="width:44px">第八節</span>${attCtl(s).split('<span class="days9">')[0]}</div><div class="line"><span class="hint" style="width:44px">第九節</span><span class="days9">${attCtl(s).split('<span class="days9">')[1]}</div><p class="hint">目前：${stamp(s)}　沒上第八節時，第九節五天自動鎖定。</p></div>`;
+document.querySelectorAll('[data-panel]').forEach(n => n.innerHTML = `<h3>${ic('pencil')}編輯 2 陳怡君</h3>${editBody(S[1])}<div style="display:flex;gap:8px"><button type="button" class="btn btn-danger">${ic('trash-2')}刪除學生</button><button type="button" class="btn btn-primary grow">完成</button></div>`);
+document.querySelectorAll('[data-sheet]').forEach(n => n.innerHTML = `<div class="grab"></div><h3 style="font-family:var(--font-display);font-size:16px">編輯 2 陳怡君</h3>${editBody(S[1]).replaceAll('class="mk8"','class="mk8" style="height:44px"').replaceAll('class="dchip','style="width:44px;height:44px" class="dchip')}<div style="display:grid;grid-template-columns:auto 1fr;gap:8px"><button type="button" class="btn btn-danger" style="min-height:44px">${ic('trash-2')}刪除</button><button type="button" class="btn btn-primary" style="min-height:44px">完成</button></div>`);
+const PV = [['1','林家豪','168','','upd'],['2','陳怡君','155','無9 一三','upd'],['3','張書維','172','無89','upd'],['7','黃柏翰','1六5','','bad'],['33','吳佳穎','160','無9','ok']];
+document.querySelectorAll('[data-preview]').forEach(n => n.innerHTML = `<div class="p h"><span class="n">座號</span><span>姓名</span><span>身高</span><span>八九節</span><span>結果</span></div>` +
+  PV.map(([no,nm,h,a,k]) => `<div class="p${k==='bad'?' err':''}"><span class="n">${no}</span><span style="font-weight:700">${nm}</span><span>${h}</span><span>${a==='無89'?'<span class="att att-both">無8·9</span>':a==='無9'?'<span class="att att-nine">無9</span>':a?'<span class="att att-part">無9&nbsp;一三</span>':'<span class="hint">—</span>'}</span><span>${k==='upd'?'<span class="chip upd">更新</span>':k==='ok'?'<span class="chip ok">新增</span>':'<span class="chip bad">看不懂</span>'}</span>${k==='bad'?'<span class="errline">身高「1六5」不是數字，請改成 165</span>':''}</div>`).join(''));
+const SEAT = [S[0],S[1],S[2],S[3],S[4],S[5],S[6],S[7],S[8],S[9],S[10],S[11],S[12],S[13],S[14]];
+document.querySelectorAll('[data-seats]').forEach(n => n.innerHTML = SEAT.map(s => `<div class="seat"><span class="sn">${s[0]}</span><span class="nm">${s[1]}</span>${stamp(s)}</div>`).join(''));
+
+/* 第 2 輪：不上8·9／不上9／部分天數；狀態 st = {s8, days[]} */
+function ctl2Html(st, mobile){
+  const all = st.s8 || st.days.length === 5, eff = st.s8 ? [1,2,3,4,5] : st.days;
+  const o89 = `<button type="button" class="opt" aria-pressed="${st.s8}" data-k="s8">${st.s8?ic('check'):''}不上8·9</button>`;
+  const o9 = `<button type="button" class="opt${st.s8?' locked':''}" aria-pressed="${all}" data-k="all9" ${st.s8?'disabled':''}>${all&&!st.s8?ic('check'):''}不上9</button>`;
+  const days = D.map((d,k)=>`<button type="button" class="dchip${st.s8?' locked':''}" aria-pressed="${eff.includes(k+1)}" data-k="d${k+1}" ${st.s8?'disabled':''} aria-label="週${d}第九節不上">${d}</button>`).join('');
+  return mobile ? `${o89}${o9}<div class="days-line"><span class="cap">部分天數</span>${days}</div>`
+                : `${o89}${o9}<span class="sep"></span><span class="cap">部分天數</span><span class="days9">${days}</span>`;
+}
+function mountCtl2(el, st, mobile){
+  const render = () => { el.innerHTML = ctl2Html(st, mobile); if (window.lucide) lucide.createIcons(); };
+  el.addEventListener('click', e => { const b = e.target.closest('button'); if (!b || b.disabled) return; const k = b.dataset.k;
+    if (k === 's8') st.s8 = !st.s8;
+    else if (k === 'all9') st.days = st.days.length === 5 ? [] : [1,2,3,4,5];
+    else { const d = +k.slice(1); st.days = st.days.includes(d) ? st.days.filter(x=>x!==d) : [...st.days, d].sort(); }
+    render(); });
+  render();
+}
+document.querySelectorAll('[data-table2]').forEach(n => { const k = +n.dataset.table2;
+  n.innerHTML = `<div class="r h"><span>座號</span><span class="l">姓名</span><span>身高</span><span class="att-h">第八、九節（亮起來＝不上）</span><span></span></div>` +
+    S.slice(0,k).map((s,i) => `<div class="r"><input class="cell-in num no" value="${s[0]}" aria-label="座號"><input class="cell-in" value="${s[1]}" aria-label="姓名"><input class="cell-in num ht${s[2]?'':' empty'}" value="${s[2]??''}" placeholder="未填" aria-label="身高"><div class="ctl2" data-i="${i}"></div><button type="button" class="mini-btn danger" aria-label="刪除 ${s[1]}">${ic('trash-2')}</button></div>`).join('') +
+    `<div class="more">…以下還有 ${32-k} 人</div>`;
+  n.querySelectorAll('.ctl2').forEach(c => { const s = S[+c.dataset.i]; mountCtl2(c, { s8: s[3], days: s[4].slice() }, false); }); });
+document.querySelectorAll('[data-mobile2]').forEach(n => { const k = +n.dataset.mobile2;
+  n.innerHTML = S.slice(0,k).map((s,i) => `<div class="mcard m2"><div class="mrow1"><span class="no">${s[0]}</span><span class="nm grow">${s[1]}</span><span class="ht">${s[2]?s[2]+' cm':'<span class="hint">身高未填</span>'}</span><button type="button" class="mini-btn" style="width:44px;height:44px" aria-label="編輯 ${s[1]}">${ic('pencil')}</button></div><div class="ctl2" data-i="${i}"></div></div>`).join('') +
+    `<div class="more" style="padding:10px;text-align:center;font-size:12px;color:var(--text-3);background:var(--sunken)">…以下還有 ${32-k} 人</div>`;
+  n.querySelectorAll('.ctl2').forEach(c => { const s = S[+c.dataset.i]; mountCtl2(c, { s8: s[3], days: s[4].slice() }, true); }); });
+document.querySelectorAll('[data-one]').forEach(c => mountCtl2(c, { s8: false, days: [1,2,3,4,5] }, false));
+
+function fit(){}
+  r.dataset.theme = dark ? 'light' : 'dark'; document.getElementById('themeLabel').textContent = dark ? '切換深色' : '切換淺色'; }
+if (window.lucide) lucide.createIcons();
+addEventListener('resize', fit); fit(); setTimeout(fit, 400);
+if (document.fonts) document.fonts.ready.then(fit);
+</script>
+</body>
+</html>
