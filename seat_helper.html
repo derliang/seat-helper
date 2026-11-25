@@ -293,7 +293,7 @@ Authorization inquiries: derliang@gmail.com
         .tag-toggle.noSide.active { background: var(--ns-fill); }
         .tag-toggle:disabled, .tag-toggle.is-disabled { opacity: .45; cursor: not-allowed; pointer-events: none; }
         /* 需求表「第8·9節」模式：亮起來＝不上；沒上第八節時第九節五天自動鎖定 */
-        .student-table.m-att tr { grid-template-columns: 30px minmax(0, 1fr) 222px; }
+        .student-table.m-att tr { grid-template-columns: 30px minmax(0, 1fr) 250px; }
         .student-table.m-att .t-stamp { display: none; }
         .days9 { display: inline-flex; gap: 4px; }
         .student-table.m-att .dchip { width: 28px; }
@@ -736,7 +736,7 @@ Authorization inquiries: derliang@gmail.com
         .ro-sum .total { font-weight: 800; color: var(--text); font-size: 13px; }
         .ro-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
         .ro-tab { border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; background: var(--surface); }
-        .ro-r { display: grid; grid-template-columns: 56px minmax(96px, 1fr) 80px 460px 36px; gap: 10px; align-items: center; padding: 6px 12px; border-bottom: 1px solid var(--line); }
+        .ro-r { display: grid; grid-template-columns: 56px minmax(96px, 1fr) 80px 490px 36px; gap: 10px; align-items: center; padding: 6px 12px; border-bottom: 1px solid var(--line); }
         .ro-r:last-child { border-bottom: 0; }
         .ro-h { background: var(--sunken); font-size: 12px; font-weight: 700; color: var(--text-3); min-height: 36px; padding-top: 0; padding-bottom: 0; }
         .ro-h span { text-align: center; }
@@ -795,7 +795,9 @@ Authorization inquiries: derliang@gmail.com
             .ro-r .att-opt { flex: 1 1 0; height: 44px; }
             .ro-r .ro-sep { display: none; }
             .ro-r .ro-days { width: 100%; }
-            .ro-r .ro-days .dchip, .ro-attbox .dchip { width: 44px; height: 44px; }
+            /* 「部分天數不上9」標籤較長：星期按鈕平分剩下的寬度，高度維持 44px */
+            .ro-r .ro-days .days9, .ro-attbox .ro-days .days9 { flex: 1; min-width: 0; }
+            .ro-r .ro-days .dchip, .ro-attbox .dchip { flex: 1; min-width: 0; max-width: 64px; width: auto; height: 44px; }
             .ro-attbox .att-opt { height: 44px; flex: 1 1 0; }
         }
         .mini-btn { width: 36px; height: 36px; border-radius: var(--r-sm); display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-ink); }
@@ -893,6 +895,9 @@ Authorization inquiries: derliang@gmail.com
             .pref select.input { grid-column: 2; }
             .sound-row { grid-template-columns: 1fr; }
             .ro-form { grid-template-columns: 64px minmax(0, 1fr) 76px; }
+            /* 手機：「部分天數不上9」自成一行，星期按鈕才有 44px 以上的寬度 */
+            .ro-r .ro-days, .ro-attbox .ro-days, .student-table.m-att .ro-days { flex-wrap: wrap; }
+            .ro-r .ro-cap, .ro-attbox .ro-cap, .student-table.m-att .ro-days .ro-cap { width: 100%; }
             .ro-actions { margin-left: 0; width: 100%; display: grid; grid-template-columns: 1fr 1fr; }
             .ro-actions .btn { min-height: 44px; padding: 0 10px; }
             .modal { top: auto; bottom: 0; left: 0; transform: none; width: 100%; max-width: none; max-height: 90vh; border-radius: var(--r-xl) var(--r-xl) 0 0; padding-bottom: env(safe-area-inset-bottom, 0px); }
@@ -6256,7 +6261,7 @@ root.ScoreImport = {
             const check = '<i data-lucide="check"></i>';
             return `<button type="button" class="att-opt" data-k="s8" aria-pressed="${s8}" onclick="${call('s8')}" aria-label="${who}不上第八、九節">${s8 ? check : ''}不上8·9</button>`
                 + `<button type="button" class="att-opt" data-k="all9" aria-pressed="${all}"${lock} onclick="${call('all9')}" aria-label="${who}第九節五天都不上">${all && !s8 ? check : ''}不上9</button>`
-                + `<span class="ro-sep"></span><span class="ro-days"><span class="ro-cap">部分天數</span><span class="days9">`
+                + `<span class="ro-sep"></span><span class="ro-days"><span class="ro-cap">部分天數不上9</span><span class="days9">`
                 + DAY_NAMES.map((d, k) => `<button type="button" class="dchip" data-k="d${k + 1}" aria-pressed="${s9.includes(k + 1)}"${lock} onclick="${call('d' + (k + 1))}" aria-label="${who}週${d}第九節不上">${d}</button>`).join('')
                 + '</span></span>';
         }

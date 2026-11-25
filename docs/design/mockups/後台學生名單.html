@@ -216,12 +216,13 @@ textarea.input{tab-size:8;resize:none;background:var(--sunken);line-height:1.6;f
 .ctl2{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .ctl2 .sep{width:1px;height:24px;background:var(--line-2);margin:0 4px}
 .ctl2 .cap{font-size:12px;font-weight:700;color:var(--text-3)}
-.rtab2 .r{grid-template-columns:52px minmax(120px,1fr) 84px 460px 36px}
+.rtab2 .r{grid-template-columns:52px minmax(120px,1fr) 84px 490px 36px}
 .rtab2 .ctl2{flex-wrap:nowrap}
 .rtab2 .r.h span.att-h{text-align:left}
 .m2 .ctl2 .opt{height:44px;min-width:0;flex:1 1 0}
-.m2 .ctl2 .dchip{width:44px;height:44px}
-.m2 .ctl2 .days-line{display:flex;align-items:center;gap:6px;width:100%}
+.m2 .ctl2 .dchip{flex:1;min-width:0;width:auto;height:44px}
+.m2 .ctl2 .days-line{display:flex;flex-wrap:wrap;align-items:center;gap:6px;width:100%}
+.m2 .ctl2 .cap{width:100%}
 .map-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .map-row .arrow{color:var(--text-3);font-weight:800}
 .themebtn{display:inline-flex;align-items:center;gap:6px}
@@ -240,7 +241,7 @@ textarea.input{tab-size:8;resize:none;background:var(--sunken);line-height:1.6;f
   <!-- ===================== 2a（第 2 輪） ===================== -->
   <section class="variant" id="2a">
     <h2><span class="vno">2a</span>學生名單（表格直接編輯，八九節三個選項） <span class="rec">定案</span></h2>
-    <p>依你的意見：每位學生的八九節一眼三選——<b>不上8·9</b>、<b>不上9</b>（第九節全週不上，一下完成，不必點一～五）、<b>部分天數</b>（點一～五）。不上8·9 時，不上9 與星期自動亮起並鎖住；點掉某一天時，不上9 自動變成部分天數。三種結果對應座位卡的三種章。表格裡的按鈕都可以直接點來試。</p>
+    <p>依你的意見：每位學生的八九節一眼三選——<b>不上8·9</b>、<b>不上9</b>（第九節全週不上，一下完成，不必點一～五）、<b>部分天數不上9</b>（點一～五）。不上8·9 時，不上9 與星期自動亮起並鎖住；點掉某一天時，不上9 自動變成部分天數。三種結果對應座位卡的三種章。表格裡的按鈕都可以直接點來試。</p>
     <div class="devices">
       <div>
         <div class="dev-cap">桌機 1280</div>
@@ -426,8 +427,8 @@ function ctl2Html(st, mobile){
   const o89 = `<button type="button" class="opt" aria-pressed="${st.s8}" data-k="s8">${st.s8?ic('check'):''}不上8·9</button>`;
   const o9 = `<button type="button" class="opt${st.s8?' locked':''}" aria-pressed="${all}" data-k="all9" ${st.s8?'disabled':''}>${all&&!st.s8?ic('check'):''}不上9</button>`;
   const days = D.map((d,k)=>`<button type="button" class="dchip${st.s8?' locked':''}" aria-pressed="${eff.includes(k+1)}" data-k="d${k+1}" ${st.s8?'disabled':''} aria-label="週${d}第九節不上">${d}</button>`).join('');
-  return mobile ? `${o89}${o9}<div class="days-line"><span class="cap">部分天數</span>${days}</div>`
-                : `${o89}${o9}<span class="sep"></span><span class="cap">部分天數</span><span class="days9">${days}</span>`;
+  return mobile ? `${o89}${o9}<div class="days-line"><span class="cap">部分天數不上9</span>${days}</div>`
+                : `${o89}${o9}<span class="sep"></span><span class="cap">部分天數不上9</span><span class="days9">${days}</span>`;
 }
 function mountCtl2(el, st, mobile){
   const render = () => { el.innerHTML = ctl2Html(st, mobile); if (window.lucide) lucide.createIcons(); };
